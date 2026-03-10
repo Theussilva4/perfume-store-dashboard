@@ -45,10 +45,10 @@ const CustomDot = (props: any) => {
       cx={cx}
       cy={cy}
       r={4}
-      fill="hsl(145, 55%, 55%)"
+      fill="hsl(145, 55%, 40%)"
       stroke="none"
       style={{
-        filter: "drop-shadow(0 0 6px hsl(145 55% 55% / 0.5))",
+        filter: "drop-shadow(0 0 6px hsl(145 55% 40% / 0.4))",
         transition: "filter 0.3s ease",
       }}
     />
@@ -65,26 +65,26 @@ const SalesChart = () => {
         <LineChart data={data} margin={{ top: 5, right: 10, left: 10, bottom: 5 }}>
           <CartesianGrid
             strokeDasharray="3 3"
-            stroke="hsl(150 8% 18% / 0.5)"
+            stroke="hsl(140 12% 85% / 0.7)"
             vertical={false}
           />
           <XAxis
             dataKey="month"
             axisLine={false}
             tickLine={false}
-            tick={{ fill: "hsl(140 5% 50%)", fontSize: 11, fontFamily: "Inter" }}
+            tick={{ fill: "hsl(150 8% 45%)", fontSize: 11, fontFamily: "Inter" }}
           />
           <YAxis
             axisLine={false}
             tickLine={false}
-            tick={{ fill: "hsl(140 5% 50%)", fontSize: 11, fontFamily: "Inter" }}
+            tick={{ fill: "hsl(150 8% 45%)", fontSize: 11, fontFamily: "Inter" }}
             tickFormatter={(v) => `${(v / 1000).toFixed(0)}k`}
           />
           <Tooltip content={<CustomTooltip />} cursor={false} />
           <Line
             type="monotone"
             dataKey="vendas"
-            stroke="hsl(145, 55%, 55%)"
+            stroke="hsl(145, 55%, 40%)"
             strokeWidth={2}
             dot={false}
             activeDot={<CustomDot />}
