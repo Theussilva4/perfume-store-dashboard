@@ -65,7 +65,7 @@ const SalesChart = () => {
         <LineChart data={data} margin={{ top: 5, right: 10, left: 10, bottom: 5 }}>
           <CartesianGrid
             strokeDasharray="3 3"
-            stroke="hsl(150 8% 18% / 0.5)"
+            stroke="hsl(140 12% 85% / 0.7)"
             vertical={false}
           />
           <XAxis
