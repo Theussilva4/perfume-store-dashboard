@@ -45,7 +45,7 @@ const SidebarNav = ({ active, onNavigate }: SidebarNavProps) => {
 
       <div className="mt-auto">
         <p className="text-xs text-muted-foreground/50 font-body">
-          Atelier Sillage © 2026
+          TassiAchando © 2026
         </p>
       </div>
     </aside>
