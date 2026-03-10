@@ -72,7 +72,7 @@ const SalesChart = () => {
             dataKey="month"
             axisLine={false}
             tickLine={false}
-            tick={{ fill: "hsl(140 5% 50%)", fontSize: 11, fontFamily: "Inter" }}
+            tick={{ fill: "hsl(150 8% 45%)", fontSize: 11, fontFamily: "Inter" }}
           />
           <YAxis
             axisLine={false}
