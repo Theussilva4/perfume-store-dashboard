@@ -1,4 +1,4 @@
-import { useState } from "react";
+import logo from "@/assets/logo.png";
 
 const navItems = [
   { label: "Visão Geral", key: "overview" },
@@ -17,12 +17,13 @@ interface SidebarNavProps {
 const SidebarNav = ({ active, onNavigate }: SidebarNavProps) => {
   return (
     <aside className="fixed left-0 top-0 h-screen w-52 bg-background flex flex-col py-10 px-6 animate-fade-in-up z-10">
-      <div className="mb-12">
-        <h1 className="font-display text-2xl font-semibold text-primary tracking-wide">
-          Sillage
+      <div className="mb-12 flex flex-col items-center">
+        <img src={logo} alt="TassiAchando" className="w-20 h-20 rounded-full mb-3" />
+        <h1 className="font-display text-lg font-semibold text-primary tracking-wide">
+          TassiAchando
         </h1>
         <p className="text-xs text-muted-foreground mt-1 font-body tracking-widest uppercase">
-          Perfumaria
+          Perfumaria e Acessórios
         </p>
       </div>
 
@@ -44,7 +45,7 @@ const SidebarNav = ({ active, onNavigate }: SidebarNavProps) => {
 
       <div className="mt-auto">
         <p className="text-xs text-muted-foreground/50 font-body">
-          Atelier Sillage © 2026
+          TassiAchando © 2026
         </p>
       </div>
     </aside>
