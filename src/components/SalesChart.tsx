@@ -45,10 +45,10 @@ const CustomDot = (props: any) => {
       cx={cx}
       cy={cy}
       r={4}
-      fill="hsl(30, 30%, 76%)"
+      fill="hsl(145, 55%, 55%)"
       stroke="none"
       style={{
-        filter: "drop-shadow(0 0 6px hsl(30 30% 76% / 0.5))",
+        filter: "drop-shadow(0 0 6px hsl(145 55% 55% / 0.5))",
         transition: "filter 0.3s ease",
       }}
     />
