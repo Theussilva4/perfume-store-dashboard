@@ -84,7 +84,7 @@ const SalesChart = () => {
           <Line
             type="monotone"
             dataKey="vendas"
-            stroke="hsl(145, 55%, 55%)"
+            stroke="hsl(145, 55%, 40%)"
             strokeWidth={2}
             dot={false}
             activeDot={<CustomDot />}
