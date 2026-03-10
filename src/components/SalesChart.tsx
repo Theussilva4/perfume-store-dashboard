@@ -77,7 +77,7 @@ const SalesChart = () => {
           <YAxis
             axisLine={false}
             tickLine={false}
-            tick={{ fill: "hsl(260 3% 50%)", fontSize: 11, fontFamily: "Inter" }}
+            tick={{ fill: "hsl(140 5% 50%)", fontSize: 11, fontFamily: "Inter" }}
             tickFormatter={(v) => `${(v / 1000).toFixed(0)}k`}
           />
           <Tooltip content={<CustomTooltip />} cursor={false} />
