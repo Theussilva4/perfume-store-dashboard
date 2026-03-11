@@ -1,25 +1,66 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Route, Routes } from "react-router-dom";
+import { BrowserRouter, Route, Routes, Navigate } from "react-router-dom";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import Index from "./pages/Index.tsx";
-import NotFound from "./pages/NotFound.tsx";
+import { AuthProvider, useAuth } from "@/contexts/AuthContext";
+import AppLayout from "@/components/AppLayout";
+import Login from "@/pages/Login";
+import Dashboard from "@/pages/Dashboard";
+import Products from "@/pages/Products";
+import Categories from "@/pages/Categories";
+import Stock from "@/pages/Stock";
+import StockEntry from "@/pages/StockEntry";
+import StockExit from "@/pages/StockExit";
+import Orders from "@/pages/Orders";
+import OrderDetail from "@/pages/OrderDetail";
+import Clients from "@/pages/Clients";
+import Reports from "@/pages/Reports";
+import Alerts from "@/pages/Alerts";
+import SettingsPage from "@/pages/SettingsPage";
+import NotFound from "@/pages/NotFound";
 
 const queryClient = new QueryClient();
+
+const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
+  const { isAuthenticated } = useAuth();
+  if (!isAuthenticated) return <Navigate to="/login" replace />;
+  return <>{children}</>;
+};
+
+const PublicRoute = ({ children }: { children: React.ReactNode }) => {
+  const { isAuthenticated } = useAuth();
+  if (isAuthenticated) return <Navigate to="/" replace />;
+  return <>{children}</>;
+};
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
       <Toaster />
       <Sonner />
-      <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<Index />} />
-          {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-      </BrowserRouter>
+      <AuthProvider>
+        <BrowserRouter>
+          <Routes>
+            <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
+            <Route path="/" element={<ProtectedRoute><AppLayout /></ProtectedRoute>}>
+              <Route index element={<Dashboard />} />
+              <Route path="produtos" element={<Products />} />
+              <Route path="categorias" element={<Categories />} />
+              <Route path="estoque" element={<Stock />} />
+              <Route path="estoque/entradas" element={<StockEntry />} />
+              <Route path="estoque/saidas" element={<StockExit />} />
+              <Route path="pedidos" element={<Orders />} />
+              <Route path="pedidos/:id" element={<OrderDetail />} />
+              <Route path="clientes" element={<Clients />} />
+              <Route path="relatorios" element={<Reports />} />
+              <Route path="alertas" element={<Alerts />} />
+              <Route path="configuracoes" element={<SettingsPage />} />
+            </Route>
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </BrowserRouter>
+      </AuthProvider>
     </TooltipProvider>
   </QueryClientProvider>
 );
