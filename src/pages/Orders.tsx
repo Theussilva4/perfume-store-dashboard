@@ -197,6 +197,18 @@ const Orders = () => {
             <DialogTitle className="font-display text-xl">Novo Pedido</DialogTitle>
           </DialogHeader>
           <div className="space-y-5">
+            {/* Branch */}
+            <div className="space-y-2">
+              <Label>Unidade</Label>
+              <Select value={orderBranch} onValueChange={setOrderBranch}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {branches.map((b) => (
+                    <SelectItem key={b.id} value={b.id}>{b.label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
             {/* Client info */}
             <div>
               <p className="text-xs text-muted-foreground uppercase tracking-widest font-medium mb-3">Dados do Cliente</p>
