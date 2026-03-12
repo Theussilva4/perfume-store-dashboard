@@ -1,3 +1,8 @@
+export interface BranchStock {
+  matriz: number;
+  filial1: number;
+}
+
 export interface Product {
   id: string;
   name: string;
@@ -7,6 +12,7 @@ export interface Product {
   costPrice: number;
   salePrice: number;
   stock: number;
+  branchStock: BranchStock;
   minStock: number;
   image?: string;
   active: boolean;
