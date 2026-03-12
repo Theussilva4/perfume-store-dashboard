@@ -13,6 +13,7 @@ import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 
 const Orders = () => {
+  const { selectedBranch, branchLabel } = useBranch();
   const navigate = useNavigate();
   const [orderList, setOrderList] = useState<Order[]>(initialOrders);
   const [search, setSearch] = useState("");
