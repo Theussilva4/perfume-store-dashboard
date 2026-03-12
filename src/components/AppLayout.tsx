@@ -67,6 +67,7 @@ const AppLayout = () => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
+  const { selectedBranch, setSelectedBranch } = useBranch();
   const [mobileOpen, setMobileOpen] = useState(false);
 
   const isActive = (key: string) => {
