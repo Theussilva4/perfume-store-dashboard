@@ -91,6 +91,25 @@ const AppLayout = () => {
         </p>
       </div>
 
+      {/* Branch selector */}
+      <div className="px-4 py-3 border-b border-border">
+        <div className="flex items-center gap-2 text-[10px] text-muted-foreground uppercase tracking-widest font-medium mb-2">
+          <Building2 className="h-3 w-3" />
+          Unidade
+        </div>
+        <Select value={selectedBranch} onValueChange={setSelectedBranch}>
+          <SelectTrigger className="h-8 text-xs">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="todas">Todas as Unidades</SelectItem>
+            {branches.map((b) => (
+              <SelectItem key={b.id} value={b.id}>{b.label}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+
       {/* Navigation */}
       <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-5">
         {navSections.map((section) => (
