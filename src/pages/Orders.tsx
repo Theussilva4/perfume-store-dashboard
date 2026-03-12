@@ -101,7 +101,7 @@ const Orders = () => {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h2 className="font-display text-2xl md:text-3xl font-semibold text-primary">Pedidos</h2>
-          <p className="text-sm text-muted-foreground mt-1">{orderList.length} pedidos registrados</p>
+          <p className="text-sm text-muted-foreground mt-1">{branchLabel} • {filtered.length} pedidos</p>
         </div>
         <Button onClick={() => setDialogOpen(true)}><Plus className="h-4 w-4 mr-2" /> Novo Pedido</Button>
       </div>
