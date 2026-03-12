@@ -81,7 +81,6 @@ const Orders = () => {
       paymentMethod: paymentMethod as Order["paymentMethod"],
       status: paymentMethod === "pendente" ? "aguardando" : "pago",
       date: new Date().toISOString().split("T")[0],
-      branch: "matriz",
       branch: orderBranch,
     };
     setOrderList((prev) => [newOrder, ...prev]);
