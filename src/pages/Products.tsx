@@ -24,7 +24,7 @@ import { toast } from "sonner";
 
 const emptyProduct: Omit<Product, "id"> = {
   name: "", category: "", description: "", brand: "",
-  costPrice: 0, salePrice: 0, stock: 0, minStock: 5,
+  costPrice: 0, salePrice: 0, stock: 0, branchStock: { matriz: 0, filial1: 0 }, minStock: 5,
   active: true,
 };
 
