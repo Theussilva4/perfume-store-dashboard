@@ -31,10 +31,11 @@ const Orders = () => {
   const [selectedQty, setSelectedQty] = useState(1);
 
   const filtered = orderList.filter((o) => {
+    const matchBranch = selectedBranch === "todas" || o.branch === selectedBranch;
     const matchSearch = o.clientName.toLowerCase().includes(search.toLowerCase()) ||
       String(o.number).includes(search);
     const matchStatus = filterStatus === "all" || o.status === filterStatus;
-    return matchSearch && matchStatus;
+    return matchBranch && matchSearch && matchStatus;
   });
 
   const addItem = () => {
