@@ -93,13 +93,13 @@ export const products: Product[] = [
 ];
 
 export const orders: Order[] = [
-  { id: "1", number: 1001, clientName: "Maria Silva", clientPhone: "(11) 99999-1111", items: [{ productId: "1", productName: "Baccarat Rouge 540", quantity: 1, price: 500 }], total: 500, paymentMethod: "pix", status: "entregue", date: "2026-03-11" },
-  { id: "2", number: 1002, clientName: "João Santos", clientPhone: "(11) 99999-2222", items: [{ productId: "2", productName: "Bleu de Chanel", quantity: 1, price: 400 }, { productId: "5", productName: "Light Blue D&G", quantity: 1, price: 300 }], total: 700, paymentMethod: "cartao", status: "pago", date: "2026-03-11" },
-  { id: "3", number: 1003, clientName: "Ana Oliveira", clientPhone: "(11) 99999-3333", items: [{ productId: "4", productName: "Aventus Creed", quantity: 1, price: 800 }], total: 800, paymentMethod: "pendente", status: "aguardando", date: "2026-03-10" },
-  { id: "4", number: 1004, clientName: "Carlos Pereira", clientPhone: "(11) 99999-4444", clientAddress: "Rua das Flores, 123", items: [{ productId: "9", productName: "Malbec", quantity: 2, price: 130 }], total: 260, paymentMethod: "dinheiro", status: "separando", date: "2026-03-10" },
-  { id: "5", number: 1005, clientName: "Lucia Ferreira", clientPhone: "(11) 99999-5555", items: [{ productId: "11", productName: "Bolsa Elegance Preta", quantity: 1, price: 120 }, { productId: "7", productName: "Flowerbomb", quantity: 1, price: 380 }], total: 500, paymentMethod: "pix", status: "entregue", date: "2026-03-09" },
-  { id: "6", number: 1006, clientName: "Pedro Lima", clientPhone: "(11) 99999-6666", items: [{ productId: "3", productName: "Santal 33", quantity: 1, price: 600 }], total: 600, paymentMethod: "pix", status: "pago", date: "2026-03-09" },
-  { id: "7", number: 1007, clientName: "Fernanda Costa", clientPhone: "(11) 99999-7777", items: [{ productId: "12", productName: "Relógio Classic Gold", quantity: 1, price: 200 }], total: 200, paymentMethod: "cartao", status: "cancelado", date: "2026-03-08" },
+  { id: "1", number: 1001, clientName: "Maria Silva", clientPhone: "(11) 99999-1111", items: [{ productId: "1", productName: "Baccarat Rouge 540", quantity: 1, price: 500 }], total: 500, paymentMethod: "pix", status: "entregue", date: "2026-03-11", branch: "matriz" },
+  { id: "2", number: 1002, clientName: "João Santos", clientPhone: "(11) 99999-2222", items: [{ productId: "2", productName: "Bleu de Chanel", quantity: 1, price: 400 }, { productId: "5", productName: "Light Blue D&G", quantity: 1, price: 300 }], total: 700, paymentMethod: "cartao", status: "pago", date: "2026-03-11", branch: "matriz" },
+  { id: "3", number: 1003, clientName: "Ana Oliveira", clientPhone: "(11) 99999-3333", items: [{ productId: "4", productName: "Aventus Creed", quantity: 1, price: 800 }], total: 800, paymentMethod: "pendente", status: "aguardando", date: "2026-03-10", branch: "filial1" },
+  { id: "4", number: 1004, clientName: "Carlos Pereira", clientPhone: "(11) 99999-4444", clientAddress: "Rua das Flores, 123", items: [{ productId: "9", productName: "Malbec", quantity: 2, price: 130 }], total: 260, paymentMethod: "dinheiro", status: "separando", date: "2026-03-10", branch: "filial1" },
+  { id: "5", number: 1005, clientName: "Lucia Ferreira", clientPhone: "(11) 99999-5555", items: [{ productId: "11", productName: "Bolsa Elegance Preta", quantity: 1, price: 120 }, { productId: "7", productName: "Flowerbomb", quantity: 1, price: 380 }], total: 500, paymentMethod: "pix", status: "entregue", date: "2026-03-09", branch: "matriz" },
+  { id: "6", number: 1006, clientName: "Pedro Lima", clientPhone: "(11) 99999-6666", items: [{ productId: "3", productName: "Santal 33", quantity: 1, price: 600 }], total: 600, paymentMethod: "pix", status: "pago", date: "2026-03-09", branch: "filial1" },
+  { id: "7", number: 1007, clientName: "Fernanda Costa", clientPhone: "(11) 99999-7777", items: [{ productId: "12", productName: "Relógio Classic Gold", quantity: 1, price: 200 }], total: 200, paymentMethod: "cartao", status: "cancelado", date: "2026-03-08", branch: "matriz" },
 ];
 
 export const clients: Client[] = [
