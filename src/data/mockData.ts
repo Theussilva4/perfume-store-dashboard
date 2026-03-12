@@ -113,11 +113,11 @@ export const clients: Client[] = [
 ];
 
 export const stockMovements: StockMovement[] = [
-  { id: "1", productId: "1", productName: "Baccarat Rouge 540", type: "entrada", quantity: 10, supplier: "Importadora Luxe", cost: 2800, date: "2026-03-01", notes: "Reposição mensal" },
-  { id: "2", productId: "2", productName: "Bleu de Chanel", type: "entrada", quantity: 5, supplier: "Importadora Luxe", cost: 1100, date: "2026-03-01" },
-  { id: "3", productId: "1", productName: "Baccarat Rouge 540", type: "saida", quantity: 1, reason: "venda", date: "2026-03-11" },
-  { id: "4", productId: "6", productName: "Oud Wood", type: "saida", quantity: 1, reason: "perda", date: "2026-03-08", notes: "Frasco quebrado" },
-  { id: "5", productId: "9", productName: "Malbec", type: "entrada", quantity: 20, supplier: "O Boticário Distribuidor", cost: 1200, date: "2026-03-05" },
+  { id: "1", productId: "1", productName: "Baccarat Rouge 540", type: "entrada", quantity: 10, supplier: "Importadora Luxe", cost: 2800, date: "2026-03-01", notes: "Reposição mensal", branch: "matriz" },
+  { id: "2", productId: "2", productName: "Bleu de Chanel", type: "entrada", quantity: 5, supplier: "Importadora Luxe", cost: 1100, date: "2026-03-01", branch: "filial1" },
+  { id: "3", productId: "1", productName: "Baccarat Rouge 540", type: "saida", quantity: 1, reason: "venda", date: "2026-03-11", branch: "matriz" },
+  { id: "4", productId: "6", productName: "Oud Wood", type: "saida", quantity: 1, reason: "perda", date: "2026-03-08", notes: "Frasco quebrado", branch: "matriz" },
+  { id: "5", productId: "9", productName: "Malbec", type: "entrada", quantity: 20, supplier: "O Boticário Distribuidor", cost: 1200, date: "2026-03-05", branch: "filial1" },
 ];
 
 export const paymentMethodLabels: Record<string, string> = {
