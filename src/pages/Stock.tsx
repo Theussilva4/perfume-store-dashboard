@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { products } from "@/data/mockData";
+import { products, getProductStock, branchLabels } from "@/data/mockData";
+import { useBranch } from "@/contexts/BranchContext";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -8,25 +9,30 @@ import { Search, AlertTriangle, Package } from "lucide-react";
 const Stock = () => {
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState("all");
+  const { selectedBranch, branchLabel } = useBranch();
+
+  const getStock = (p: typeof products[0]) => getProductStock(p, selectedBranch);
 
   const filtered = products.filter((p) => {
     const matchSearch = p.name.toLowerCase().includes(search.toLowerCase());
-    if (filter === "low") return matchSearch && p.stock <= p.minStock && p.stock > 0;
-    if (filter === "out") return matchSearch && p.stock === 0;
+    const stock = getStock(p);
+    if (filter === "low") return matchSearch && stock <= p.minStock && stock > 0;
+    if (filter === "out") return matchSearch && stock === 0;
     return matchSearch;
   });
 
-  const lowCount = products.filter((p) => p.stock <= p.minStock && p.stock > 0).length;
-  const outCount = products.filter((p) => p.stock === 0).length;
+  const lowCount = products.filter((p) => { const s = getStock(p); return s <= p.minStock && s > 0; }).length;
+  const outCount = products.filter((p) => getStock(p) === 0).length;
 
   return (
     <div className="space-y-6 animate-fade-in-up">
       <div>
         <h2 className="font-display text-2xl md:text-3xl font-semibold text-primary">Controle de Estoque</h2>
-        <p className="text-sm text-muted-foreground mt-1">{products.length} produtos • {lowCount} estoque baixo • {outCount} sem estoque</p>
+        <p className="text-sm text-muted-foreground mt-1">
+          {branchLabel} • {products.length} produtos • {lowCount} estoque baixo • {outCount} sem estoque
+        </p>
       </div>
 
-      {/* Alerts */}
       {(lowCount > 0 || outCount > 0) && (
         <div className="flex gap-3 flex-wrap">
           {lowCount > 0 && (
@@ -44,7 +50,6 @@ const Stock = () => {
         </div>
       )}
 
-      {/* Filters */}
       <div className="flex flex-col sm:flex-row gap-3">
         <div className="relative flex-1 max-w-md">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -60,7 +65,6 @@ const Stock = () => {
         </Select>
       </div>
 
-      {/* Table */}
       <div className="bg-card rounded-lg border border-border overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
@@ -68,15 +72,24 @@ const Stock = () => {
               <tr className="border-b border-border bg-muted/30">
                 <th className="text-left px-4 py-3 font-medium text-muted-foreground">Produto</th>
                 <th className="text-left px-4 py-3 font-medium text-muted-foreground">Categoria</th>
-                <th className="text-center px-4 py-3 font-medium text-muted-foreground">Atual</th>
+                {selectedBranch === "todas" ? (
+                  <>
+                    <th className="text-center px-4 py-3 font-medium text-muted-foreground">Matriz</th>
+                    <th className="text-center px-4 py-3 font-medium text-muted-foreground">Filial 1</th>
+                    <th className="text-center px-4 py-3 font-medium text-muted-foreground">Total</th>
+                  </>
+                ) : (
+                  <th className="text-center px-4 py-3 font-medium text-muted-foreground">Atual</th>
+                )}
                 <th className="text-center px-4 py-3 font-medium text-muted-foreground">Mínimo</th>
                 <th className="text-center px-4 py-3 font-medium text-muted-foreground">Status</th>
               </tr>
             </thead>
             <tbody>
               {filtered.map((p) => {
-                const isLow = p.stock <= p.minStock && p.stock > 0;
-                const isOut = p.stock === 0;
+                const stock = getStock(p);
+                const isLow = stock <= p.minStock && stock > 0;
+                const isOut = stock === 0;
                 return (
                   <tr key={p.id} className="border-b border-border last:border-0 hover:bg-muted/20 transition-colors">
                     <td className="px-4 py-3">
@@ -84,7 +97,15 @@ const Stock = () => {
                       <div className="text-xs text-muted-foreground">{p.brand}</div>
                     </td>
                     <td className="px-4 py-3 text-muted-foreground">{p.category}</td>
-                    <td className="px-4 py-3 text-center font-medium">{p.stock}</td>
+                    {selectedBranch === "todas" ? (
+                      <>
+                        <td className="px-4 py-3 text-center font-medium">{p.branchStock.matriz}</td>
+                        <td className="px-4 py-3 text-center font-medium">{p.branchStock.filial1}</td>
+                        <td className="px-4 py-3 text-center font-semibold text-primary">{p.stock}</td>
+                      </>
+                    ) : (
+                      <td className="px-4 py-3 text-center font-medium">{stock}</td>
+                    )}
                     <td className="px-4 py-3 text-center text-muted-foreground">{p.minStock}</td>
                     <td className="px-4 py-3 text-center">
                       {isOut ? (

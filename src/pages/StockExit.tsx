@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { stockMovements, products } from "@/data/mockData";
+import { stockMovements, products, branchLabels } from "@/data/mockData";
+import { useBranch, branches } from "@/contexts/BranchContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -18,18 +19,19 @@ const reasonLabels: Record<string, string> = {
 };
 
 const StockExit = () => {
-  const exits = stockMovements.filter((m) => m.type === "saida");
+  const { selectedBranch, branchLabel } = useBranch();
+  const exits = stockMovements.filter((m) => m.type === "saida" && (selectedBranch === "todas" || m.branch === selectedBranch));
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [form, setForm] = useState({ productId: "", quantity: 0, reason: "", notes: "" });
+  const [form, setForm] = useState({ productId: "", quantity: 0, reason: "", notes: "", branch: "matriz" });
 
   const handleSave = () => {
-    if (!form.productId || form.quantity <= 0 || !form.reason) {
+    if (!form.productId || form.quantity <= 0 || !form.reason || !form.branch) {
       toast.error("Preencha todos os campos obrigatórios.");
       return;
     }
-    toast.success("Saída registrada! Estoque atualizado.");
+    toast.success(`Saída registrada na ${branchLabels[form.branch]}! Estoque atualizado.`);
     setDialogOpen(false);
-    setForm({ productId: "", quantity: 0, reason: "", notes: "" });
+    setForm({ productId: "", quantity: 0, reason: "", notes: "", branch: "matriz" });
   };
 
   return (
@@ -37,7 +39,7 @@ const StockExit = () => {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h2 className="font-display text-2xl md:text-3xl font-semibold text-primary">Saídas de Estoque</h2>
-          <p className="text-sm text-muted-foreground mt-1">Registre saídas por perda, defeito ou ajuste</p>
+          <p className="text-sm text-muted-foreground mt-1">{branchLabel} • Registre saídas por perda, defeito ou ajuste</p>
         </div>
         <Button onClick={() => setDialogOpen(true)}><Plus className="h-4 w-4 mr-2" /> Nova Saída</Button>
       </div>
@@ -51,6 +53,7 @@ const StockExit = () => {
                 <th className="text-left px-4 py-3 font-medium text-muted-foreground">Produto</th>
                 <th className="text-center px-4 py-3 font-medium text-muted-foreground">Qtd</th>
                 <th className="text-left px-4 py-3 font-medium text-muted-foreground">Motivo</th>
+                <th className="text-center px-4 py-3 font-medium text-muted-foreground">Unidade</th>
                 <th className="text-left px-4 py-3 font-medium text-muted-foreground">Obs</th>
               </tr>
             </thead>
@@ -64,6 +67,9 @@ const StockExit = () => {
                     <Badge variant="secondary" className="text-[10px]">
                       {e.reason ? reasonLabels[e.reason] || e.reason : "—"}
                     </Badge>
+                  </td>
+                  <td className="px-4 py-3 text-center">
+                    <Badge variant="outline" className="text-[10px]">{branchLabels[e.branch]}</Badge>
                   </td>
                   <td className="px-4 py-3 text-muted-foreground text-xs">{e.notes || "—"}</td>
                 </tr>
@@ -87,12 +93,23 @@ const StockExit = () => {
           </DialogHeader>
           <div className="space-y-4">
             <div className="space-y-2">
+              <Label>Unidade de origem</Label>
+              <Select value={form.branch} onValueChange={(v) => setForm({ ...form, branch: v })}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {branches.map((b) => (
+                    <SelectItem key={b.id} value={b.id}>{b.label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
               <Label>Produto</Label>
               <Select value={form.productId} onValueChange={(v) => setForm({ ...form, productId: v })}>
                 <SelectTrigger><SelectValue placeholder="Selecione um produto" /></SelectTrigger>
                 <SelectContent>
                   {products.map((p) => (
-                    <SelectItem key={p.id} value={p.id}>{p.name} ({p.stock} un.)</SelectItem>
+                    <SelectItem key={p.id} value={p.id}>{p.name} ({p.branchStock[form.branch as keyof typeof p.branchStock] ?? 0} un.)</SelectItem>
                   ))}
                 </SelectContent>
               </Select>

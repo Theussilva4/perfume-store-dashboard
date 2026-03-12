@@ -1,17 +1,20 @@
 import { orders, products } from "@/data/mockData";
+import { useBranch } from "@/contexts/BranchContext";
 import KpiCard from "@/components/KpiCard";
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, PieChart, Pie, Cell,
 } from "recharts";
 
 const Reports = () => {
-  const totalRevenue = orders.filter((o) => o.status !== "cancelado").reduce((s, o) => s + o.total, 0);
-  const validOrders = orders.filter((o) => o.status !== "cancelado");
+  const { selectedBranch, branchLabel } = useBranch();
+  const branchOrders = orders.filter((o) => selectedBranch === "todas" || o.branch === selectedBranch);
+
+  const totalRevenue = branchOrders.filter((o) => o.status !== "cancelado").reduce((s, o) => s + o.total, 0);
+  const validOrders = branchOrders.filter((o) => o.status !== "cancelado");
   const avgTicket = validOrders.length ? totalRevenue / validOrders.length : 0;
 
-  // Products most sold
   const productSales: Record<string, { name: string; qty: number; revenue: number }> = {};
-  orders.forEach((o) => {
+  branchOrders.forEach((o) => {
     if (o.status === "cancelado") return;
     o.items.forEach((item) => {
       if (!productSales[item.productId]) {
@@ -23,9 +26,8 @@ const Reports = () => {
   });
   const topProducts = Object.values(productSales).sort((a, b) => b.qty - a.qty).slice(0, 5);
 
-  // Sales by category
   const categorySales: Record<string, number> = {};
-  orders.forEach((o) => {
+  branchOrders.forEach((o) => {
     if (o.status === "cancelado") return;
     o.items.forEach((item) => {
       const product = products.find((p) => p.id === item.productId);
@@ -35,8 +37,7 @@ const Reports = () => {
   });
   const categoryData = Object.entries(categorySales).map(([name, value]) => ({ name, value }));
 
-  // Profit calculation
-  const totalCost = orders
+  const totalCost = branchOrders
     .filter((o) => o.status !== "cancelado")
     .reduce((s, o) => {
       return s + o.items.reduce((is, item) => {
@@ -68,10 +69,9 @@ const Reports = () => {
     <div className="space-y-6 animate-fade-in-up">
       <div>
         <h2 className="font-display text-2xl md:text-3xl font-semibold text-primary">Relatórios</h2>
-        <p className="text-sm text-muted-foreground mt-1">Análise de vendas e desempenho</p>
+        <p className="text-sm text-muted-foreground mt-1">{branchLabel} • Análise de vendas e desempenho</p>
       </div>
 
-      {/* KPIs */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <KpiCard label="Faturamento Total" value={`R$ ${totalRevenue.toLocaleString("pt-BR")}`} positive delay="animate-delay-1" />
         <KpiCard label="Ticket Médio" value={`R$ ${avgTicket.toLocaleString("pt-BR", { maximumFractionDigits: 0 })}`} positive delay="animate-delay-2" />
@@ -80,7 +80,6 @@ const Reports = () => {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Top products chart */}
         <div className="bg-card rounded-lg border border-border p-6">
           <h3 className="text-xs text-muted-foreground uppercase tracking-widest mb-5">Produtos Mais Vendidos</h3>
           <ResponsiveContainer width="100%" height={250}>
@@ -94,7 +93,6 @@ const Reports = () => {
           </ResponsiveContainer>
         </div>
 
-        {/* Category pie chart */}
         <div className="bg-card rounded-lg border border-border p-6">
           <h3 className="text-xs text-muted-foreground uppercase tracking-widest mb-5">Vendas por Categoria</h3>
           <ResponsiveContainer width="100%" height={250}>
@@ -118,7 +116,6 @@ const Reports = () => {
         </div>
       </div>
 
-      {/* Top clients */}
       <div className="bg-card rounded-lg border border-border p-6">
         <h3 className="text-xs text-muted-foreground uppercase tracking-widest mb-5">Clientes que Mais Compram</h3>
         <div className="overflow-x-auto">
@@ -131,9 +128,9 @@ const Reports = () => {
               </tr>
             </thead>
             <tbody>
-              {[...new Map(orders.filter((o) => o.status !== "cancelado").map((o) => [o.clientName, o])).values()]
+              {[...new Map(branchOrders.filter((o) => o.status !== "cancelado").map((o) => [o.clientName, o])).values()]
                 .map((o) => {
-                  const clientOrders = orders.filter((oo) => oo.clientName === o.clientName && oo.status !== "cancelado");
+                  const clientOrders = branchOrders.filter((oo) => oo.clientName === o.clientName && oo.status !== "cancelado");
                   return { name: o.clientName, count: clientOrders.length, total: clientOrders.reduce((s, oo) => s + oo.total, 0) };
                 })
                 .sort((a, b) => b.total - a.total)
