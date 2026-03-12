@@ -142,3 +142,14 @@ export const statusColors: Record<string, string> = {
   entregue: "text-success bg-success/10",
   cancelado: "text-destructive bg-destructive/10",
 };
+
+export const branchLabels: Record<string, string> = {
+  matriz: "Matriz",
+  filial1: "Filial 1",
+};
+
+/** Get stock for a product given a branch filter */
+export function getProductStock(p: Product, branch: string): number {
+  if (branch === "todas") return p.stock;
+  return p.branchStock[branch as keyof BranchStock] ?? 0;
+}
