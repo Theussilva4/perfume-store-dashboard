@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { orders as initialOrders, products, statusLabels, statusColors, paymentMethodLabels, Order, OrderItem } from "@/data/mockData";
+import { orders as initialOrders, products, statusLabels, statusColors, paymentMethodLabels, branchLabels, Order, OrderItem } from "@/data/mockData";
+import { useBranch, branches } from "@/contexts/BranchContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
