@@ -165,6 +165,9 @@ const Orders = () => {
                   </td>
                   <td className="px-4 py-3 text-muted-foreground">{new Date(order.date).toLocaleDateString("pt-BR")}</td>
                   <td className="px-4 py-3 text-center">
+                    <Badge variant="outline" className="text-[10px]">{branchLabels[order.branch]}</Badge>
+                  </td>
+                  <td className="px-4 py-3 text-center">
                     <button
                       onClick={() => navigate(`/pedidos/${order.id}`)}
                       className="p-1.5 rounded-md hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
