@@ -135,6 +135,7 @@ const Orders = () => {
                 <th className="text-center px-4 py-3 font-medium text-muted-foreground">Pagamento</th>
                 <th className="text-center px-4 py-3 font-medium text-muted-foreground">Status</th>
                 <th className="text-left px-4 py-3 font-medium text-muted-foreground">Data</th>
+                <th className="text-center px-4 py-3 font-medium text-muted-foreground">Unidade</th>
                 <th className="text-center px-4 py-3 font-medium text-muted-foreground">Ações</th>
               </tr>
             </thead>
