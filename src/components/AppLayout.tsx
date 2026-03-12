@@ -1,5 +1,6 @@
 import { Outlet, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
+import { useBranch, branches } from "@/contexts/BranchContext";
 import logo from "@/assets/logo.png";
 import {
   LayoutDashboard,
@@ -16,10 +17,12 @@ import {
   LogOut,
   Menu,
   X,
+  Building2,
 } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 const navSections = [
   {
@@ -64,6 +67,7 @@ const AppLayout = () => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
+  const { selectedBranch, setSelectedBranch } = useBranch();
   const [mobileOpen, setMobileOpen] = useState(false);
 
   const isActive = (key: string) => {
@@ -85,6 +89,25 @@ const AppLayout = () => {
         <p className="text-[10px] text-muted-foreground tracking-widest uppercase">
           Perfumaria e Acessórios
         </p>
+      </div>
+
+      {/* Branch selector */}
+      <div className="px-4 py-3 border-b border-border">
+        <div className="flex items-center gap-2 text-[10px] text-muted-foreground uppercase tracking-widest font-medium mb-2">
+          <Building2 className="h-3 w-3" />
+          Unidade
+        </div>
+        <Select value={selectedBranch} onValueChange={setSelectedBranch}>
+          <SelectTrigger className="h-8 text-xs">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="todas">Todas as Unidades</SelectItem>
+            {branches.map((b) => (
+              <SelectItem key={b.id} value={b.id}>{b.label}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </div>
 
       {/* Navigation */}

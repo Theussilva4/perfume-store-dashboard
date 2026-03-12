@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { orders as initialOrders, products, statusLabels, statusColors, paymentMethodLabels, Order, OrderItem } from "@/data/mockData";
+import { orders as initialOrders, products, statusLabels, statusColors, paymentMethodLabels, branchLabels, Order, OrderItem } from "@/data/mockData";
+import { useBranch, branches } from "@/contexts/BranchContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -12,6 +13,7 @@ import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 
 const Orders = () => {
+  const { selectedBranch, branchLabel } = useBranch();
   const navigate = useNavigate();
   const [orderList, setOrderList] = useState<Order[]>(initialOrders);
   const [search, setSearch] = useState("");
@@ -26,13 +28,15 @@ const Orders = () => {
   const [paymentMethod, setPaymentMethod] = useState<string>("pix");
   const [orderItems, setOrderItems] = useState<OrderItem[]>([]);
   const [selectedProduct, setSelectedProduct] = useState("");
+  const [orderBranch, setOrderBranch] = useState("matriz");
   const [selectedQty, setSelectedQty] = useState(1);
 
   const filtered = orderList.filter((o) => {
+    const matchBranch = selectedBranch === "todas" || o.branch === selectedBranch;
     const matchSearch = o.clientName.toLowerCase().includes(search.toLowerCase()) ||
       String(o.number).includes(search);
     const matchStatus = filterStatus === "all" || o.status === filterStatus;
-    return matchSearch && matchStatus;
+    return matchBranch && matchSearch && matchStatus;
   });
 
   const addItem = () => {
@@ -77,6 +81,7 @@ const Orders = () => {
       paymentMethod: paymentMethod as Order["paymentMethod"],
       status: paymentMethod === "pendente" ? "aguardando" : "pago",
       date: new Date().toISOString().split("T")[0],
+      branch: orderBranch,
     };
     setOrderList((prev) => [newOrder, ...prev]);
     toast.success(`Pedido #${newOrder.number} criado!`);
@@ -97,7 +102,7 @@ const Orders = () => {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h2 className="font-display text-2xl md:text-3xl font-semibold text-primary">Pedidos</h2>
-          <p className="text-sm text-muted-foreground mt-1">{orderList.length} pedidos registrados</p>
+          <p className="text-sm text-muted-foreground mt-1">{branchLabel} • {filtered.length} pedidos</p>
         </div>
         <Button onClick={() => setDialogOpen(true)}><Plus className="h-4 w-4 mr-2" /> Novo Pedido</Button>
       </div>
@@ -131,6 +136,7 @@ const Orders = () => {
                 <th className="text-center px-4 py-3 font-medium text-muted-foreground">Pagamento</th>
                 <th className="text-center px-4 py-3 font-medium text-muted-foreground">Status</th>
                 <th className="text-left px-4 py-3 font-medium text-muted-foreground">Data</th>
+                <th className="text-center px-4 py-3 font-medium text-muted-foreground">Unidade</th>
                 <th className="text-center px-4 py-3 font-medium text-muted-foreground">Ações</th>
               </tr>
             </thead>
@@ -160,6 +166,9 @@ const Orders = () => {
                   </td>
                   <td className="px-4 py-3 text-muted-foreground">{new Date(order.date).toLocaleDateString("pt-BR")}</td>
                   <td className="px-4 py-3 text-center">
+                    <Badge variant="outline" className="text-[10px]">{branchLabels[order.branch]}</Badge>
+                  </td>
+                  <td className="px-4 py-3 text-center">
                     <button
                       onClick={() => navigate(`/pedidos/${order.id}`)}
                       className="p-1.5 rounded-md hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
@@ -188,6 +197,18 @@ const Orders = () => {
             <DialogTitle className="font-display text-xl">Novo Pedido</DialogTitle>
           </DialogHeader>
           <div className="space-y-5">
+            {/* Branch */}
+            <div className="space-y-2">
+              <Label>Unidade</Label>
+              <Select value={orderBranch} onValueChange={setOrderBranch}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {branches.map((b) => (
+                    <SelectItem key={b.id} value={b.id}>{b.label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
             {/* Client info */}
             <div>
               <p className="text-xs text-muted-foreground uppercase tracking-widest font-medium mb-3">Dados do Cliente</p>
