@@ -78,18 +78,18 @@ export const categories: Category[] = [
 ];
 
 export const products: Product[] = [
-  { id: "1", name: "Baccarat Rouge 540", category: "Perfumes Importados", description: "Fragrância oriental floral", brand: "Maison Francis Kurkdjian", costPrice: 280, salePrice: 500, stock: 12, minStock: 5, active: true },
-  { id: "2", name: "Bleu de Chanel", category: "Perfumes Importados", description: "Fragrância amadeirada aromática", brand: "Chanel", costPrice: 220, salePrice: 400, stock: 8, minStock: 5, active: true },
-  { id: "3", name: "Santal 33", category: "Perfumes Importados", description: "Fragrância amadeirada", brand: "Le Labo", costPrice: 350, salePrice: 600, stock: 3, minStock: 5, active: true },
-  { id: "4", name: "Aventus Creed", category: "Perfumes Importados", description: "Fragrância frutada", brand: "Creed", costPrice: 400, salePrice: 800, stock: 5, minStock: 3, active: true },
-  { id: "5", name: "Light Blue D&G", category: "Perfumes Importados", description: "Fragrância cítrica", brand: "Dolce & Gabbana", costPrice: 150, salePrice: 300, stock: 15, minStock: 5, active: true },
-  { id: "6", name: "Oud Wood", category: "Perfumes Importados", description: "Fragrância oud", brand: "Tom Ford", costPrice: 380, salePrice: 700, stock: 2, minStock: 3, active: true },
-  { id: "7", name: "Flowerbomb", category: "Perfumes Importados", description: "Fragrância floral oriental", brand: "Viktor & Rolf", costPrice: 200, salePrice: 380, stock: 5, minStock: 5, active: true },
-  { id: "8", name: "Noir de Noir", category: "Perfumes Importados", description: "Fragrância oriental", brand: "Tom Ford", costPrice: 420, salePrice: 850, stock: 1, minStock: 3, active: true },
-  { id: "9", name: "Malbec", category: "Perfumes Nacionais", description: "Fragrância amadeirada", brand: "O Boticário", costPrice: 60, salePrice: 130, stock: 20, minStock: 10, active: true },
-  { id: "10", name: "Egeo", category: "Perfumes Nacionais", description: "Fragrância fresca", brand: "O Boticário", costPrice: 50, salePrice: 110, stock: 18, minStock: 10, active: true },
-  { id: "11", name: "Bolsa Elegance Preta", category: "Bolsas", description: "Bolsa de couro sintético", brand: "TassiAchando", costPrice: 45, salePrice: 120, stock: 7, minStock: 3, active: true },
-  { id: "12", name: "Relógio Classic Gold", category: "Relógios", description: "Relógio analógico dourado", brand: "TassiAchando", costPrice: 80, salePrice: 200, stock: 4, minStock: 2, active: true },
+  { id: "1", name: "Baccarat Rouge 540", category: "Perfumes Importados", description: "Fragrância oriental floral", brand: "Maison Francis Kurkdjian", costPrice: 280, salePrice: 500, stock: 12, branchStock: { matriz: 8, filial1: 4 }, minStock: 5, active: true },
+  { id: "2", name: "Bleu de Chanel", category: "Perfumes Importados", description: "Fragrância amadeirada aromática", brand: "Chanel", costPrice: 220, salePrice: 400, stock: 8, branchStock: { matriz: 5, filial1: 3 }, minStock: 5, active: true },
+  { id: "3", name: "Santal 33", category: "Perfumes Importados", description: "Fragrância amadeirada", brand: "Le Labo", costPrice: 350, salePrice: 600, stock: 3, branchStock: { matriz: 2, filial1: 1 }, minStock: 5, active: true },
+  { id: "4", name: "Aventus Creed", category: "Perfumes Importados", description: "Fragrância frutada", brand: "Creed", costPrice: 400, salePrice: 800, stock: 5, branchStock: { matriz: 3, filial1: 2 }, minStock: 3, active: true },
+  { id: "5", name: "Light Blue D&G", category: "Perfumes Importados", description: "Fragrância cítrica", brand: "Dolce & Gabbana", costPrice: 150, salePrice: 300, stock: 15, branchStock: { matriz: 10, filial1: 5 }, minStock: 5, active: true },
+  { id: "6", name: "Oud Wood", category: "Perfumes Importados", description: "Fragrância oud", brand: "Tom Ford", costPrice: 380, salePrice: 700, stock: 2, branchStock: { matriz: 2, filial1: 0 }, minStock: 3, active: true },
+  { id: "7", name: "Flowerbomb", category: "Perfumes Importados", description: "Fragrância floral oriental", brand: "Viktor & Rolf", costPrice: 200, salePrice: 380, stock: 5, branchStock: { matriz: 3, filial1: 2 }, minStock: 5, active: true },
+  { id: "8", name: "Noir de Noir", category: "Perfumes Importados", description: "Fragrância oriental", brand: "Tom Ford", costPrice: 420, salePrice: 850, stock: 1, branchStock: { matriz: 1, filial1: 0 }, minStock: 3, active: true },
+  { id: "9", name: "Malbec", category: "Perfumes Nacionais", description: "Fragrância amadeirada", brand: "O Boticário", costPrice: 60, salePrice: 130, stock: 20, branchStock: { matriz: 12, filial1: 8 }, minStock: 10, active: true },
+  { id: "10", name: "Egeo", category: "Perfumes Nacionais", description: "Fragrância fresca", brand: "O Boticário", costPrice: 50, salePrice: 110, stock: 18, branchStock: { matriz: 10, filial1: 8 }, minStock: 10, active: true },
+  { id: "11", name: "Bolsa Elegance Preta", category: "Bolsas", description: "Bolsa de couro sintético", brand: "TassiAchando", costPrice: 45, salePrice: 120, stock: 7, branchStock: { matriz: 4, filial1: 3 }, minStock: 3, active: true },
+  { id: "12", name: "Relógio Classic Gold", category: "Relógios", description: "Relógio analógico dourado", brand: "TassiAchando", costPrice: 80, salePrice: 200, stock: 4, branchStock: { matriz: 3, filial1: 1 }, minStock: 2, active: true },
 ];
 
 export const orders: Order[] = [
