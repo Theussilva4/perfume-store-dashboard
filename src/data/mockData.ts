@@ -64,6 +64,7 @@ export interface StockMovement {
   cost?: number;
   date: string;
   notes?: string;
+  branch: string;
 }
 
 export const categories: Category[] = [
