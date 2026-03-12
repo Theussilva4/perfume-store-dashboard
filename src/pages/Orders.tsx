@@ -28,6 +28,7 @@ const Orders = () => {
   const [paymentMethod, setPaymentMethod] = useState<string>("pix");
   const [orderItems, setOrderItems] = useState<OrderItem[]>([]);
   const [selectedProduct, setSelectedProduct] = useState("");
+  const [orderBranch, setOrderBranch] = useState("matriz");
   const [selectedQty, setSelectedQty] = useState(1);
 
   const filtered = orderList.filter((o) => {
