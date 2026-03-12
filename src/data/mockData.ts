@@ -43,6 +43,7 @@ export interface Order {
   status: "aguardando" | "pago" | "separando" | "entregue" | "cancelado";
   date: string;
   notes?: string;
+  branch: string;
 }
 
 export interface Client {
