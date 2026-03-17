@@ -1,4 +1,4 @@
-import { orders, products } from "@/data/mockData";
+import { pedidos, produtos } from "@/data/mockData";
 import { useBranch } from "@/contexts/BranchContext";
 import KpiCard from "@/components/KpiCard";
 import {
@@ -6,54 +6,54 @@ import {
 } from "recharts";
 
 const Reports = () => {
-  const { selectedBranch, branchLabel } = useBranch();
-  const branchOrders = orders.filter((o) => selectedBranch === "todas" || o.branch === selectedBranch);
+  const { filialSelecionada, rotuloFilial } = useBranch();
+  const pedidosFilial = pedidos.filter((o) => filialSelecionada === "todas" || o.filial === filialSelecionada);
 
-  const totalRevenue = branchOrders.filter((o) => o.status !== "cancelado").reduce((s, o) => s + o.total, 0);
-  const validOrders = branchOrders.filter((o) => o.status !== "cancelado");
-  const avgTicket = validOrders.length ? totalRevenue / validOrders.length : 0;
+  const faturamentoTotal = pedidosFilial.filter((o) => o.status !== "cancelado").reduce((s, o) => s + o.total, 0);
+  const pedidosValidos = pedidosFilial.filter((o) => o.status !== "cancelado");
+  const ticketMedio = pedidosValidos.length ? faturamentoTotal / pedidosValidos.length : 0;
 
-  const productSales: Record<string, { name: string; qty: number; revenue: number }> = {};
-  branchOrders.forEach((o) => {
+  const vendasPorProduto: Record<string, { nome: string; qtd: number; receita: number }> = {};
+  pedidosFilial.forEach((o) => {
     if (o.status === "cancelado") return;
-    o.items.forEach((item) => {
-      if (!productSales[item.productId]) {
-        productSales[item.productId] = { name: item.productName, qty: 0, revenue: 0 };
+    o.itens.forEach((item) => {
+      if (!vendasPorProduto[item.produtoId]) {
+        vendasPorProduto[item.produtoId] = { nome: item.nomeProduto, qtd: 0, receita: 0 };
       }
-      productSales[item.productId].qty += item.quantity;
-      productSales[item.productId].revenue += item.price * item.quantity;
+      vendasPorProduto[item.produtoId].qtd += item.quantidade;
+      vendasPorProduto[item.produtoId].receita += item.preco * item.quantidade;
     });
   });
-  const topProducts = Object.values(productSales).sort((a, b) => b.qty - a.qty).slice(0, 5);
+  const topProdutos = Object.values(vendasPorProduto).sort((a, b) => b.qtd - a.qtd).slice(0, 5);
 
-  const categorySales: Record<string, number> = {};
-  branchOrders.forEach((o) => {
+  const vendasPorCategoria: Record<string, number> = {};
+  pedidosFilial.forEach((o) => {
     if (o.status === "cancelado") return;
-    o.items.forEach((item) => {
-      const product = products.find((p) => p.id === item.productId);
-      const cat = product?.category || "Outros";
-      categorySales[cat] = (categorySales[cat] || 0) + item.price * item.quantity;
+    o.itens.forEach((item) => {
+      const produto = produtos.find((p) => p.id === item.produtoId);
+      const cat = produto?.categoria || "Outros";
+      vendasPorCategoria[cat] = (vendasPorCategoria[cat] || 0) + item.preco * item.quantidade;
     });
   });
-  const categoryData = Object.entries(categorySales).map(([name, value]) => ({ name, value }));
+  const dadosCategoria = Object.entries(vendasPorCategoria).map(([nome, valor]) => ({ nome, valor }));
 
-  const totalCost = branchOrders
+  const custoTotal = pedidosFilial
     .filter((o) => o.status !== "cancelado")
     .reduce((s, o) => {
-      return s + o.items.reduce((is, item) => {
-        const product = products.find((p) => p.id === item.productId);
-        return is + (product?.costPrice || 0) * item.quantity;
+      return s + o.itens.reduce((is, item) => {
+        const produto = produtos.find((p) => p.id === item.produtoId);
+        return is + (produto?.precoCusto || 0) * item.quantidade;
       }, 0);
     }, 0);
-  const totalProfit = totalRevenue - totalCost;
-  const margin = totalRevenue > 0 ? ((totalProfit / totalRevenue) * 100).toFixed(1) : "0";
+  const lucroTotal = faturamentoTotal - custoTotal;
+  const margem = faturamentoTotal > 0 ? ((lucroTotal / faturamentoTotal) * 100).toFixed(1) : "0";
 
-  const COLORS = [
+  const CORES = [
     "hsl(145, 55%, 40%)", "hsl(200, 60%, 50%)", "hsl(30, 80%, 55%)",
     "hsl(280, 50%, 55%)", "hsl(350, 60%, 55%)", "hsl(170, 50%, 45%)",
   ];
 
-  const CustomTooltip = ({ active, payload, label }: any) => {
+  const TooltipPersonalizado = ({ active, payload, label }: any) => {
     if (active && payload?.length) {
       return (
         <div className="bg-card border border-border rounded-md px-3 py-2 text-sm">
@@ -69,26 +69,26 @@ const Reports = () => {
     <div className="space-y-6 animate-fade-in-up">
       <div>
         <h2 className="font-display text-2xl md:text-3xl font-semibold text-primary">Relatórios</h2>
-        <p className="text-sm text-muted-foreground mt-1">{branchLabel} • Análise de vendas e desempenho</p>
+        <p className="text-sm text-muted-foreground mt-1">{rotuloFilial} • Análise de vendas e desempenho</p>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <KpiCard label="Faturamento Total" value={`R$ ${totalRevenue.toLocaleString("pt-BR")}`} positive delay="animate-delay-1" />
-        <KpiCard label="Ticket Médio" value={`R$ ${avgTicket.toLocaleString("pt-BR", { maximumFractionDigits: 0 })}`} positive delay="animate-delay-2" />
-        <KpiCard label="Lucro Total" value={`R$ ${totalProfit.toLocaleString("pt-BR")}`} change={`Margem: ${margin}%`} positive delay="animate-delay-2" />
-        <KpiCard label="Total de Pedidos" value={String(validOrders.length)} positive delay="animate-delay-3" />
+        <KpiCard label="Faturamento Total" value={`R$ ${faturamentoTotal.toLocaleString("pt-BR")}`} positive delay="animate-delay-1" />
+        <KpiCard label="Ticket Médio" value={`R$ ${ticketMedio.toLocaleString("pt-BR", { maximumFractionDigits: 0 })}`} positive delay="animate-delay-2" />
+        <KpiCard label="Lucro Total" value={`R$ ${lucroTotal.toLocaleString("pt-BR")}`} change={`Margem: ${margem}%`} positive delay="animate-delay-2" />
+        <KpiCard label="Total de Pedidos" value={String(pedidosValidos.length)} positive delay="animate-delay-3" />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div className="bg-card rounded-lg border border-border p-6">
           <h3 className="text-xs text-muted-foreground uppercase tracking-widest mb-5">Produtos Mais Vendidos</h3>
           <ResponsiveContainer width="100%" height={250}>
-            <BarChart data={topProducts} layout="vertical" margin={{ left: 0, right: 20 }}>
+            <BarChart data={topProdutos} layout="vertical" margin={{ left: 0, right: 20 }}>
               <CartesianGrid strokeDasharray="3 3" stroke="hsl(140 12% 85% / 0.7)" horizontal={false} />
               <XAxis type="number" tick={{ fill: "hsl(150 8% 45%)", fontSize: 11 }} axisLine={false} tickLine={false} />
-              <YAxis dataKey="name" type="category" tick={{ fill: "hsl(150 8% 45%)", fontSize: 11 }} axisLine={false} tickLine={false} width={120} />
-              <Tooltip content={<CustomTooltip />} cursor={false} />
-              <Bar dataKey="revenue" fill="hsl(145, 55%, 40%)" radius={[0, 4, 4, 0]} barSize={20} />
+              <YAxis dataKey="nome" type="category" tick={{ fill: "hsl(150 8% 45%)", fontSize: 11 }} axisLine={false} tickLine={false} width={120} />
+              <Tooltip content={<TooltipPersonalizado />} cursor={false} />
+              <Bar dataKey="receita" fill="hsl(145, 55%, 40%)" radius={[0, 4, 4, 0]} barSize={20} />
             </BarChart>
           </ResponsiveContainer>
         </div>
@@ -97,19 +97,19 @@ const Reports = () => {
           <h3 className="text-xs text-muted-foreground uppercase tracking-widest mb-5">Vendas por Categoria</h3>
           <ResponsiveContainer width="100%" height={250}>
             <PieChart>
-              <Pie data={categoryData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={90} strokeWidth={2} stroke="hsl(0 0% 100%)">
-                {categoryData.map((_, i) => (
-                  <Cell key={i} fill={COLORS[i % COLORS.length]} />
+              <Pie data={dadosCategoria} dataKey="valor" nameKey="nome" cx="50%" cy="50%" outerRadius={90} strokeWidth={2} stroke="hsl(0 0% 100%)">
+                {dadosCategoria.map((_, i) => (
+                  <Cell key={i} fill={CORES[i % CORES.length]} />
                 ))}
               </Pie>
-              <Tooltip content={<CustomTooltip />} />
+              <Tooltip content={<TooltipPersonalizado />} />
             </PieChart>
           </ResponsiveContainer>
           <div className="flex flex-wrap gap-3 mt-3 justify-center">
-            {categoryData.map((cat, i) => (
-              <div key={cat.name} className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: COLORS[i % COLORS.length] }} />
-                {cat.name}
+            {dadosCategoria.map((cat, i) => (
+              <div key={cat.nome} className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: CORES[i % CORES.length] }} />
+                {cat.nome}
               </div>
             ))}
           </div>
@@ -128,17 +128,17 @@ const Reports = () => {
               </tr>
             </thead>
             <tbody>
-              {[...new Map(branchOrders.filter((o) => o.status !== "cancelado").map((o) => [o.clientName, o])).values()]
+              {[...new Map(pedidosFilial.filter((o) => o.status !== "cancelado").map((o) => [o.nomeCliente, o])).values()]
                 .map((o) => {
-                  const clientOrders = branchOrders.filter((oo) => oo.clientName === o.clientName && oo.status !== "cancelado");
-                  return { name: o.clientName, count: clientOrders.length, total: clientOrders.reduce((s, oo) => s + oo.total, 0) };
+                  const pedidosCliente = pedidosFilial.filter((oo) => oo.nomeCliente === o.nomeCliente && oo.status !== "cancelado");
+                  return { nome: o.nomeCliente, contagem: pedidosCliente.length, total: pedidosCliente.reduce((s, oo) => s + oo.total, 0) };
                 })
                 .sort((a, b) => b.total - a.total)
                 .slice(0, 5)
                 .map((c) => (
-                  <tr key={c.name} className="border-b border-border last:border-0 hover:bg-muted/20">
-                    <td className="px-4 py-3 font-medium text-foreground">{c.name}</td>
-                    <td className="px-4 py-3 text-center text-muted-foreground">{c.count}</td>
+                  <tr key={c.nome} className="border-b border-border last:border-0 hover:bg-muted/20">
+                    <td className="px-4 py-3 font-medium text-foreground">{c.nome}</td>
+                    <td className="px-4 py-3 text-center text-muted-foreground">{c.contagem}</td>
                     <td className="px-4 py-3 text-right text-primary font-medium">R$ {c.total.toLocaleString("pt-BR")}</td>
                   </tr>
                 ))}

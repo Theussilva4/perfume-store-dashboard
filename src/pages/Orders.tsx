@@ -1,6 +1,6 @@
 import { useState } from "react";
-import { orders as initialOrders, products, statusLabels, statusColors, paymentMethodLabels, branchLabels, Order, OrderItem } from "@/data/mockData";
-import { useBranch, branches } from "@/contexts/BranchContext";
+import { pedidos as pedidosIniciais, produtos, rotulosStatus, coresStatus, rotulosFormaPagamento, rotulosFilial, Pedido, ItemPedido } from "@/data/mockData";
+import { useBranch, filiais } from "@/contexts/BranchContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -13,86 +13,85 @@ import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 
 const Orders = () => {
-  const { selectedBranch, branchLabel } = useBranch();
+  const { filialSelecionada, rotuloFilial } = useBranch();
   const navigate = useNavigate();
-  const [orderList, setOrderList] = useState<Order[]>(initialOrders);
+  const [listaPedidos, setListaPedidos] = useState<Pedido[]>(pedidosIniciais);
   const [search, setSearch] = useState("");
-  const [filterStatus, setFilterStatus] = useState("all");
-  const [filterPeriod, setFilterPeriod] = useState("all");
+  const [filtroStatus, setFiltroStatus] = useState("all");
+  const [filtroPeriodo, setFiltroPeriodo] = useState("all");
   const [dialogOpen, setDialogOpen] = useState(false);
 
-  // New order form
-  const [clientName, setClientName] = useState("");
-  const [clientPhone, setClientPhone] = useState("");
-  const [clientAddress, setClientAddress] = useState("");
-  const [paymentMethod, setPaymentMethod] = useState<string>("pix");
-  const [orderItems, setOrderItems] = useState<OrderItem[]>([]);
-  const [selectedProduct, setSelectedProduct] = useState("");
-  const [orderBranch, setOrderBranch] = useState("matriz");
-  const [selectedQty, setSelectedQty] = useState(1);
+  const [nomeCliente, setNomeCliente] = useState("");
+  const [telefoneCliente, setTelefoneCliente] = useState("");
+  const [enderecoCliente, setEnderecoCliente] = useState("");
+  const [formaPagamento, setFormaPagamento] = useState<string>("pix");
+  const [itensPedido, setItensPedido] = useState<ItemPedido[]>([]);
+  const [produtoSelecionado, setProdutoSelecionado] = useState("");
+  const [filialPedido, setFilialPedido] = useState("matriz");
+  const [qtdSelecionada, setQtdSelecionada] = useState(1);
 
-  const filtered = orderList.filter((o) => {
-    const matchBranch = selectedBranch === "todas" || o.branch === selectedBranch;
-    const matchSearch = o.clientName.toLowerCase().includes(search.toLowerCase()) ||
-      String(o.number).includes(search);
-    const matchStatus = filterStatus === "all" || o.status === filterStatus;
-    return matchBranch && matchSearch && matchStatus;
+  const filtrados = listaPedidos.filter((o) => {
+    const matchFilial = filialSelecionada === "todas" || o.filial === filialSelecionada;
+    const matchSearch = o.nomeCliente.toLowerCase().includes(search.toLowerCase()) ||
+      String(o.numero).includes(search);
+    const matchStatus = filtroStatus === "all" || o.status === filtroStatus;
+    return matchFilial && matchSearch && matchStatus;
   });
 
-  const addItem = () => {
-    const product = products.find((p) => p.id === selectedProduct);
-    if (!product) return;
-    const existing = orderItems.find((i) => i.productId === product.id);
-    if (existing) {
-      setOrderItems((prev) =>
-        prev.map((i) => i.productId === product.id ? { ...i, quantity: i.quantity + selectedQty } : i)
+  const adicionarItem = () => {
+    const produto = produtos.find((p) => p.id === produtoSelecionado);
+    if (!produto) return;
+    const existente = itensPedido.find((i) => i.produtoId === produto.id);
+    if (existente) {
+      setItensPedido((prev) =>
+        prev.map((i) => i.produtoId === produto.id ? { ...i, quantidade: i.quantidade + qtdSelecionada } : i)
       );
     } else {
-      setOrderItems((prev) => [...prev, {
-        productId: product.id,
-        productName: product.name,
-        quantity: selectedQty,
-        price: product.salePrice,
+      setItensPedido((prev) => [...prev, {
+        produtoId: produto.id,
+        nomeProduto: produto.nome,
+        quantidade: qtdSelecionada,
+        preco: produto.precoVenda,
       }]);
     }
-    setSelectedProduct("");
-    setSelectedQty(1);
+    setProdutoSelecionado("");
+    setQtdSelecionada(1);
   };
 
-  const removeItem = (productId: string) => {
-    setOrderItems((prev) => prev.filter((i) => i.productId !== productId));
+  const removerItem = (produtoId: string) => {
+    setItensPedido((prev) => prev.filter((i) => i.produtoId !== produtoId));
   };
 
-  const orderTotal = orderItems.reduce((s, i) => s + i.price * i.quantity, 0);
+  const totalPedido = itensPedido.reduce((s, i) => s + i.preco * i.quantidade, 0);
 
-  const handleCreateOrder = () => {
-    if (!clientName || !clientPhone || orderItems.length === 0) {
+  const handleCriarPedido = () => {
+    if (!nomeCliente || !telefoneCliente || itensPedido.length === 0) {
       toast.error("Preencha cliente e adicione pelo menos um produto.");
       return;
     }
-    const newOrder: Order = {
+    const novoPedido: Pedido = {
       id: String(Date.now()),
-      number: Math.max(...orderList.map((o) => o.number)) + 1,
-      clientName,
-      clientPhone,
-      clientAddress: clientAddress || undefined,
-      items: orderItems,
-      total: orderTotal,
-      paymentMethod: paymentMethod as Order["paymentMethod"],
-      status: paymentMethod === "pendente" ? "aguardando" : "pago",
-      date: new Date().toISOString().split("T")[0],
-      branch: orderBranch,
+      numero: Math.max(...listaPedidos.map((o) => o.numero)) + 1,
+      nomeCliente,
+      telefoneCliente,
+      enderecoCliente: enderecoCliente || undefined,
+      itens: itensPedido,
+      total: totalPedido,
+      formaPagamento: formaPagamento as Pedido["formaPagamento"],
+      status: formaPagamento === "pendente" ? "aguardando" : "pago",
+      data: new Date().toISOString().split("T")[0],
+      filial: filialPedido,
     };
-    setOrderList((prev) => [newOrder, ...prev]);
-    toast.success(`Pedido #${newOrder.number} criado!`);
+    setListaPedidos((prev) => [novoPedido, ...prev]);
+    toast.success(`Pedido #${novoPedido.numero} criado!`);
     setDialogOpen(false);
-    setClientName(""); setClientPhone(""); setClientAddress("");
-    setOrderItems([]); setPaymentMethod("pix");
+    setNomeCliente(""); setTelefoneCliente(""); setEnderecoCliente("");
+    setItensPedido([]); setFormaPagamento("pix");
   };
 
-  const updateStatus = (orderId: string, status: Order["status"]) => {
-    setOrderList((prev) =>
-      prev.map((o) => (o.id === orderId ? { ...o, status } : o))
+  const atualizarStatus = (pedidoId: string, status: Pedido["status"]) => {
+    setListaPedidos((prev) =>
+      prev.map((o) => (o.id === pedidoId ? { ...o, status } : o))
     );
     toast.success("Status atualizado!");
   };
@@ -102,29 +101,27 @@ const Orders = () => {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h2 className="font-display text-2xl md:text-3xl font-semibold text-primary">Pedidos</h2>
-          <p className="text-sm text-muted-foreground mt-1">{branchLabel} • {filtered.length} pedidos</p>
+          <p className="text-sm text-muted-foreground mt-1">{rotuloFilial} • {filtrados.length} pedidos</p>
         </div>
         <Button onClick={() => setDialogOpen(true)}><Plus className="h-4 w-4 mr-2" /> Novo Pedido</Button>
       </div>
 
-      {/* Filters */}
       <div className="flex flex-col sm:flex-row gap-3">
         <div className="relative flex-1 max-w-md">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input placeholder="Buscar por cliente ou nº..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-10" />
         </div>
-        <Select value={filterStatus} onValueChange={setFilterStatus}>
+        <Select value={filtroStatus} onValueChange={setFiltroStatus}>
           <SelectTrigger className="w-full sm:w-48"><SelectValue /></SelectTrigger>
           <SelectContent>
             <SelectItem value="all">Todos os status</SelectItem>
-            {Object.entries(statusLabels).map(([k, v]) => (
+            {Object.entries(rotulosStatus).map(([k, v]) => (
               <SelectItem key={k} value={k}>{v}</SelectItem>
             ))}
           </SelectContent>
         </Select>
       </div>
 
-      {/* Orders table */}
       <div className="bg-card rounded-lg border border-border overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
@@ -141,36 +138,36 @@ const Orders = () => {
               </tr>
             </thead>
             <tbody>
-              {filtered.map((order) => (
-                <tr key={order.id} className="border-b border-border last:border-0 hover:bg-muted/20 transition-colors">
-                  <td className="px-4 py-3 font-medium text-foreground">#{order.number}</td>
+              {filtrados.map((pedido) => (
+                <tr key={pedido.id} className="border-b border-border last:border-0 hover:bg-muted/20 transition-colors">
+                  <td className="px-4 py-3 font-medium text-foreground">#{pedido.numero}</td>
                   <td className="px-4 py-3">
-                    <div className="font-medium text-foreground">{order.clientName}</div>
-                    <div className="text-xs text-muted-foreground">{order.clientPhone}</div>
+                    <div className="font-medium text-foreground">{pedido.nomeCliente}</div>
+                    <div className="text-xs text-muted-foreground">{pedido.telefoneCliente}</div>
                   </td>
-                  <td className="px-4 py-3 text-right font-medium">R$ {order.total.toLocaleString("pt-BR")}</td>
-                  <td className="px-4 py-3 text-center text-muted-foreground">{paymentMethodLabels[order.paymentMethod]}</td>
+                  <td className="px-4 py-3 text-right font-medium">R$ {pedido.total.toLocaleString("pt-BR")}</td>
+                  <td className="px-4 py-3 text-center text-muted-foreground">{rotulosFormaPagamento[pedido.formaPagamento]}</td>
                   <td className="px-4 py-3 text-center">
-                    <Select value={order.status} onValueChange={(v) => updateStatus(order.id, v as Order["status"])}>
+                    <Select value={pedido.status} onValueChange={(v) => atualizarStatus(pedido.id, v as Pedido["status"])}>
                       <SelectTrigger className="h-7 text-xs border-0 bg-transparent w-auto inline-flex">
-                        <Badge className={`${statusColors[order.status]} border-0 text-[10px]`}>
-                          {statusLabels[order.status]}
+                        <Badge className={`${coresStatus[pedido.status]} border-0 text-[10px]`}>
+                          {rotulosStatus[pedido.status]}
                         </Badge>
                       </SelectTrigger>
                       <SelectContent>
-                        {Object.entries(statusLabels).map(([k, v]) => (
+                        {Object.entries(rotulosStatus).map(([k, v]) => (
                           <SelectItem key={k} value={k}>{v}</SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
                   </td>
-                  <td className="px-4 py-3 text-muted-foreground">{new Date(order.date).toLocaleDateString("pt-BR")}</td>
+                  <td className="px-4 py-3 text-muted-foreground">{new Date(pedido.data).toLocaleDateString("pt-BR")}</td>
                   <td className="px-4 py-3 text-center">
-                    <Badge variant="outline" className="text-[10px]">{branchLabels[order.branch]}</Badge>
+                    <Badge variant="outline" className="text-[10px]">{rotulosFilial[pedido.filial]}</Badge>
                   </td>
                   <td className="px-4 py-3 text-center">
                     <button
-                      onClick={() => navigate(`/pedidos/${order.id}`)}
+                      onClick={() => navigate(`/pedidos/${pedido.id}`)}
                       className="p-1.5 rounded-md hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
                     >
                       <Eye className="h-4 w-4" />
@@ -183,77 +180,73 @@ const Orders = () => {
         </div>
       </div>
 
-      {filtered.length === 0 && (
+      {filtrados.length === 0 && (
         <div className="text-center py-12 text-muted-foreground">
           <ClipboardList className="h-12 w-12 mx-auto mb-3 opacity-30" />
           <p>Nenhum pedido encontrado.</p>
         </div>
       )}
 
-      {/* New order dialog */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="font-display text-xl">Novo Pedido</DialogTitle>
           </DialogHeader>
           <div className="space-y-5">
-            {/* Branch */}
             <div className="space-y-2">
               <Label>Unidade</Label>
-              <Select value={orderBranch} onValueChange={setOrderBranch}>
+              <Select value={filialPedido} onValueChange={setFilialPedido}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  {branches.map((b) => (
-                    <SelectItem key={b.id} value={b.id}>{b.label}</SelectItem>
+                  {filiais.map((b) => (
+                    <SelectItem key={b.id} value={b.id}>{b.rotulo}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
-            {/* Client info */}
             <div>
               <p className="text-xs text-muted-foreground uppercase tracking-widest font-medium mb-3">Dados do Cliente</p>
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-2">
                   <Label>Nome</Label>
-                  <Input value={clientName} onChange={(e) => setClientName(e.target.value)} />
+                  <Input value={nomeCliente} onChange={(e) => setNomeCliente(e.target.value)} />
                 </div>
                 <div className="space-y-2">
                   <Label>Telefone</Label>
-                  <Input value={clientPhone} onChange={(e) => setClientPhone(e.target.value)} placeholder="(00) 00000-0000" />
+                  <Input value={telefoneCliente} onChange={(e) => setTelefoneCliente(e.target.value)} placeholder="(00) 00000-0000" />
                 </div>
                 <div className="col-span-2 space-y-2">
                   <Label>Endereço (opcional)</Label>
-                  <Input value={clientAddress} onChange={(e) => setClientAddress(e.target.value)} />
+                  <Input value={enderecoCliente} onChange={(e) => setEnderecoCliente(e.target.value)} />
                 </div>
               </div>
             </div>
 
-            {/* Products */}
             <div>
               <p className="text-xs text-muted-foreground uppercase tracking-widest font-medium mb-3">Produtos</p>
               <div className="flex gap-2 mb-3">
-                <Select value={selectedProduct} onValueChange={setSelectedProduct}>
+                <Select value={produtoSelecionado} onValueChange={setProdutoSelecionado}>
                   <SelectTrigger className="flex-1"><SelectValue placeholder="Selecione um produto" /></SelectTrigger>
                   <SelectContent>
-                    {products.filter((p) => p.active && p.stock > 0).map((p) => (
+                    {produtos.filter((p) => p.ativo && p.estoque > 0).map((p) => (
                       <SelectItem key={p.id} value={p.id}>
-                        {p.name} — R$ {p.salePrice.toLocaleString("pt-BR")}
+                        {p.nome} — R$ {p.precoVenda.toLocaleString("pt-BR")}
                       </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
-                <Input type="number" value={selectedQty} onChange={(e) => setSelectedQty(Number(e.target.value))} className="w-20" min={1} />
-                <Button variant="outline" onClick={addItem} disabled={!selectedProduct}>+</Button>
+                <Input type="number" value={qtdSelecionada} onChange={(e) => setQtdSelecionada(Number(e.target.value))} className="w-20" min={1} />
+                <Button variant="outline" onClick={adicionarItem} disabled={!produtoSelecionado}>+</Button>
               </div>
 
-              {orderItems.length > 0 && (
+              {itensPedido.length > 0 && (
                 <div className="bg-muted/30 rounded-md p-3 space-y-2">
-                  {orderItems.map((item) => (
-                    <div key={item.productId} className="flex items-center justify-between text-sm">
-                      <span className="text-foreground">{item.productName} × {item.quantity}</span>
+                  {itensPedido.map((item) => (
+                    <div key={item.produtoId} className="flex items-center justify-between text-sm">
+                      <span className="text-foreground">{item.nomeProduto} × {item.quantidade}</span>
                       <div className="flex items-center gap-3">
-                        <span className="text-muted-foreground">R$ {(item.price * item.quantity).toLocaleString("pt-BR")}</span>
-                        <button onClick={() => removeItem(item.productId)} className="text-destructive hover:text-destructive/80">
+                        <span className="text-muted-foreground">R$ {(item.preco * item.quantidade).toLocaleString("pt-BR")}</span>
+                        <button onClick={() => removerItem(item.produtoId)} className="text-destructive hover:text-destructive/80">
                           <Trash2 className="h-3.5 w-3.5" />
                         </button>
                       </div>
@@ -261,16 +254,15 @@ const Orders = () => {
                   ))}
                   <div className="border-t border-border pt-2 flex justify-between font-medium">
                     <span>Total</span>
-                    <span className="text-primary">R$ {orderTotal.toLocaleString("pt-BR")}</span>
+                    <span className="text-primary">R$ {totalPedido.toLocaleString("pt-BR")}</span>
                   </div>
                 </div>
               )}
             </div>
 
-            {/* Payment */}
             <div className="space-y-2">
               <Label>Forma de Pagamento</Label>
-              <Select value={paymentMethod} onValueChange={setPaymentMethod}>
+              <Select value={formaPagamento} onValueChange={setFormaPagamento}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="pix">PIX</SelectItem>
@@ -283,7 +275,7 @@ const Orders = () => {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setDialogOpen(false)}>Cancelar</Button>
-            <Button onClick={handleCreateOrder}>Criar Pedido</Button>
+            <Button onClick={handleCriarPedido}>Criar Pedido</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

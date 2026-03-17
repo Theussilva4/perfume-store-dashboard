@@ -1,6 +1,6 @@
 import { useState } from "react";
-import { stockMovements, products, branchLabels } from "@/data/mockData";
-import { useBranch, branches } from "@/contexts/BranchContext";
+import { movimentacoesEstoque, produtos, rotulosFilial } from "@/data/mockData";
+import { useBranch, filiais } from "@/contexts/BranchContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -11,7 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { Plus, ArrowUpFromLine } from "lucide-react";
 import { toast } from "sonner";
 
-const reasonLabels: Record<string, string> = {
+const rotulosMotivo: Record<string, string> = {
   venda: "Venda",
   perda: "Perda",
   defeito: "Defeito",
@@ -19,19 +19,19 @@ const reasonLabels: Record<string, string> = {
 };
 
 const StockExit = () => {
-  const { selectedBranch, branchLabel } = useBranch();
-  const exits = stockMovements.filter((m) => m.type === "saida" && (selectedBranch === "todas" || m.branch === selectedBranch));
+  const { filialSelecionada, rotuloFilial } = useBranch();
+  const saidas = movimentacoesEstoque.filter((m) => m.tipo === "saida" && (filialSelecionada === "todas" || m.filial === filialSelecionada));
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [form, setForm] = useState({ productId: "", quantity: 0, reason: "", notes: "", branch: "matriz" });
+  const [form, setForm] = useState({ produtoId: "", quantidade: 0, motivo: "", observacoes: "", filial: "matriz" });
 
-  const handleSave = () => {
-    if (!form.productId || form.quantity <= 0 || !form.reason || !form.branch) {
+  const handleSalvar = () => {
+    if (!form.produtoId || form.quantidade <= 0 || !form.motivo || !form.filial) {
       toast.error("Preencha todos os campos obrigatórios.");
       return;
     }
-    toast.success(`Saída registrada na ${branchLabels[form.branch]}! Estoque atualizado.`);
+    toast.success(`Saída registrada na ${rotulosFilial[form.filial]}! Estoque atualizado.`);
     setDialogOpen(false);
-    setForm({ productId: "", quantity: 0, reason: "", notes: "", branch: "matriz" });
+    setForm({ produtoId: "", quantidade: 0, motivo: "", observacoes: "", filial: "matriz" });
   };
 
   return (
@@ -39,7 +39,7 @@ const StockExit = () => {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h2 className="font-display text-2xl md:text-3xl font-semibold text-primary">Saídas de Estoque</h2>
-          <p className="text-sm text-muted-foreground mt-1">{branchLabel} • Registre saídas por perda, defeito ou ajuste</p>
+          <p className="text-sm text-muted-foreground mt-1">{rotuloFilial} • Registre saídas por perda, defeito ou ajuste</p>
         </div>
         <Button onClick={() => setDialogOpen(true)}><Plus className="h-4 w-4 mr-2" /> Nova Saída</Button>
       </div>
@@ -58,20 +58,20 @@ const StockExit = () => {
               </tr>
             </thead>
             <tbody>
-              {exits.map((e) => (
+              {saidas.map((e) => (
                 <tr key={e.id} className="border-b border-border last:border-0 hover:bg-muted/20">
-                  <td className="px-4 py-3 text-muted-foreground">{new Date(e.date).toLocaleDateString("pt-BR")}</td>
-                  <td className="px-4 py-3 font-medium text-foreground">{e.productName}</td>
-                  <td className="px-4 py-3 text-center text-destructive font-medium">-{e.quantity}</td>
+                  <td className="px-4 py-3 text-muted-foreground">{new Date(e.data).toLocaleDateString("pt-BR")}</td>
+                  <td className="px-4 py-3 font-medium text-foreground">{e.nomeProduto}</td>
+                  <td className="px-4 py-3 text-center text-destructive font-medium">-{e.quantidade}</td>
                   <td className="px-4 py-3">
                     <Badge variant="secondary" className="text-[10px]">
-                      {e.reason ? reasonLabels[e.reason] || e.reason : "—"}
+                      {e.motivo ? rotulosMotivo[e.motivo] || e.motivo : "—"}
                     </Badge>
                   </td>
                   <td className="px-4 py-3 text-center">
-                    <Badge variant="outline" className="text-[10px]">{branchLabels[e.branch]}</Badge>
+                    <Badge variant="outline" className="text-[10px]">{rotulosFilial[e.filial]}</Badge>
                   </td>
-                  <td className="px-4 py-3 text-muted-foreground text-xs">{e.notes || "—"}</td>
+                  <td className="px-4 py-3 text-muted-foreground text-xs">{e.observacoes || "—"}</td>
                 </tr>
               ))}
             </tbody>
@@ -79,7 +79,7 @@ const StockExit = () => {
         </div>
       </div>
 
-      {exits.length === 0 && (
+      {saidas.length === 0 && (
         <div className="text-center py-12 text-muted-foreground">
           <ArrowUpFromLine className="h-12 w-12 mx-auto mb-3 opacity-30" />
           <p>Nenhuma saída registrada.</p>
@@ -94,22 +94,22 @@ const StockExit = () => {
           <div className="space-y-4">
             <div className="space-y-2">
               <Label>Unidade de origem</Label>
-              <Select value={form.branch} onValueChange={(v) => setForm({ ...form, branch: v })}>
+              <Select value={form.filial} onValueChange={(v) => setForm({ ...form, filial: v })}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  {branches.map((b) => (
-                    <SelectItem key={b.id} value={b.id}>{b.label}</SelectItem>
+                  {filiais.map((b) => (
+                    <SelectItem key={b.id} value={b.id}>{b.rotulo}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
             <div className="space-y-2">
               <Label>Produto</Label>
-              <Select value={form.productId} onValueChange={(v) => setForm({ ...form, productId: v })}>
+              <Select value={form.produtoId} onValueChange={(v) => setForm({ ...form, produtoId: v })}>
                 <SelectTrigger><SelectValue placeholder="Selecione um produto" /></SelectTrigger>
                 <SelectContent>
-                  {products.map((p) => (
-                    <SelectItem key={p.id} value={p.id}>{p.name} ({p.branchStock[form.branch as keyof typeof p.branchStock] ?? 0} un.)</SelectItem>
+                  {produtos.map((p) => (
+                    <SelectItem key={p.id} value={p.id}>{p.nome} ({p.estoquePorFilial[form.filial as keyof typeof p.estoquePorFilial] ?? 0} un.)</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
@@ -117,11 +117,11 @@ const StockExit = () => {
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label>Quantidade</Label>
-                <Input type="number" value={form.quantity} onChange={(e) => setForm({ ...form, quantity: Number(e.target.value) })} />
+                <Input type="number" value={form.quantidade} onChange={(e) => setForm({ ...form, quantidade: Number(e.target.value) })} />
               </div>
               <div className="space-y-2">
                 <Label>Motivo</Label>
-                <Select value={form.reason} onValueChange={(v) => setForm({ ...form, reason: v })}>
+                <Select value={form.motivo} onValueChange={(v) => setForm({ ...form, motivo: v })}>
                   <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="venda">Venda</SelectItem>
@@ -134,12 +134,12 @@ const StockExit = () => {
             </div>
             <div className="space-y-2">
               <Label>Observação</Label>
-              <Textarea value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} rows={2} />
+              <Textarea value={form.observacoes} onChange={(e) => setForm({ ...form, observacoes: e.target.value })} rows={2} />
             </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setDialogOpen(false)}>Cancelar</Button>
-            <Button onClick={handleSave}>Registrar Saída</Button>
+            <Button onClick={handleSalvar}>Registrar Saída</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
