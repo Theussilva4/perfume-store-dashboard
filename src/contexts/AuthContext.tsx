@@ -1,16 +1,16 @@
 import { createContext, useContext, useState, ReactNode } from "react";
 
-interface User {
-  name: string;
+interface Usuario {
+  nome: string;
   email: string;
-  role: "admin" | "vendedor";
+  cargo: "admin" | "vendedor";
 }
 
 interface AuthContextType {
-  user: User | null;
-  login: (email: string, password: string) => boolean;
-  logout: () => void;
-  isAuthenticated: boolean;
+  usuario: Usuario | null;
+  entrar: (email: string, senha: string) => boolean;
+  sair: () => void;
+  estaAutenticado: boolean;
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
@@ -22,29 +22,28 @@ export const useAuth = () => {
 };
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
-  const [user, setUser] = useState<User | null>(() => {
+  const [usuario, setUsuario] = useState<Usuario | null>(() => {
     const saved = localStorage.getItem("auth_user");
     return saved ? JSON.parse(saved) : null;
   });
 
-  const login = (email: string, password: string) => {
-    // Mock authentication - will be replaced with real auth later
-    if (email && password.length >= 4) {
-      const u: User = { name: "Administrador", email, role: "admin" };
-      setUser(u);
+  const entrar = (email: string, senha: string) => {
+    if (email && senha.length >= 4) {
+      const u: Usuario = { nome: "Administrador", email, cargo: "admin" };
+      setUsuario(u);
       localStorage.setItem("auth_user", JSON.stringify(u));
       return true;
     }
     return false;
   };
 
-  const logout = () => {
-    setUser(null);
+  const sair = () => {
+    setUsuario(null);
     localStorage.removeItem("auth_user");
   };
 
   return (
-    <AuthContext.Provider value={{ user, login, logout, isAuthenticated: !!user }}>
+    <AuthContext.Provider value={{ usuario, entrar, sair, estaAutenticado: !!usuario }}>
       {children}
     </AuthContext.Provider>
   );

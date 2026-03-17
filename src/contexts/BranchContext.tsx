@@ -1,36 +1,36 @@
 import { createContext, useContext, useState, ReactNode } from "react";
 
-export interface Branch {
+export interface Filial {
   id: string;
-  name: string;
-  label: string;
+  nome: string;
+  rotulo: string;
 }
 
-export const branches: Branch[] = [
-  { id: "matriz", name: "Matriz", label: "Matriz" },
-  { id: "filial1", name: "Filial 1", label: "Filial 1" },
+export const filiais: Filial[] = [
+  { id: "matriz", nome: "Matriz", rotulo: "Matriz" },
+  { id: "filial1", nome: "Filial 1", rotulo: "Filial 1" },
 ];
 
-type BranchFilter = "todas" | string;
+type FiltroFilial = "todas" | string;
 
 interface BranchContextType {
-  selectedBranch: BranchFilter;
-  setSelectedBranch: (b: BranchFilter) => void;
-  branchLabel: string;
+  filialSelecionada: FiltroFilial;
+  setFilialSelecionada: (b: FiltroFilial) => void;
+  rotuloFilial: string;
 }
 
 const BranchContext = createContext<BranchContextType | null>(null);
 
 export const BranchProvider = ({ children }: { children: ReactNode }) => {
-  const [selectedBranch, setSelectedBranch] = useState<BranchFilter>("todas");
+  const [filialSelecionada, setFilialSelecionada] = useState<FiltroFilial>("todas");
 
-  const branchLabel =
-    selectedBranch === "todas"
+  const rotuloFilial =
+    filialSelecionada === "todas"
       ? "Todas as Unidades"
-      : branches.find((b) => b.id === selectedBranch)?.label || selectedBranch;
+      : filiais.find((b) => b.id === filialSelecionada)?.rotulo || filialSelecionada;
 
   return (
-    <BranchContext.Provider value={{ selectedBranch, setSelectedBranch, branchLabel }}>
+    <BranchContext.Provider value={{ filialSelecionada, setFilialSelecionada, rotuloFilial }}>
       {children}
     </BranchContext.Provider>
   );
