@@ -1,133 +1,133 @@
-export interface BranchStock {
+export interface EstoqueFilial {
   matriz: number;
   filial1: number;
 }
 
-export interface Product {
+export interface Produto {
   id: string;
-  name: string;
-  category: string;
-  description: string;
-  brand: string;
-  costPrice: number;
-  salePrice: number;
-  stock: number;
-  branchStock: BranchStock;
-  minStock: number;
-  image?: string;
-  active: boolean;
+  nome: string;
+  categoria: string;
+  descricao: string;
+  marca: string;
+  precoCusto: number;
+  precoVenda: number;
+  estoque: number;
+  estoquePorFilial: EstoqueFilial;
+  estoqueMinimo: number;
+  imagem?: string;
+  ativo: boolean;
 }
 
-export interface Category {
+export interface Categoria {
   id: string;
-  name: string;
-  productCount: number;
+  nome: string;
+  quantidadeProdutos: number;
 }
 
-export interface OrderItem {
-  productId: string;
-  productName: string;
-  quantity: number;
-  price: number;
+export interface ItemPedido {
+  produtoId: string;
+  nomeProduto: string;
+  quantidade: number;
+  preco: number;
 }
 
-export interface Order {
+export interface Pedido {
   id: string;
-  number: number;
-  clientName: string;
-  clientPhone: string;
-  clientAddress?: string;
-  items: OrderItem[];
+  numero: number;
+  nomeCliente: string;
+  telefoneCliente: string;
+  enderecoCliente?: string;
+  itens: ItemPedido[];
   total: number;
-  paymentMethod: "pix" | "dinheiro" | "cartao" | "pendente";
+  formaPagamento: "pix" | "dinheiro" | "cartao" | "pendente";
   status: "aguardando" | "pago" | "separando" | "entregue" | "cancelado";
-  date: string;
-  notes?: string;
-  branch: string;
+  data: string;
+  observacoes?: string;
+  filial: string;
 }
 
-export interface Client {
+export interface Cliente {
   id: string;
-  name: string;
-  phone: string;
-  orderCount: number;
-  totalSpent: number;
+  nome: string;
+  telefone: string;
+  quantidadePedidos: number;
+  totalGasto: number;
 }
 
-export interface StockMovement {
+export interface MovimentacaoEstoque {
   id: string;
-  productId: string;
-  productName: string;
-  type: "entrada" | "saida";
-  quantity: number;
-  reason?: string;
-  supplier?: string;
-  cost?: number;
-  date: string;
-  notes?: string;
-  branch: string;
+  produtoId: string;
+  nomeProduto: string;
+  tipo: "entrada" | "saida";
+  quantidade: number;
+  motivo?: string;
+  fornecedor?: string;
+  custo?: number;
+  data: string;
+  observacoes?: string;
+  filial: string;
 }
 
-export const categories: Category[] = [
-  { id: "1", name: "Perfumes Importados", productCount: 12 },
-  { id: "2", name: "Perfumes Nacionais", productCount: 8 },
-  { id: "3", name: "Bolsas", productCount: 5 },
-  { id: "4", name: "Relógios", productCount: 4 },
-  { id: "5", name: "Óculos", productCount: 3 },
-  { id: "6", name: "Acessórios", productCount: 7 },
+export const categorias: Categoria[] = [
+  { id: "1", nome: "Perfumes Importados", quantidadeProdutos: 12 },
+  { id: "2", nome: "Perfumes Nacionais", quantidadeProdutos: 8 },
+  { id: "3", nome: "Bolsas", quantidadeProdutos: 5 },
+  { id: "4", nome: "Relógios", quantidadeProdutos: 4 },
+  { id: "5", nome: "Óculos", quantidadeProdutos: 3 },
+  { id: "6", nome: "Acessórios", quantidadeProdutos: 7 },
 ];
 
-export const products: Product[] = [
-  { id: "1", name: "Baccarat Rouge 540", category: "Perfumes Importados", description: "Fragrância oriental floral", brand: "Maison Francis Kurkdjian", costPrice: 280, salePrice: 500, stock: 12, branchStock: { matriz: 8, filial1: 4 }, minStock: 5, active: true },
-  { id: "2", name: "Bleu de Chanel", category: "Perfumes Importados", description: "Fragrância amadeirada aromática", brand: "Chanel", costPrice: 220, salePrice: 400, stock: 8, branchStock: { matriz: 5, filial1: 3 }, minStock: 5, active: true },
-  { id: "3", name: "Santal 33", category: "Perfumes Importados", description: "Fragrância amadeirada", brand: "Le Labo", costPrice: 350, salePrice: 600, stock: 3, branchStock: { matriz: 2, filial1: 1 }, minStock: 5, active: true },
-  { id: "4", name: "Aventus Creed", category: "Perfumes Importados", description: "Fragrância frutada", brand: "Creed", costPrice: 400, salePrice: 800, stock: 5, branchStock: { matriz: 3, filial1: 2 }, minStock: 3, active: true },
-  { id: "5", name: "Light Blue D&G", category: "Perfumes Importados", description: "Fragrância cítrica", brand: "Dolce & Gabbana", costPrice: 150, salePrice: 300, stock: 15, branchStock: { matriz: 10, filial1: 5 }, minStock: 5, active: true },
-  { id: "6", name: "Oud Wood", category: "Perfumes Importados", description: "Fragrância oud", brand: "Tom Ford", costPrice: 380, salePrice: 700, stock: 2, branchStock: { matriz: 2, filial1: 0 }, minStock: 3, active: true },
-  { id: "7", name: "Flowerbomb", category: "Perfumes Importados", description: "Fragrância floral oriental", brand: "Viktor & Rolf", costPrice: 200, salePrice: 380, stock: 5, branchStock: { matriz: 3, filial1: 2 }, minStock: 5, active: true },
-  { id: "8", name: "Noir de Noir", category: "Perfumes Importados", description: "Fragrância oriental", brand: "Tom Ford", costPrice: 420, salePrice: 850, stock: 1, branchStock: { matriz: 1, filial1: 0 }, minStock: 3, active: true },
-  { id: "9", name: "Malbec", category: "Perfumes Nacionais", description: "Fragrância amadeirada", brand: "O Boticário", costPrice: 60, salePrice: 130, stock: 20, branchStock: { matriz: 12, filial1: 8 }, minStock: 10, active: true },
-  { id: "10", name: "Egeo", category: "Perfumes Nacionais", description: "Fragrância fresca", brand: "O Boticário", costPrice: 50, salePrice: 110, stock: 18, branchStock: { matriz: 10, filial1: 8 }, minStock: 10, active: true },
-  { id: "11", name: "Bolsa Elegance Preta", category: "Bolsas", description: "Bolsa de couro sintético", brand: "TassiAchando", costPrice: 45, salePrice: 120, stock: 7, branchStock: { matriz: 4, filial1: 3 }, minStock: 3, active: true },
-  { id: "12", name: "Relógio Classic Gold", category: "Relógios", description: "Relógio analógico dourado", brand: "TassiAchando", costPrice: 80, salePrice: 200, stock: 4, branchStock: { matriz: 3, filial1: 1 }, minStock: 2, active: true },
+export const produtos: Produto[] = [
+  { id: "1", nome: "Baccarat Rouge 540", categoria: "Perfumes Importados", descricao: "Fragrância oriental floral", marca: "Maison Francis Kurkdjian", precoCusto: 280, precoVenda: 500, estoque: 12, estoquePorFilial: { matriz: 8, filial1: 4 }, estoqueMinimo: 5, ativo: true },
+  { id: "2", nome: "Bleu de Chanel", categoria: "Perfumes Importados", descricao: "Fragrância amadeirada aromática", marca: "Chanel", precoCusto: 220, precoVenda: 400, estoque: 8, estoquePorFilial: { matriz: 5, filial1: 3 }, estoqueMinimo: 5, ativo: true },
+  { id: "3", nome: "Santal 33", categoria: "Perfumes Importados", descricao: "Fragrância amadeirada", marca: "Le Labo", precoCusto: 350, precoVenda: 600, estoque: 3, estoquePorFilial: { matriz: 2, filial1: 1 }, estoqueMinimo: 5, ativo: true },
+  { id: "4", nome: "Aventus Creed", categoria: "Perfumes Importados", descricao: "Fragrância frutada", marca: "Creed", precoCusto: 400, precoVenda: 800, estoque: 5, estoquePorFilial: { matriz: 3, filial1: 2 }, estoqueMinimo: 3, ativo: true },
+  { id: "5", nome: "Light Blue D&G", categoria: "Perfumes Importados", descricao: "Fragrância cítrica", marca: "Dolce & Gabbana", precoCusto: 150, precoVenda: 300, estoque: 15, estoquePorFilial: { matriz: 10, filial1: 5 }, estoqueMinimo: 5, ativo: true },
+  { id: "6", nome: "Oud Wood", categoria: "Perfumes Importados", descricao: "Fragrância oud", marca: "Tom Ford", precoCusto: 380, precoVenda: 700, estoque: 2, estoquePorFilial: { matriz: 2, filial1: 0 }, estoqueMinimo: 3, ativo: true },
+  { id: "7", nome: "Flowerbomb", categoria: "Perfumes Importados", descricao: "Fragrância floral oriental", marca: "Viktor & Rolf", precoCusto: 200, precoVenda: 380, estoque: 5, estoquePorFilial: { matriz: 3, filial1: 2 }, estoqueMinimo: 5, ativo: true },
+  { id: "8", nome: "Noir de Noir", categoria: "Perfumes Importados", descricao: "Fragrância oriental", marca: "Tom Ford", precoCusto: 420, precoVenda: 850, estoque: 1, estoquePorFilial: { matriz: 1, filial1: 0 }, estoqueMinimo: 3, ativo: true },
+  { id: "9", nome: "Malbec", categoria: "Perfumes Nacionais", descricao: "Fragrância amadeirada", marca: "O Boticário", precoCusto: 60, precoVenda: 130, estoque: 20, estoquePorFilial: { matriz: 12, filial1: 8 }, estoqueMinimo: 10, ativo: true },
+  { id: "10", nome: "Egeo", categoria: "Perfumes Nacionais", descricao: "Fragrância fresca", marca: "O Boticário", precoCusto: 50, precoVenda: 110, estoque: 18, estoquePorFilial: { matriz: 10, filial1: 8 }, estoqueMinimo: 10, ativo: true },
+  { id: "11", nome: "Bolsa Elegance Preta", categoria: "Bolsas", descricao: "Bolsa de couro sintético", marca: "TassiAchando", precoCusto: 45, precoVenda: 120, estoque: 7, estoquePorFilial: { matriz: 4, filial1: 3 }, estoqueMinimo: 3, ativo: true },
+  { id: "12", nome: "Relógio Classic Gold", categoria: "Relógios", descricao: "Relógio analógico dourado", marca: "TassiAchando", precoCusto: 80, precoVenda: 200, estoque: 4, estoquePorFilial: { matriz: 3, filial1: 1 }, estoqueMinimo: 2, ativo: true },
 ];
 
-export const orders: Order[] = [
-  { id: "1", number: 1001, clientName: "Maria Silva", clientPhone: "(11) 99999-1111", items: [{ productId: "1", productName: "Baccarat Rouge 540", quantity: 1, price: 500 }], total: 500, paymentMethod: "pix", status: "entregue", date: "2026-03-11", branch: "matriz" },
-  { id: "2", number: 1002, clientName: "João Santos", clientPhone: "(11) 99999-2222", items: [{ productId: "2", productName: "Bleu de Chanel", quantity: 1, price: 400 }, { productId: "5", productName: "Light Blue D&G", quantity: 1, price: 300 }], total: 700, paymentMethod: "cartao", status: "pago", date: "2026-03-11", branch: "matriz" },
-  { id: "3", number: 1003, clientName: "Ana Oliveira", clientPhone: "(11) 99999-3333", items: [{ productId: "4", productName: "Aventus Creed", quantity: 1, price: 800 }], total: 800, paymentMethod: "pendente", status: "aguardando", date: "2026-03-10", branch: "filial1" },
-  { id: "4", number: 1004, clientName: "Carlos Pereira", clientPhone: "(11) 99999-4444", clientAddress: "Rua das Flores, 123", items: [{ productId: "9", productName: "Malbec", quantity: 2, price: 130 }], total: 260, paymentMethod: "dinheiro", status: "separando", date: "2026-03-10", branch: "filial1" },
-  { id: "5", number: 1005, clientName: "Lucia Ferreira", clientPhone: "(11) 99999-5555", items: [{ productId: "11", productName: "Bolsa Elegance Preta", quantity: 1, price: 120 }, { productId: "7", productName: "Flowerbomb", quantity: 1, price: 380 }], total: 500, paymentMethod: "pix", status: "entregue", date: "2026-03-09", branch: "matriz" },
-  { id: "6", number: 1006, clientName: "Pedro Lima", clientPhone: "(11) 99999-6666", items: [{ productId: "3", productName: "Santal 33", quantity: 1, price: 600 }], total: 600, paymentMethod: "pix", status: "pago", date: "2026-03-09", branch: "filial1" },
-  { id: "7", number: 1007, clientName: "Fernanda Costa", clientPhone: "(11) 99999-7777", items: [{ productId: "12", productName: "Relógio Classic Gold", quantity: 1, price: 200 }], total: 200, paymentMethod: "cartao", status: "cancelado", date: "2026-03-08", branch: "matriz" },
+export const pedidos: Pedido[] = [
+  { id: "1", numero: 1001, nomeCliente: "Maria Silva", telefoneCliente: "(11) 99999-1111", itens: [{ produtoId: "1", nomeProduto: "Baccarat Rouge 540", quantidade: 1, preco: 500 }], total: 500, formaPagamento: "pix", status: "entregue", data: "2026-03-11", filial: "matriz" },
+  { id: "2", numero: 1002, nomeCliente: "João Santos", telefoneCliente: "(11) 99999-2222", itens: [{ produtoId: "2", nomeProduto: "Bleu de Chanel", quantidade: 1, preco: 400 }, { produtoId: "5", nomeProduto: "Light Blue D&G", quantidade: 1, preco: 300 }], total: 700, formaPagamento: "cartao", status: "pago", data: "2026-03-11", filial: "matriz" },
+  { id: "3", numero: 1003, nomeCliente: "Ana Oliveira", telefoneCliente: "(11) 99999-3333", itens: [{ produtoId: "4", nomeProduto: "Aventus Creed", quantidade: 1, preco: 800 }], total: 800, formaPagamento: "pendente", status: "aguardando", data: "2026-03-10", filial: "filial1" },
+  { id: "4", numero: 1004, nomeCliente: "Carlos Pereira", telefoneCliente: "(11) 99999-4444", enderecoCliente: "Rua das Flores, 123", itens: [{ produtoId: "9", nomeProduto: "Malbec", quantidade: 2, preco: 130 }], total: 260, formaPagamento: "dinheiro", status: "separando", data: "2026-03-10", filial: "filial1" },
+  { id: "5", numero: 1005, nomeCliente: "Lucia Ferreira", telefoneCliente: "(11) 99999-5555", itens: [{ produtoId: "11", nomeProduto: "Bolsa Elegance Preta", quantidade: 1, preco: 120 }, { produtoId: "7", nomeProduto: "Flowerbomb", quantidade: 1, preco: 380 }], total: 500, formaPagamento: "pix", status: "entregue", data: "2026-03-09", filial: "matriz" },
+  { id: "6", numero: 1006, nomeCliente: "Pedro Lima", telefoneCliente: "(11) 99999-6666", itens: [{ produtoId: "3", nomeProduto: "Santal 33", quantidade: 1, preco: 600 }], total: 600, formaPagamento: "pix", status: "pago", data: "2026-03-09", filial: "filial1" },
+  { id: "7", numero: 1007, nomeCliente: "Fernanda Costa", telefoneCliente: "(11) 99999-7777", itens: [{ produtoId: "12", nomeProduto: "Relógio Classic Gold", quantidade: 1, preco: 200 }], total: 200, formaPagamento: "cartao", status: "cancelado", data: "2026-03-08", filial: "matriz" },
 ];
 
-export const clients: Client[] = [
-  { id: "1", name: "Maria Silva", phone: "(11) 99999-1111", orderCount: 5, totalSpent: 2800 },
-  { id: "2", name: "João Santos", phone: "(11) 99999-2222", orderCount: 3, totalSpent: 1900 },
-  { id: "3", name: "Ana Oliveira", phone: "(11) 99999-3333", orderCount: 2, totalSpent: 1600 },
-  { id: "4", name: "Carlos Pereira", phone: "(11) 99999-4444", orderCount: 4, totalSpent: 1040 },
-  { id: "5", name: "Lucia Ferreira", phone: "(11) 99999-5555", orderCount: 6, totalSpent: 3200 },
-  { id: "6", name: "Pedro Lima", phone: "(11) 99999-6666", orderCount: 1, totalSpent: 600 },
-  { id: "7", name: "Fernanda Costa", phone: "(11) 99999-7777", orderCount: 2, totalSpent: 400 },
+export const clientes: Cliente[] = [
+  { id: "1", nome: "Maria Silva", telefone: "(11) 99999-1111", quantidadePedidos: 5, totalGasto: 2800 },
+  { id: "2", nome: "João Santos", telefone: "(11) 99999-2222", quantidadePedidos: 3, totalGasto: 1900 },
+  { id: "3", nome: "Ana Oliveira", telefone: "(11) 99999-3333", quantidadePedidos: 2, totalGasto: 1600 },
+  { id: "4", nome: "Carlos Pereira", telefone: "(11) 99999-4444", quantidadePedidos: 4, totalGasto: 1040 },
+  { id: "5", nome: "Lucia Ferreira", telefone: "(11) 99999-5555", quantidadePedidos: 6, totalGasto: 3200 },
+  { id: "6", nome: "Pedro Lima", telefone: "(11) 99999-6666", quantidadePedidos: 1, totalGasto: 600 },
+  { id: "7", nome: "Fernanda Costa", telefone: "(11) 99999-7777", quantidadePedidos: 2, totalGasto: 400 },
 ];
 
-export const stockMovements: StockMovement[] = [
-  { id: "1", productId: "1", productName: "Baccarat Rouge 540", type: "entrada", quantity: 10, supplier: "Importadora Luxe", cost: 2800, date: "2026-03-01", notes: "Reposição mensal", branch: "matriz" },
-  { id: "2", productId: "2", productName: "Bleu de Chanel", type: "entrada", quantity: 5, supplier: "Importadora Luxe", cost: 1100, date: "2026-03-01", branch: "filial1" },
-  { id: "3", productId: "1", productName: "Baccarat Rouge 540", type: "saida", quantity: 1, reason: "venda", date: "2026-03-11", branch: "matriz" },
-  { id: "4", productId: "6", productName: "Oud Wood", type: "saida", quantity: 1, reason: "perda", date: "2026-03-08", notes: "Frasco quebrado", branch: "matriz" },
-  { id: "5", productId: "9", productName: "Malbec", type: "entrada", quantity: 20, supplier: "O Boticário Distribuidor", cost: 1200, date: "2026-03-05", branch: "filial1" },
+export const movimentacoesEstoque: MovimentacaoEstoque[] = [
+  { id: "1", produtoId: "1", nomeProduto: "Baccarat Rouge 540", tipo: "entrada", quantidade: 10, fornecedor: "Importadora Luxe", custo: 2800, data: "2026-03-01", observacoes: "Reposição mensal", filial: "matriz" },
+  { id: "2", produtoId: "2", nomeProduto: "Bleu de Chanel", tipo: "entrada", quantidade: 5, fornecedor: "Importadora Luxe", custo: 1100, data: "2026-03-01", filial: "filial1" },
+  { id: "3", produtoId: "1", nomeProduto: "Baccarat Rouge 540", tipo: "saida", quantidade: 1, motivo: "venda", data: "2026-03-11", filial: "matriz" },
+  { id: "4", produtoId: "6", nomeProduto: "Oud Wood", tipo: "saida", quantidade: 1, motivo: "perda", data: "2026-03-08", observacoes: "Frasco quebrado", filial: "matriz" },
+  { id: "5", produtoId: "9", nomeProduto: "Malbec", tipo: "entrada", quantidade: 20, fornecedor: "O Boticário Distribuidor", custo: 1200, data: "2026-03-05", filial: "filial1" },
 ];
 
-export const paymentMethodLabels: Record<string, string> = {
+export const rotulosFormaPagamento: Record<string, string> = {
   pix: "PIX",
   dinheiro: "Dinheiro",
   cartao: "Cartão",
   pendente: "Pendente",
 };
 
-export const statusLabels: Record<string, string> = {
+export const rotulosStatus: Record<string, string> = {
   aguardando: "Aguardando Pagamento",
   pago: "Pago",
   separando: "Separando",
@@ -135,7 +135,7 @@ export const statusLabels: Record<string, string> = {
   cancelado: "Cancelado",
 };
 
-export const statusColors: Record<string, string> = {
+export const coresStatus: Record<string, string> = {
   aguardando: "text-amber-600 bg-amber-50",
   pago: "text-primary bg-primary/10",
   separando: "text-blue-600 bg-blue-50",
@@ -143,13 +143,13 @@ export const statusColors: Record<string, string> = {
   cancelado: "text-destructive bg-destructive/10",
 };
 
-export const branchLabels: Record<string, string> = {
+export const rotulosFilial: Record<string, string> = {
   matriz: "Matriz",
   filial1: "Filial 1",
 };
 
-/** Get stock for a product given a branch filter */
-export function getProductStock(p: Product, branch: string): number {
-  if (branch === "todas") return p.stock;
-  return p.branchStock[branch as keyof BranchStock] ?? 0;
+/** Obter estoque de um produto para uma filial */
+export function obterEstoqueProduto(p: Produto, filial: string): number {
+  if (filial === "todas") return p.estoque;
+  return p.estoquePorFilial[filial as keyof EstoqueFilial] ?? 0;
 }

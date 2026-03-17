@@ -24,14 +24,14 @@ import NotFound from "@/pages/NotFound";
 const queryClient = new QueryClient();
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
-  const { isAuthenticated } = useAuth();
-  if (!isAuthenticated) return <Navigate to="/login" replace />;
+  const { estaAutenticado } = useAuth();
+  if (!estaAutenticado) return <Navigate to="/login" replace />;
   return <>{children}</>;
 };
 
 const PublicRoute = ({ children }: { children: React.ReactNode }) => {
-  const { isAuthenticated } = useAuth();
-  if (isAuthenticated) return <Navigate to="/" replace />;
+  const { estaAutenticado } = useAuth();
+  if (estaAutenticado) return <Navigate to="/" replace />;
   return <>{children}</>;
 };
 

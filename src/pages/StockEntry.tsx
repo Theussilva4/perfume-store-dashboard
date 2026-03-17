@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { stockMovements, products } from "@/data/mockData";
+import { movimentacoesEstoque, produtos } from "@/data/mockData";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -10,18 +10,18 @@ import { Plus, ArrowDownToLine } from "lucide-react";
 import { toast } from "sonner";
 
 const StockEntry = () => {
-  const entries = stockMovements.filter((m) => m.type === "entrada");
+  const entradas = movimentacoesEstoque.filter((m) => m.tipo === "entrada");
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [form, setForm] = useState({ productId: "", quantity: 0, supplier: "", cost: 0, notes: "" });
+  const [form, setForm] = useState({ produtoId: "", quantidade: 0, fornecedor: "", custo: 0, observacoes: "" });
 
-  const handleSave = () => {
-    if (!form.productId || form.quantity <= 0) {
+  const handleSalvar = () => {
+    if (!form.produtoId || form.quantidade <= 0) {
       toast.error("Selecione um produto e quantidade válida.");
       return;
     }
     toast.success("Entrada registrada! Estoque atualizado.");
     setDialogOpen(false);
-    setForm({ productId: "", quantity: 0, supplier: "", cost: 0, notes: "" });
+    setForm({ produtoId: "", quantidade: 0, fornecedor: "", custo: 0, observacoes: "" });
   };
 
   return (
@@ -48,14 +48,14 @@ const StockEntry = () => {
               </tr>
             </thead>
             <tbody>
-              {entries.map((e) => (
+              {entradas.map((e) => (
                 <tr key={e.id} className="border-b border-border last:border-0 hover:bg-muted/20">
-                  <td className="px-4 py-3 text-muted-foreground">{new Date(e.date).toLocaleDateString("pt-BR")}</td>
-                  <td className="px-4 py-3 font-medium text-foreground">{e.productName}</td>
-                  <td className="px-4 py-3 text-center text-primary font-medium">+{e.quantity}</td>
-                  <td className="px-4 py-3 text-muted-foreground">{e.supplier || "—"}</td>
-                  <td className="px-4 py-3 text-right">{e.cost ? `R$ ${e.cost.toLocaleString("pt-BR")}` : "—"}</td>
-                  <td className="px-4 py-3 text-muted-foreground text-xs">{e.notes || "—"}</td>
+                  <td className="px-4 py-3 text-muted-foreground">{new Date(e.data).toLocaleDateString("pt-BR")}</td>
+                  <td className="px-4 py-3 font-medium text-foreground">{e.nomeProduto}</td>
+                  <td className="px-4 py-3 text-center text-primary font-medium">+{e.quantidade}</td>
+                  <td className="px-4 py-3 text-muted-foreground">{e.fornecedor || "—"}</td>
+                  <td className="px-4 py-3 text-right">{e.custo ? `R$ ${e.custo.toLocaleString("pt-BR")}` : "—"}</td>
+                  <td className="px-4 py-3 text-muted-foreground text-xs">{e.observacoes || "—"}</td>
                 </tr>
               ))}
             </tbody>
@@ -63,7 +63,7 @@ const StockEntry = () => {
         </div>
       </div>
 
-      {entries.length === 0 && (
+      {entradas.length === 0 && (
         <div className="text-center py-12 text-muted-foreground">
           <ArrowDownToLine className="h-12 w-12 mx-auto mb-3 opacity-30" />
           <p>Nenhuma entrada registrada.</p>
@@ -78,11 +78,11 @@ const StockEntry = () => {
           <div className="space-y-4">
             <div className="space-y-2">
               <Label>Produto</Label>
-              <Select value={form.productId} onValueChange={(v) => setForm({ ...form, productId: v })}>
+              <Select value={form.produtoId} onValueChange={(v) => setForm({ ...form, produtoId: v })}>
                 <SelectTrigger><SelectValue placeholder="Selecione um produto" /></SelectTrigger>
                 <SelectContent>
-                  {products.map((p) => (
-                    <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
+                  {produtos.map((p) => (
+                    <SelectItem key={p.id} value={p.id}>{p.nome}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
@@ -90,25 +90,25 @@ const StockEntry = () => {
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label>Quantidade</Label>
-                <Input type="number" value={form.quantity} onChange={(e) => setForm({ ...form, quantity: Number(e.target.value) })} />
+                <Input type="number" value={form.quantidade} onChange={(e) => setForm({ ...form, quantidade: Number(e.target.value) })} />
               </div>
               <div className="space-y-2">
                 <Label>Custo Total (R$)</Label>
-                <Input type="number" value={form.cost} onChange={(e) => setForm({ ...form, cost: Number(e.target.value) })} />
+                <Input type="number" value={form.custo} onChange={(e) => setForm({ ...form, custo: Number(e.target.value) })} />
               </div>
             </div>
             <div className="space-y-2">
               <Label>Fornecedor</Label>
-              <Input value={form.supplier} onChange={(e) => setForm({ ...form, supplier: e.target.value })} />
+              <Input value={form.fornecedor} onChange={(e) => setForm({ ...form, fornecedor: e.target.value })} />
             </div>
             <div className="space-y-2">
               <Label>Observação</Label>
-              <Textarea value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} rows={2} />
+              <Textarea value={form.observacoes} onChange={(e) => setForm({ ...form, observacoes: e.target.value })} rows={2} />
             </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setDialogOpen(false)}>Cancelar</Button>
-            <Button onClick={handleSave}>Registrar Entrada</Button>
+            <Button onClick={handleSalvar}>Registrar Entrada</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
