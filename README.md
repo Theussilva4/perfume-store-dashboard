@@ -1,4 +1,4 @@
-# Welcome to your Lovable project
+# Bem vindo ao meu Projeto de loja de Perfumes
 
 ## Project info
 
