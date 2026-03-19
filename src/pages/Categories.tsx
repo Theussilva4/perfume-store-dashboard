@@ -3,8 +3,8 @@ import { categorias as categoriasIniciais, Categoria } from "@/data/mockData";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { Plus, Pencil, Trash2, FolderOpen } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
+import { Plus, Pencil, Trash2, FolderOpen, Percent } from "lucide-react";
 import { toast } from "sonner";
 
 const Categories = () => {
@@ -12,17 +12,18 @@ const Categories = () => {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editando, setEditando] = useState<Categoria | null>(null);
   const [nome, setNome] = useState("");
+  const [margemPadrao, setMargemPadrao] = useState<number>(50);
 
-  const abrirNova = () => { setEditando(null); setNome(""); setDialogOpen(true); };
-  const abrirEdicao = (c: Categoria) => { setEditando(c); setNome(c.nome); setDialogOpen(true); };
+  const abrirNova = () => { setEditando(null); setNome(""); setMargemPadrao(50); setDialogOpen(true); };
+  const abrirEdicao = (c: Categoria) => { setEditando(c); setNome(c.nome); setMargemPadrao(c.margemPadrao ?? 50); setDialogOpen(true); };
 
   const handleSalvar = () => {
     if (!nome.trim()) { toast.error("Preencha o nome."); return; }
     if (editando) {
-      setLista((prev) => prev.map((c) => (c.id === editando.id ? { ...c, nome } : c)));
+      setLista((prev) => prev.map((c) => (c.id === editando.id ? { ...c, nome, margemPadrao } : c)));
       toast.success("Categoria atualizada!");
     } else {
-      setLista((prev) => [...prev, { id: String(Date.now()), nome, quantidadeProdutos: 0 }]);
+      setLista((prev) => [...prev, { id: String(Date.now()), nome, quantidadeProdutos: 0, margemPadrao }]);
       toast.success("Categoria criada!");
     }
     setDialogOpen(false);
@@ -51,7 +52,14 @@ const Categories = () => {
             </div>
             <div className="flex-1 min-w-0">
               <h3 className="font-medium text-sm text-foreground truncate">{cat.nome}</h3>
-              <p className="text-xs text-muted-foreground">{cat.quantidadeProdutos} produtos</p>
+              <div className="flex items-center gap-2">
+                <p className="text-xs text-muted-foreground">{cat.quantidadeProdutos} produtos</p>
+                {cat.margemPadrao != null && (
+                  <span className="text-xs text-primary font-medium flex items-center gap-0.5">
+                    <Percent className="h-3 w-3" />{cat.margemPadrao}% margem
+                  </span>
+                )}
+              </div>
             </div>
             <div className="flex gap-1">
               <button onClick={() => abrirEdicao(cat)} className="p-1.5 rounded-md hover:bg-muted text-muted-foreground hover:text-foreground transition-colors">
@@ -69,10 +77,18 @@ const Categories = () => {
         <DialogContent className="max-w-sm">
           <DialogHeader>
             <DialogTitle className="font-display text-xl">{editando ? "Editar Categoria" : "Nova Categoria"}</DialogTitle>
+            <DialogDescription>Defina o nome e a margem padrão de lucro.</DialogDescription>
           </DialogHeader>
-          <div className="space-y-3">
-            <Label>Nome da Categoria</Label>
-            <Input value={nome} onChange={(e) => setNome(e.target.value)} placeholder="Ex: Perfumes Importados" />
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label>Nome da Categoria</Label>
+              <Input value={nome} onChange={(e) => setNome(e.target.value)} placeholder="Ex: Perfumes Importados" />
+            </div>
+            <div className="space-y-2">
+              <Label>Margem Padrão (%)</Label>
+              <Input type="number" min={0} max={500} value={margemPadrao} onChange={(e) => setMargemPadrao(Number(e.target.value))} placeholder="Ex: 80" />
+              <p className="text-xs text-muted-foreground">Usada como sugestão ao cadastrar produtos e registrar compras desta categoria.</p>
+            </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setDialogOpen(false)}>Cancelar</Button>
