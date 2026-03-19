@@ -16,12 +16,17 @@ export interface Produto {
   estoqueMinimo: number;
   imagem?: string;
   ativo: boolean;
+  codigoBarras?: string;
+  volume?: number;
+  margem?: number;
+  precoPromocional?: number;
 }
 
 export interface Categoria {
   id: string;
   nome: string;
   quantidadeProdutos: number;
+  margemPadrao?: number;
 }
 
 export interface ItemPedido {
@@ -68,28 +73,51 @@ export interface MovimentacaoEstoque {
   filial: string;
 }
 
+export interface Compra {
+  id: string;
+  produtoId: string;
+  nomeProduto: string;
+  categoria: string;
+  marca: string;
+  codigoBarras?: string;
+  volume?: number;
+  fornecedor: string;
+  notaFiscal: string;
+  dataCompra: string;
+  quantidade: number;
+  custoUnitario: number;
+  custoTotal: number;
+  desconto: number;
+  frete: number;
+  outrosCustos: number;
+  custoRealUnitario: number;
+  precoSugerido?: number;
+  filial: string;
+  observacoes?: string;
+}
+
 export const categorias: Categoria[] = [
-  { id: "1", nome: "Perfumes Importados", quantidadeProdutos: 12 },
-  { id: "2", nome: "Perfumes Nacionais", quantidadeProdutos: 8 },
-  { id: "3", nome: "Bolsas", quantidadeProdutos: 5 },
-  { id: "4", nome: "Relógios", quantidadeProdutos: 4 },
-  { id: "5", nome: "Óculos", quantidadeProdutos: 3 },
-  { id: "6", nome: "Acessórios", quantidadeProdutos: 7 },
+  { id: "1", nome: "Perfumes Importados", quantidadeProdutos: 12, margemPadrao: 80 },
+  { id: "2", nome: "Perfumes Nacionais", quantidadeProdutos: 8, margemPadrao: 50 },
+  { id: "3", nome: "Bolsas", quantidadeProdutos: 5, margemPadrao: 60 },
+  { id: "4", nome: "Relógios", quantidadeProdutos: 4, margemPadrao: 55 },
+  { id: "5", nome: "Óculos", quantidadeProdutos: 3, margemPadrao: 50 },
+  { id: "6", nome: "Acessórios", quantidadeProdutos: 7, margemPadrao: 45 },
 ];
 
 export const produtos: Produto[] = [
-  { id: "1", nome: "Baccarat Rouge 540", categoria: "Perfumes Importados", descricao: "Fragrância oriental floral", marca: "Maison Francis Kurkdjian", precoCusto: 280, precoVenda: 500, estoque: 12, estoquePorFilial: { matriz: 8, filial1: 4 }, estoqueMinimo: 5, ativo: true },
-  { id: "2", nome: "Bleu de Chanel", categoria: "Perfumes Importados", descricao: "Fragrância amadeirada aromática", marca: "Chanel", precoCusto: 220, precoVenda: 400, estoque: 8, estoquePorFilial: { matriz: 5, filial1: 3 }, estoqueMinimo: 5, ativo: true },
-  { id: "3", nome: "Santal 33", categoria: "Perfumes Importados", descricao: "Fragrância amadeirada", marca: "Le Labo", precoCusto: 350, precoVenda: 600, estoque: 3, estoquePorFilial: { matriz: 2, filial1: 1 }, estoqueMinimo: 5, ativo: true },
-  { id: "4", nome: "Aventus Creed", categoria: "Perfumes Importados", descricao: "Fragrância frutada", marca: "Creed", precoCusto: 400, precoVenda: 800, estoque: 5, estoquePorFilial: { matriz: 3, filial1: 2 }, estoqueMinimo: 3, ativo: true },
-  { id: "5", nome: "Light Blue D&G", categoria: "Perfumes Importados", descricao: "Fragrância cítrica", marca: "Dolce & Gabbana", precoCusto: 150, precoVenda: 300, estoque: 15, estoquePorFilial: { matriz: 10, filial1: 5 }, estoqueMinimo: 5, ativo: true },
-  { id: "6", nome: "Oud Wood", categoria: "Perfumes Importados", descricao: "Fragrância oud", marca: "Tom Ford", precoCusto: 380, precoVenda: 700, estoque: 2, estoquePorFilial: { matriz: 2, filial1: 0 }, estoqueMinimo: 3, ativo: true },
-  { id: "7", nome: "Flowerbomb", categoria: "Perfumes Importados", descricao: "Fragrância floral oriental", marca: "Viktor & Rolf", precoCusto: 200, precoVenda: 380, estoque: 5, estoquePorFilial: { matriz: 3, filial1: 2 }, estoqueMinimo: 5, ativo: true },
-  { id: "8", nome: "Noir de Noir", categoria: "Perfumes Importados", descricao: "Fragrância oriental", marca: "Tom Ford", precoCusto: 420, precoVenda: 850, estoque: 1, estoquePorFilial: { matriz: 1, filial1: 0 }, estoqueMinimo: 3, ativo: true },
-  { id: "9", nome: "Malbec", categoria: "Perfumes Nacionais", descricao: "Fragrância amadeirada", marca: "O Boticário", precoCusto: 60, precoVenda: 130, estoque: 20, estoquePorFilial: { matriz: 12, filial1: 8 }, estoqueMinimo: 10, ativo: true },
-  { id: "10", nome: "Egeo", categoria: "Perfumes Nacionais", descricao: "Fragrância fresca", marca: "O Boticário", precoCusto: 50, precoVenda: 110, estoque: 18, estoquePorFilial: { matriz: 10, filial1: 8 }, estoqueMinimo: 10, ativo: true },
-  { id: "11", nome: "Bolsa Elegance Preta", categoria: "Bolsas", descricao: "Bolsa de couro sintético", marca: "TassiAchando", precoCusto: 45, precoVenda: 120, estoque: 7, estoquePorFilial: { matriz: 4, filial1: 3 }, estoqueMinimo: 3, ativo: true },
-  { id: "12", nome: "Relógio Classic Gold", categoria: "Relógios", descricao: "Relógio analógico dourado", marca: "TassiAchando", precoCusto: 80, precoVenda: 200, estoque: 4, estoquePorFilial: { matriz: 3, filial1: 1 }, estoqueMinimo: 2, ativo: true },
+  { id: "1", nome: "Baccarat Rouge 540", categoria: "Perfumes Importados", descricao: "Fragrância oriental floral", marca: "Maison Francis Kurkdjian", precoCusto: 280, precoVenda: 500, estoque: 12, estoquePorFilial: { matriz: 8, filial1: 4 }, estoqueMinimo: 5, ativo: true, codigoBarras: "7890001234567", volume: 70, margem: 78.6 },
+  { id: "2", nome: "Bleu de Chanel", categoria: "Perfumes Importados", descricao: "Fragrância amadeirada aromática", marca: "Chanel", precoCusto: 220, precoVenda: 400, estoque: 8, estoquePorFilial: { matriz: 5, filial1: 3 }, estoqueMinimo: 5, ativo: true, codigoBarras: "7890001234568", volume: 100, margem: 81.8 },
+  { id: "3", nome: "Santal 33", categoria: "Perfumes Importados", descricao: "Fragrância amadeirada", marca: "Le Labo", precoCusto: 350, precoVenda: 600, estoque: 3, estoquePorFilial: { matriz: 2, filial1: 1 }, estoqueMinimo: 5, ativo: true, volume: 50, margem: 71.4 },
+  { id: "4", nome: "Aventus Creed", categoria: "Perfumes Importados", descricao: "Fragrância frutada", marca: "Creed", precoCusto: 400, precoVenda: 800, estoque: 5, estoquePorFilial: { matriz: 3, filial1: 2 }, estoqueMinimo: 3, ativo: true, volume: 100, margem: 100 },
+  { id: "5", nome: "Light Blue D&G", categoria: "Perfumes Importados", descricao: "Fragrância cítrica", marca: "Dolce & Gabbana", precoCusto: 150, precoVenda: 300, estoque: 15, estoquePorFilial: { matriz: 10, filial1: 5 }, estoqueMinimo: 5, ativo: true, volume: 100, margem: 100 },
+  { id: "6", nome: "Oud Wood", categoria: "Perfumes Importados", descricao: "Fragrância oud", marca: "Tom Ford", precoCusto: 380, precoVenda: 700, estoque: 2, estoquePorFilial: { matriz: 2, filial1: 0 }, estoqueMinimo: 3, ativo: true, volume: 50, margem: 84.2 },
+  { id: "7", nome: "Flowerbomb", categoria: "Perfumes Importados", descricao: "Fragrância floral oriental", marca: "Viktor & Rolf", precoCusto: 200, precoVenda: 380, estoque: 5, estoquePorFilial: { matriz: 3, filial1: 2 }, estoqueMinimo: 5, ativo: true, volume: 100, margem: 90 },
+  { id: "8", nome: "Noir de Noir", categoria: "Perfumes Importados", descricao: "Fragrância oriental", marca: "Tom Ford", precoCusto: 420, precoVenda: 850, estoque: 1, estoquePorFilial: { matriz: 1, filial1: 0 }, estoqueMinimo: 3, ativo: true, volume: 50, margem: 102.4 },
+  { id: "9", nome: "Malbec", categoria: "Perfumes Nacionais", descricao: "Fragrância amadeirada", marca: "O Boticário", precoCusto: 60, precoVenda: 130, estoque: 20, estoquePorFilial: { matriz: 12, filial1: 8 }, estoqueMinimo: 10, ativo: true, codigoBarras: "7890002345678", volume: 100, margem: 116.7 },
+  { id: "10", nome: "Egeo", categoria: "Perfumes Nacionais", descricao: "Fragrância fresca", marca: "O Boticário", precoCusto: 50, precoVenda: 110, estoque: 18, estoquePorFilial: { matriz: 10, filial1: 8 }, estoqueMinimo: 10, ativo: true, volume: 90, margem: 120 },
+  { id: "11", nome: "Bolsa Elegance Preta", categoria: "Bolsas", descricao: "Bolsa de couro sintético", marca: "TassiAchando", precoCusto: 45, precoVenda: 120, estoque: 7, estoquePorFilial: { matriz: 4, filial1: 3 }, estoqueMinimo: 3, ativo: true, margem: 166.7 },
+  { id: "12", nome: "Relógio Classic Gold", categoria: "Relógios", descricao: "Relógio analógico dourado", marca: "TassiAchando", precoCusto: 80, precoVenda: 200, estoque: 4, estoquePorFilial: { matriz: 3, filial1: 1 }, estoqueMinimo: 2, ativo: true, margem: 150 },
 ];
 
 export const pedidos: Pedido[] = [
@@ -118,6 +146,37 @@ export const movimentacoesEstoque: MovimentacaoEstoque[] = [
   { id: "3", produtoId: "1", nomeProduto: "Baccarat Rouge 540", tipo: "saida", quantidade: 1, motivo: "venda", data: "2026-03-11", filial: "matriz" },
   { id: "4", produtoId: "6", nomeProduto: "Oud Wood", tipo: "saida", quantidade: 1, motivo: "perda", data: "2026-03-08", observacoes: "Frasco quebrado", filial: "matriz" },
   { id: "5", produtoId: "9", nomeProduto: "Malbec", tipo: "entrada", quantidade: 20, fornecedor: "O Boticário Distribuidor", custo: 1200, data: "2026-03-05", filial: "filial1" },
+];
+
+export const compras: Compra[] = [
+  {
+    id: "1", produtoId: "1", nomeProduto: "Baccarat Rouge 540", categoria: "Perfumes Importados", marca: "Maison Francis Kurkdjian",
+    codigoBarras: "7890001234567", volume: 70, fornecedor: "Importadora Luxe", notaFiscal: "NF-2026-001",
+    dataCompra: "2026-03-01", quantidade: 10, custoUnitario: 280, custoTotal: 2800,
+    desconto: 200, frete: 150, outrosCustos: 50,
+    custoRealUnitario: 280, precoSugerido: 504, filial: "matriz", observacoes: "Reposição mensal"
+  },
+  {
+    id: "2", produtoId: "2", nomeProduto: "Bleu de Chanel", categoria: "Perfumes Importados", marca: "Chanel",
+    codigoBarras: "7890001234568", volume: 100, fornecedor: "Importadora Luxe", notaFiscal: "NF-2026-001",
+    dataCompra: "2026-03-01", quantidade: 5, custoUnitario: 220, custoTotal: 1100,
+    desconto: 0, frete: 80, outrosCustos: 0,
+    custoRealUnitario: 236, precoSugerido: 424.8, filial: "filial1"
+  },
+  {
+    id: "3", produtoId: "9", nomeProduto: "Malbec", categoria: "Perfumes Nacionais", marca: "O Boticário",
+    codigoBarras: "7890002345678", volume: 100, fornecedor: "O Boticário Distribuidor", notaFiscal: "NF-2026-005",
+    dataCompra: "2026-03-05", quantidade: 20, custoUnitario: 60, custoTotal: 1200,
+    desconto: 100, frete: 60, outrosCustos: 0,
+    custoRealUnitario: 58, precoSugerido: 87, filial: "filial1", observacoes: "Promoção do distribuidor"
+  },
+  {
+    id: "4", produtoId: "4", nomeProduto: "Aventus Creed", categoria: "Perfumes Importados", marca: "Creed",
+    volume: 100, fornecedor: "Creed Brasil", notaFiscal: "NF-2026-008",
+    dataCompra: "2026-03-10", quantidade: 3, custoUnitario: 400, custoTotal: 1200,
+    desconto: 0, frete: 120, outrosCustos: 30,
+    custoRealUnitario: 450, precoSugerido: 810, filial: "matriz"
+  },
 ];
 
 export const rotulosFormaPagamento: Record<string, string> = {

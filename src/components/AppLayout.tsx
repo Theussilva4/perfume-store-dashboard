@@ -30,7 +30,7 @@ const navSections = [
     label: "Estoque",
     items: [
       { label: "Controle", key: "/estoque", icon: Warehouse },
-      { label: "Entradas", key: "/estoque/entradas", icon: ArrowDownToLine },
+      { label: "Compras", key: "/estoque/entradas", icon: ArrowDownToLine },
       { label: "Saídas", key: "/estoque/saidas", icon: ArrowUpFromLine },
     ],
   },

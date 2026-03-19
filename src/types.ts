@@ -1,5 +1,3 @@
-// types.ts (crie esse arquivo ou coloque no topo do seu componente)
-// src/types.ts
 export interface Produto {
   codproduto: number;
   descricao: string;
@@ -15,8 +13,14 @@ export interface Produto {
     filial1: number;
   };
   ativo: boolean;
+  codigoBarras?: string;
+  volume?: number;
+  margem?: number;
+  precoPromocional?: number;
 }
+
 export interface categoria {
   codcategoria: number;
   categoria: string;
+  margemPadrao?: number;
 }
