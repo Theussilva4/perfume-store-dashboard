@@ -1,96 +1,57 @@
 
 
-## Fase 1: Compras + Precificação Profissional
+## Integrar Categorias com API + Criar cadastro de Marcas
 
-Considerando sua tabela real `msproduto` com `codigo_barras`, `volume_ml`, `preco_normal` e `preco_promocao`.
+### Resumo
 
----
-
-### 1. Atualizar modelo de dados
-
-**`src/types.ts`** — Adicionar campos ao `Produto`:
-- `codigoBarras?: string` (mapeado de `codigo_barras`)
-- `volume?: string` (mapeado de `volume_ml`)
-- `margem?: number` (% configurável)
-- `precoPromocional?: number` (mapeado de `preco_promocao`)
-
-**`src/data/mockData.ts`** — Novos tipos e dados:
-
-Nova interface `Compra`:
-```
-id, produtoId, nomeProduto, categoria, marca,
-codigoBarras, volume, fornecedor, notaFiscal,
-dataCompra, quantidade, custoUnitario, custoTotal,
-desconto, frete, outrosCustos, custoRealUnitario,
-filial, observacoes
-```
-
-Fórmula do custo real:
-```
-custoRealUnitario = (custoTotal + frete + outrosCustos - desconto) / quantidade
-```
-
-Adicionar `margemPadrao?: number` na interface `Categoria` (ex: importados = 80%, nacionais = 50%).
-
-Incluir 3-4 compras mock com NF, frete, descontos.
+Conectar a tela de Categorias à API real (tabela `mscategoria` com campos `codcategoria`, `categoria`, `margem_padrao`) e criar uma nova tela de Marcas (tabela `msmarca` com campos `codmarca`, `marca`), seguindo o mesmo padrão visual das Categorias.
 
 ---
 
-### 2. Refatorar StockEntry.tsx → Tela de Compras
+### 1. Atualizar tipos (`src/types.ts`)
 
-Título: **"Compras"** com subtítulo "Controle de compras e custo real".
+- Ajustar interface `categoria` para usar `margem_padrao` (snake_case do banco)
+- Criar interface `Marca`: `codmarca: number`, `marca: string`
 
-**Formulário completo (dialog expandido `max-w-2xl`):**
+### 2. Criar service de marcas (`src/services/marcaService.js`)
 
-| Seção | Campos |
-|-------|--------|
-| Produto | Select com busca → auto-preenche categoria, marca, código barras, volume |
-| Nota Fiscal | Fornecedor, Nº NF, Data da compra |
-| Valores | Quantidade, Custo unitário, Custo total (auto), Desconto, Frete, Outros custos |
-| Resultado | **Custo Real Unitário** (calculado em tempo real, destaque visual) |
-| Sugestão | **Preço sugerido** = custoReal × (1 + margem da categoria), editável |
-| Destino | Filial, Observações |
+- `getMarcas()` → `GET /marcas`
+- `createMarca(dados)` → `POST /marcas`
+- `updateMarca(id, dados)` → `PATCH /marcas/{id}`
+- `deleteMarca(id)` → `DELETE /marcas/{id}`
 
-**Tabela de compras** com colunas: Data, NF, Produto, Qtd, Custo Unit., Frete, Desc., Custo Real, Fornecedor.
+### 3. Atualizar service de categorias (`src/services/categoriaService.js`)
 
----
+- Adicionar `deleteCategoria(id)` → `DELETE /categorias/{id}`
+- Remover linha solta no final do arquivo (`getCategorias,updateCategoria,createCategoria`)
 
-### 3. Precificação no cadastro de produto (Products.tsx)
+### 4. Refatorar `Categories.tsx` para usar API real
 
-Adicionar ao dialog de produto:
-- Código de barras
-- Volume (ml)
-- Margem (%) — pré-preenchida pela margem da categoria selecionada
-- Preço promocional
-- **Exibição calculada**: Markup = precoVenda / precoCusto, Lucro = precoVenda - precoCusto
+- Trocar mock data por chamadas a `getCategorias`, `createCategoria`, `updateCategoria`, `deleteCategoria`
+- Mapear campos do banco: `codcategoria` como ID, `categoria` como nome, `margem_padrao` como margem
+- Adicionar loading state e tratamento de erro com `Array.isArray`
 
-No card do produto, mostrar: margem %, markup e lucro por unidade.
+### 5. Criar página `Brands.tsx` (`src/pages/Brands.tsx`)
 
-Atualizar `mapearProduto()` para incluir `codigo_barras` e `volume_ml` da API.
+- Layout idêntico ao de Categorias (grid de cards com ícone, nome, botões editar/remover)
+- Dialog para criar/editar marca (campo único: nome da marca)
+- Chamadas à API via `marcaService`
+- Ícone: `Tag` do lucide-react
 
----
+### 6. Adicionar rota e navegação
 
-### 4. Margem por categoria (Categories.tsx)
+- **`src/App.tsx`**: nova rota `/marcas` → `<Brands />`
+- **`src/components/AppLayout.tsx`**: adicionar "Marcas" na seção "Catálogo" com ícone `Tag`
 
-Adicionar campo "Margem Padrão (%)" no dialog de criação/edição de categoria. Valor usado como sugestão automática ao cadastrar produtos e registrar compras.
-
----
-
-### 5. Navegação (AppLayout.tsx)
-
-Renomear "Entradas" → "Compras" na sidebar (seção Estoque).
-
----
-
-### Arquivos a editar
+### Arquivos
 
 | Arquivo | Ação |
 |---------|------|
-| `src/types.ts` | Adicionar campos novos ao Produto |
-| `src/data/mockData.ts` | Interface Compra, margemPadrao em Categoria, dados mock |
-| `src/pages/StockEntry.tsx` | Refatorar → tela de compras completa com cálculo custo real |
-| `src/pages/Products.tsx` | Campos de precificação + exibição margem/markup nos cards |
-| `src/pages/Categories.tsx` | Campo margem padrão |
-| `src/components/AppLayout.tsx` | Renomear "Entradas" → "Compras" |
-| `src/services/produtosService.js` | Preparar envio de `codigo_barras`, `volume_ml` no create/update |
+| `src/types.ts` | Adicionar interface `Marca` |
+| `src/services/marcaService.js` | Criar (CRUD completo) |
+| `src/services/categoriaService.js` | Adicionar delete, limpar linha solta |
+| `src/pages/Categories.tsx` | Refatorar para API real |
+| `src/pages/Brands.tsx` | Criar página de marcas |
+| `src/App.tsx` | Adicionar rota `/marcas` |
+| `src/components/AppLayout.tsx` | Adicionar "Marcas" no menu Catálogo |
 
