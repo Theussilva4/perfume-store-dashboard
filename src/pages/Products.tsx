@@ -65,8 +65,13 @@ const Products = () => {
   });
 
   async function carregarCategorias() {
-    const data = await getCategorias();
-    setCategorias(data);
+    try {
+      const data = await getCategorias();
+      setCategorias(Array.isArray(data) ? data : []);
+    } catch (error) {
+      console.error(error);
+      setCategorias([]);
+    }
   }
 
   useEffect(() => {
@@ -79,7 +84,8 @@ const Products = () => {
   async function carregarProdutos() {
     try {
       const data = await getProdutos();
-      setListaProdutos(data.map(mapearProduto));
+      const lista = Array.isArray(data) ? data : [];
+      setListaProdutos(lista.map(mapearProduto));
     } catch (error) {
       console.error(error);
       toast.error("Erro ao buscar produtos");
