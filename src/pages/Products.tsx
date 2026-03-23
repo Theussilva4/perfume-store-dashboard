@@ -65,8 +65,13 @@ const Products = () => {
   });
 
   async function carregarCategorias() {
-    const data = await getCategorias();
-    setCategorias(data);
+    try {
+      const data = await getCategorias();
+      setCategorias(Array.isArray(data) ? data : []);
+    } catch (error) {
+      console.error(error);
+      setCategorias([]);
+    }
   }
 
   useEffect(() => {
