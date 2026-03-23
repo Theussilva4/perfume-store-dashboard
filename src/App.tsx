@@ -10,6 +10,7 @@ import Login from "@/pages/Login";
 import Dashboard from "@/pages/Dashboard";
 import Products from "@/pages/Products";
 import Categories from "@/pages/Categories";
+import Brands from "@/pages/Brands";
 import Stock from "@/pages/Stock";
 import StockEntry from "@/pages/StockEntry";
 import StockExit from "@/pages/StockExit";
