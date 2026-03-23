@@ -22,5 +22,10 @@ export interface Produto {
 export interface categoria {
   codcategoria: number;
   categoria: string;
-  margemPadrao?: number;
+  margem_padrao?: number;
+}
+
+export interface Marca {
+  codmarca: number;
+  marca: string;
 }
