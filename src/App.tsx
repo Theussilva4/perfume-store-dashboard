@@ -50,6 +50,7 @@ const App = () => (
               <Route index element={<Dashboard />} />
               <Route path="produtos" element={<Products />} />
               <Route path="categorias" element={<Categories />} />
+              <Route path="marcas" element={<Brands />} />
               <Route path="estoque" element={<Stock />} />
               <Route path="estoque/entradas" element={<StockEntry />} />
               <Route path="estoque/saidas" element={<StockExit />} />

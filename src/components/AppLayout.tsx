@@ -24,6 +24,7 @@ const navSections = [
     items: [
       { label: "Produtos", key: "/produtos", icon: Package },
       { label: "Categorias", key: "/categorias", icon: FolderOpen },
+      { label: "Marcas", key: "/marcas", icon: Tag },
     ],
   },
   {
