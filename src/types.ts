@@ -29,3 +29,42 @@ export interface Marca {
   codmarca: number;
   marca: string;
 }
+
+export interface Cliente {
+  codcliente: number;
+  nome: string;
+  cpf_cnpj: string;
+  telefone:string;
+  email: string;
+  endereco:string;
+  numero: string;
+  bairro: string;
+  cidade: string;
+  estado: string;
+  cep: string;
+  data_cadastro: string;
+  ativo: string
+}
+
+export interface Pedido{
+ 	numpedido:	number,
+ 	codcliente:	number,
+ 	codusur_criou:	number,
+ 	codusur_vendedor:	number,
+ 	data_pedido:	string
+ 	valor_total:	number,
+ 	status:	string
+ 	codfilial:	number,
+
+}
+
+export interface PedidoItem{
+   	coditem:	number,
+   	numpedido:	number,
+   	codproduto:	number,
+   	quantidade:	number,
+   	preco_unitario:	number,
+   	valor_total:	number,
+}
+
+

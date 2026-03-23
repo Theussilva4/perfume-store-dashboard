@@ -20,11 +20,12 @@ const navSections = [
     ],
   },
   {
-    label: "Catálogo",
+    label: "Cadastro",
     items: [
       { label: "Produtos", key: "/produtos", icon: Package },
       { label: "Categorias", key: "/categorias", icon: FolderOpen },
       { label: "Marcas", key: "/marcas", icon: Tag },
+      { label: "Clientes", key: "/clientes", icon: Users },
     ],
   },
   {
@@ -38,7 +39,7 @@ const navSections = [
   {
     label: "Análises",
     items: [
-      { label: "Clientes", key: "/clientes", icon: Users },
+     
       { label: "Relatórios", key: "/relatorios", icon: BarChart3 },
     ],
   },
