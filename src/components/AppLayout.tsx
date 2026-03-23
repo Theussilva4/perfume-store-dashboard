@@ -3,7 +3,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useBranch, filiais } from "@/contexts/BranchContext";
 import logo from "@/assets/logo.png";
 import {
-  LayoutDashboard, Package, FolderOpen, Warehouse, ArrowDownToLine, ArrowUpFromLine,
+  LayoutDashboard, Package, FolderOpen, Tag, Warehouse, ArrowDownToLine, ArrowUpFromLine,
   ClipboardList, Users, BarChart3, Settings, Bell, LogOut, Menu, X, Building2,
 } from "lucide-react";
 import { useState } from "react";
