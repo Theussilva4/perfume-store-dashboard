@@ -9,6 +9,10 @@ export async function updateProduto(id, dados) {
   const res = await api.patch(`/produtos/${id}`, dados);
   return res.data;
 }
+export async function alterarStatusProduto(id, ativo) {
+  const res = await api.patch(`/produtos/${id}/ativo`, { ativo });
+  return res.data;
+}
 
 export async function createProduto(dados) {
   const res = await api.post("/produtos", dados);
