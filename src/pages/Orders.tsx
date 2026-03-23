@@ -12,8 +12,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Plus, Search, Eye, ClipboardList, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
+import { useEffect } from "react";
+
+
 
 const Orders = () => {
+  const [listaFiliais,setListaFiliais] = useState<any[]>([]);
   const { filialSelecionada, rotuloFilial } = useBranch();
   const navigate = useNavigate();
   const [listaPedidos, setListaPedidos] = useState<Pedido[]>(pedidosIniciais);
@@ -21,7 +25,7 @@ const Orders = () => {
   const [filtroStatus, setFiltroStatus] = useState("all");
   const [filtroPeriodo, setFiltroPeriodo] = useState("all");
   const [dialogOpen, setDialogOpen] = useState(false);
-
+  
   const [nomeCliente, setNomeCliente] = useState("");
   const [telefoneCliente, setTelefoneCliente] = useState("");
   const [enderecoCliente, setEnderecoCliente] = useState("");
@@ -30,7 +34,19 @@ const Orders = () => {
   const [produtoSelecionado, setProdutoSelecionado] = useState("");
   const [filialPedido, setFilialPedido] = useState("matriz");
   const [qtdSelecionada, setQtdSelecionada] = useState(1);
-
+  
+  useEffect(()=> {
+    carregarFiliais();
+  })
+  async function carregarFiliais() {
+    try{
+      const data = await getFilial();
+      setListaFiliais(data);
+    }catch(error){
+      console.log(error);
+    }
+    
+  }
   const filtrados = listaPedidos.filter((o) => {
     const matchFilial = filialSelecionada === "todas" || o.filial === filialSelecionada;
     const matchSearch = o.nomeCliente.toLowerCase().includes(search.toLowerCase()) ||
@@ -198,8 +214,8 @@ const Orders = () => {
               <Select value={filialPedido} onValueChange={setFilialPedido}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  {filiais.map((b) => (
-                    <SelectItem key={b.id} value={b.id}>{b.rotulo}</SelectItem>
+                  {listaFiliais.map((b) => (
+                    <SelectItem key={b.codfilial} value={b.codfilial}>{b.filial}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
