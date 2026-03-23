@@ -1,38 +1,78 @@
-import { useState } from "react";
-import { categorias as categoriasIniciais, Categoria } from "@/data/mockData";
+import { useState, useEffect } from "react";
+import { getCategorias, createCategoria, updateCategoria, deleteCategoria } from "@/services/categoriaService";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
-import { Plus, Pencil, Trash2, FolderOpen, Percent } from "lucide-react";
+import { Plus, Pencil, Trash2, FolderOpen, Percent, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
+interface CategoriaAPI {
+  codcategoria: number;
+  categoria: string;
+  margem_padrao?: number;
+}
+
 const Categories = () => {
-  const [lista, setLista] = useState<Categoria[]>(categoriasIniciais);
+  const [lista, setLista] = useState<CategoriaAPI[]>([]);
+  const [carregando, setCarregando] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [editando, setEditando] = useState<Categoria | null>(null);
+  const [editando, setEditando] = useState<CategoriaAPI | null>(null);
   const [nome, setNome] = useState("");
   const [margemPadrao, setMargemPadrao] = useState<number>(50);
 
-  const abrirNova = () => { setEditando(null); setNome(""); setMargemPadrao(50); setDialogOpen(true); };
-  const abrirEdicao = (c: Categoria) => { setEditando(c); setNome(c.nome); setMargemPadrao(c.margemPadrao ?? 50); setDialogOpen(true); };
-
-  const handleSalvar = () => {
-    if (!nome.trim()) { toast.error("Preencha o nome."); return; }
-    if (editando) {
-      setLista((prev) => prev.map((c) => (c.id === editando.id ? { ...c, nome, margemPadrao } : c)));
-      toast.success("Categoria atualizada!");
-    } else {
-      setLista((prev) => [...prev, { id: String(Date.now()), nome, quantidadeProdutos: 0, margemPadrao }]);
-      toast.success("Categoria criada!");
+  const carregar = async () => {
+    try {
+      setCarregando(true);
+      const dados = await getCategorias();
+      setLista(Array.isArray(dados) ? dados : []);
+    } catch {
+      toast.error("Erro ao carregar categorias.");
+      setLista([]);
+    } finally {
+      setCarregando(false);
     }
-    setDialogOpen(false);
   };
 
-  const handleRemover = (id: string) => {
-    setLista((prev) => prev.filter((c) => c.id !== id));
-    toast.success("Categoria removida!");
+  useEffect(() => { carregar(); }, []);
+
+  const abrirNova = () => { setEditando(null); setNome(""); setMargemPadrao(50); setDialogOpen(true); };
+  const abrirEdicao = (c: CategoriaAPI) => { setEditando(c); setNome(c.categoria); setMargemPadrao(c.margem_padrao ?? 50); setDialogOpen(true); };
+
+  const handleSalvar = async () => {
+    if (!nome.trim()) { toast.error("Preencha o nome."); return; }
+    try {
+      if (editando) {
+        await updateCategoria(editando.codcategoria, { categoria: nome, margem_padrao: margemPadrao });
+        toast.success("Categoria atualizada!");
+      } else {
+        await createCategoria({ categoria: nome, margem_padrao: margemPadrao });
+        toast.success("Categoria criada!");
+      }
+      setDialogOpen(false);
+      carregar();
+    } catch {
+      toast.error("Erro ao salvar categoria.");
+    }
   };
+
+  const handleRemover = async (id: number) => {
+    try {
+      await deleteCategoria(id);
+      toast.success("Categoria removida!");
+      carregar();
+    } catch {
+      toast.error("Erro ao remover categoria.");
+    }
+  };
+
+  if (carregando) {
+    return (
+      <div className="flex items-center justify-center py-20">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6 animate-fade-in-up">
@@ -46,17 +86,16 @@ const Categories = () => {
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         {lista.map((cat) => (
-          <div key={cat.id} className="bg-card rounded-lg border border-border p-5 flex items-center gap-4">
+          <div key={cat.codcategoria} className="bg-card rounded-lg border border-border p-5 flex items-center gap-4">
             <div className="w-10 h-10 rounded-md bg-primary/10 flex items-center justify-center flex-shrink-0">
               <FolderOpen className="h-5 w-5 text-primary" />
             </div>
             <div className="flex-1 min-w-0">
-              <h3 className="font-medium text-sm text-foreground truncate">{cat.nome}</h3>
+              <h3 className="font-medium text-sm text-foreground truncate">{cat.categoria}</h3>
               <div className="flex items-center gap-2">
-                <p className="text-xs text-muted-foreground">{cat.quantidadeProdutos} produtos</p>
-                {cat.margemPadrao != null && (
+                {cat.margem_padrao != null && (
                   <span className="text-xs text-primary font-medium flex items-center gap-0.5">
-                    <Percent className="h-3 w-3" />{cat.margemPadrao}% margem
+                    <Percent className="h-3 w-3" />{cat.margem_padrao}% margem
                   </span>
                 )}
               </div>
@@ -65,7 +104,7 @@ const Categories = () => {
               <button onClick={() => abrirEdicao(cat)} className="p-1.5 rounded-md hover:bg-muted text-muted-foreground hover:text-foreground transition-colors">
                 <Pencil className="h-3.5 w-3.5" />
               </button>
-              <button onClick={() => handleRemover(cat.id)} className="p-1.5 rounded-md hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors">
+              <button onClick={() => handleRemover(cat.codcategoria)} className="p-1.5 rounded-md hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors">
                 <Trash2 className="h-3.5 w-3.5" />
               </button>
             </div>
