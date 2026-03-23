@@ -3,7 +3,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useBranch, filiais } from "@/contexts/BranchContext";
 import logo from "@/assets/logo.png";
 import {
-  LayoutDashboard, Package, FolderOpen, Warehouse, ArrowDownToLine, ArrowUpFromLine,
+  LayoutDashboard, Package, FolderOpen, Tag, Warehouse, ArrowDownToLine, ArrowUpFromLine,
   ClipboardList, Users, BarChart3, Settings, Bell, LogOut, Menu, X, Building2,
 } from "lucide-react";
 import { useState } from "react";
@@ -24,6 +24,7 @@ const navSections = [
     items: [
       { label: "Produtos", key: "/produtos", icon: Package },
       { label: "Categorias", key: "/categorias", icon: FolderOpen },
+      { label: "Marcas", key: "/marcas", icon: Tag },
     ],
   },
   {
