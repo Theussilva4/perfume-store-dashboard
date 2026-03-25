@@ -45,6 +45,13 @@ export interface Cliente {
   data_cadastro: string;
   ativo: string
 }
+export interface Vendedor {
+  codvendedor: number;
+  nome: string;
+  cpf: string;
+  data_cadastro: string;
+  ativo: string
+}
 
 export interface Pedido{
  	numpedido:	number,
