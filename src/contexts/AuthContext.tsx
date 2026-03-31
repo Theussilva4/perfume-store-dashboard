@@ -1,16 +1,17 @@
-import { createContext, useContext, useState, ReactNode } from "react";
+import { createContext, useContext, useState, ReactNode, useEffect } from "react";
 
 interface Usuario {
   nome: string;
+  login: string;
   email: string;
   cargo: "admin" | "vendedor";
 }
 
 interface AuthContextType {
   usuario: Usuario | null;
-  entrar: (email: string, senha: string) => boolean;
-  sair: () => void;
   estaAutenticado: boolean;
+  entrar: (token: string, user: any) => void;
+  sair: () => void;
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
@@ -22,28 +23,46 @@ export const useAuth = () => {
 };
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
-  const [usuario, setUsuario] = useState<Usuario | null>(() => {
-    const saved = localStorage.getItem("auth_user");
-    return saved ? JSON.parse(saved) : null;
-  });
+  const [usuario, setUsuario] = useState<Usuario | null>(null);
 
-  const entrar = (email: string, senha: string) => {
-    if (email && senha.length >= 4) {
-      const u: Usuario = { nome: "Administrador", email, cargo: "admin" };
-      setUsuario(u);
-      localStorage.setItem("auth_user", JSON.stringify(u));
-      return true;
-    }
-    return false;
+  // ✅ Recupera usuário ao recarregar a página
+  useEffect(() => {
+  const userStorage = localStorage.getItem("auth_user");
+
+  if (userStorage) {
+    setUsuario(JSON.parse(userStorage));
+  }
+}, []);
+
+  const entrar = (token: string, userData: any) => {
+    localStorage.setItem("token", token);
+
+    const user: Usuario = {
+      nome: userData.nome,
+      login: userData.email,
+      email: userData.email,
+      cargo: userData.tipo === "ADMIN" ? "admin" : "vendedor",
+    };
+
+    setUsuario(user);
+    localStorage.setItem("auth_user", JSON.stringify(user));
   };
 
   const sair = () => {
     setUsuario(null);
     localStorage.removeItem("auth_user");
+    localStorage.removeItem("token");
   };
 
   return (
-    <AuthContext.Provider value={{ usuario, entrar, sair, estaAutenticado: !!usuario }}>
+    <AuthContext.Provider
+      value={{
+        usuario,
+        entrar,
+        sair,
+        estaAutenticado: !!usuario,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );

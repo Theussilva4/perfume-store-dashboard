@@ -6,11 +6,12 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Eye, EyeOff, Lock, Mail } from "lucide-react";
+import { loginRequest } from "@/services/authService";
 
 const Login = () => {
   const { entrar } = useAuth();
   const navigate = useNavigate();
-  const [email, setEmail] = useState("");
+  const [login, setLogin] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
@@ -21,15 +22,31 @@ const Login = () => {
     setError("");
     setLoading(true);
 
-    setTimeout(() => {
-      const success = entrar(email, password);
-      if (success) {
-        navigate("/");
-      } else {
-        setError("E-mail ou senha inválidos.");
-      }
+    try {
+      console.log("🔵 Iniciando login...");
+
+      const data = await loginRequest(login, password);
+      console.log("🟢 RESPOSTA:", data);
+
+      console.log("🟡 Salvando token...");
+      localStorage.setItem("token", data.token);
+
+      console.log("🟣 Chamando entrar()");
+      entrar(data.token,data.usuario);
+
+      console.log("⚪ Token no localStorage:", localStorage.getItem("token"));
+
+      console.log("🚀 Indo pra /");
+      navigate("/");
+
+    } catch (err: any) {
+      console.log("🔴 ERRO COMPLETO:", err);
+      console.log("🔴 RESPOSTA:", err.response);
+
+      setError(err.response?.data?.erro || "Erro ao fazer login");
+    } finally {
       setLoading(false);
-    }, 600);
+    }
   };
 
   return (
@@ -43,10 +60,10 @@ const Login = () => {
           </div>
           <form onSubmit={handleSubmit} className="space-y-5">
             <div className="space-y-2">
-              <Label htmlFor="email" className="text-sm text-foreground">E-mail</Label>
+              <Label htmlFor="login" className="text-sm text-foreground">E-mail</Label>
               <div className="relative">
                 <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input id="email" type="email" placeholder="seu@email.com" value={email} onChange={(e) => setEmail(e.target.value)} className="pl-10" required />
+                <Input id="login" type="login" placeholder="seu@login.com" value={login} onChange={(e) => setLogin(e.target.value)} className="pl-10" required />
               </div>
             </div>
             <div className="space-y-2">

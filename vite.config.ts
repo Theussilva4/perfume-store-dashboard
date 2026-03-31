@@ -8,6 +8,7 @@ export default defineConfig(({ mode }) => ({
   server: {
     host: "::",
     port: 8080,
+    allowedHosts: ['nonsupplementally-enharmonic-jonathon.ngrok-free.dev'],
     hmr: {
       overlay: false,
     },
@@ -19,3 +20,4 @@ export default defineConfig(({ mode }) => ({
     },
   },
 }));
+
