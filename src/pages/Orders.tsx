@@ -74,10 +74,11 @@ const Orders = () => {
         getProdutos(),
       ]);
 
-      setListaFiliais(filiais);
-      setListarClientes(clientes);
-      setListarVendedor(vendedores);
-      setListarProdutos(produtos);
+      const toArray = (d: any) => Array.isArray(d) ? d : (Array.isArray(d?.data) ? d.data : []);
+      setListaFiliais(toArray(filiais));
+      setListarClientes(toArray(clientes));
+      setListarVendedor(toArray(vendedores));
+      setListarProdutos(toArray(produtos));
     } catch (error) {
       console.error(error);
       setErro("Erro ao carregar dados");
