@@ -14,6 +14,3 @@ export async function createFilial(dados) {
   const res = await api.post("/filial", dados);
   return res.data;
 }
-
-
-getFilial,updateFilial,createFilial
