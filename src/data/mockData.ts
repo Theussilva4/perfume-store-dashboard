@@ -187,6 +187,7 @@ export const rotulosFormaPagamento: Record<string, string> = {
 };
 
 export const rotulosStatus: Record<string, string> = {
+  aberto: "Aberto",
   aguardando: "Aguardando Pagamento",
   pago: "Pago",
   separando: "Separando",
@@ -195,6 +196,7 @@ export const rotulosStatus: Record<string, string> = {
 };
 
 export const coresStatus: Record<string, string> = {
+  aberto: "text-slate-600 bg-slate-100",
   aguardando: "text-amber-600 bg-amber-50",
   pago: "text-primary bg-primary/10",
   separando: "text-blue-600 bg-blue-50",

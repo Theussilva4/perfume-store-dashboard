@@ -7,6 +7,8 @@ import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { BranchProvider } from "@/contexts/BranchContext";
 import AppLayout from "@/components/AppLayout";
 import Login from "@/pages/Login";
+import Register from "@/pages/Register";
+import SetupPassword from "@/pages/SetupPassword";
 import Dashboard from "@/pages/Dashboard";
 import Products from "@/pages/Products";
 import Categories from "@/pages/Categories";
@@ -46,6 +48,8 @@ const App = () => (
         <BrowserRouter>
           <Routes>
             <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
+            <Route path="/configurar-senha" element={<PublicRoute><SetupPassword /></PublicRoute>} />
+            <Route path="/usuarios/novo" element={<ProtectedRoute><Register /></ProtectedRoute>} />
             <Route path="/" element={<ProtectedRoute><AppLayout /></ProtectedRoute>}>
               <Route index element={<Dashboard />} />
               <Route path="produtos" element={<Products />} />

@@ -48,6 +48,7 @@ const navSections = [
     label: "Sistema",
     items: [
       { label: "Alertas", key: "/alertas", icon: Bell },
+      { label: "Colaboradores", key: "/usuarios/novo", icon: Users },
       { label: "Configurações", key: "/configuracoes", icon: Settings },
     ],
   },

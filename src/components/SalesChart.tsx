@@ -9,21 +9,7 @@ import {
   CartesianGrid,
 } from "recharts";
 
-const data = [
-  { month: "Jan", vendas: 12400 },
-  { month: "Fev", vendas: 15800 },
-  { month: "Mar", vendas: 13200 },
-  { month: "Abr", vendas: 18900 },
-  { month: "Mai", vendas: 22100 },
-  { month: "Jun", vendas: 19800 },
-  { month: "Jul", vendas: 24500 },
-  { month: "Ago", vendas: 21300 },
-  { month: "Set", vendas: 26700 },
-  { month: "Out", vendas: 28400 },
-  { month: "Nov", vendas: 31200 },
-  { month: "Dez", vendas: 35800 },
-];
-
+const allMonths = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
 const CustomTooltip = ({ active, payload, label }: any) => {
   if (active && payload && payload.length) {
     return (
@@ -55,14 +41,25 @@ const CustomDot = (props: any) => {
   );
 };
 
-const SalesChart = () => {
+const SalesChart = ({ pedidos = [] }: { pedidos?: any[] }) => {
+  const chartData = allMonths.map(m => ({ month: m, vendas: 0 }));
+
+  pedidos.forEach(p => {
+    if (!p.data) return;
+    const dateStr = String(p.data); 
+    const monthIndex = parseInt(dateStr.split('-')[1] || "1", 10) - 1;
+    if (monthIndex >= 0 && monthIndex < 12) {
+      chartData[monthIndex].vendas += Number(p.total || 0);
+    }
+  });
+
   return (
     <div className="bg-card rounded-sm p-6 animate-fade-in-up animate-delay-4">
       <h3 className="text-xs text-muted-foreground font-body uppercase tracking-widest mb-6">
-        Vendas ao Longo do Tempo
+        Vendas ao Longo do Ano Base
       </h3>
       <ResponsiveContainer width="100%" height={280}>
-        <LineChart data={data} margin={{ top: 5, right: 10, left: 10, bottom: 5 }}>
+        <LineChart data={chartData} margin={{ top: 5, right: 10, left: 10, bottom: 5 }}>
           <CartesianGrid
             strokeDasharray="3 3"
             stroke="hsl(140 12% 85% / 0.7)"

@@ -1,11 +1,11 @@
 import { useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import logo from "@/assets/logo.png";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Eye, EyeOff, Lock, Mail } from "lucide-react";
+import { Eye, EyeOff, Lock, User } from "lucide-react";
 import { loginRequest } from "@/services/authService";
 
 const Login = () => {
@@ -28,13 +28,19 @@ const Login = () => {
       const data = await loginRequest(login, password);
       console.log("🟢 RESPOSTA:", data);
 
+      if (password === "padrao") {
+        console.log("🟠 Primeiro acesso detectado. Redirecionando para Setup.");
+        // Guarda temporariamente as credenciais para autorizar a requisição GET de update de senha
+        localStorage.setItem("tmp_usuario_setup", JSON.stringify({ token: data.token, usuario: data.usuario }));
+        navigate("/configurar-senha");
+        return;
+      }
+
       console.log("🟡 Salvando token...");
       localStorage.setItem("token", data.token);
 
       console.log("🟣 Chamando entrar()");
-      entrar(data.token,data.usuario);
-
-      console.log("⚪ Token no localStorage:", localStorage.getItem("token"));
+      entrar(data.token, data.usuario);
 
       console.log("🚀 Indo pra /");
       navigate("/");
@@ -60,10 +66,10 @@ const Login = () => {
           </div>
           <form onSubmit={handleSubmit} className="space-y-5">
             <div className="space-y-2">
-              <Label htmlFor="login" className="text-sm text-foreground">E-mail</Label>
+              <Label htmlFor="login" className="text-sm text-foreground">Usuário</Label>
               <div className="relative">
-                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input id="login" type="login" placeholder="seu@login.com" value={login} onChange={(e) => setLogin(e.target.value)} className="pl-10" required />
+                <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input id="login" type="text" placeholder="Seu nome de usuário" value={login} onChange={(e) => setLogin(e.target.value)} className="pl-10" required />
               </div>
             </div>
             <div className="space-y-2">

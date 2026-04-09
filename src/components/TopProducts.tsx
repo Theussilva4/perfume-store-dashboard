@@ -1,13 +1,37 @@
-const products = [
-  { name: "Baccarat Rouge 540", vendidos: 47, receita: "R$ 23.500" },
-  { name: "Bleu de Chanel", vendidos: 38, receita: "R$ 15.200" },
-  { name: "Santal 33", vendidos: 31, receita: "R$ 18.600" },
-  { name: "Aventus Creed", vendidos: 28, receita: "R$ 22.400" },
-  { name: "Light Blue D&G", vendidos: 24, receita: "R$ 7.200" },
-];
+const TopProducts = ({ pedidos = [], produtos = [] }: { pedidos?: any[], produtos?: any[] }) => {
+  // Calculando dinamicamente com base em pedidos recebidos pra filial atual
+  const vendasMap: Record<string, { vendidos: number, receita: number, name: string }> = {};
+  
+  pedidos.forEach(p => {
+    (p.itens || p.mspedido_item || []).forEach((item: any) => {
+      const idProd = item.codproduto ?? item.CODPRODUTO ?? item.produtoId ?? item.id_produto;
+      if (!idProd) return;
+      if (!vendasMap[idProd]) {
+         const pDetail = produtos.find(pt => String(pt.codproduto) === String(idProd));
+         vendasMap[idProd] = {
+           name: pDetail?.descricao || item.nomeProduto || `Produto ID: ${idProd}`,
+           vendidos: 0,
+           receita: 0
+         };
+      }
+      
+      const qtd = Number(item.quantidade ?? item.QUANTIDADE ?? 1);
+      const prc = Number(item.preco_unitario ?? item.PRECO_UNITARIO ?? item.preco ?? 0);
+      
+      vendasMap[idProd].vendidos += qtd;
+      vendasMap[idProd].receita += (qtd * prc);
+    });
+  });
 
-const TopProducts = () => {
-  const maxSold = Math.max(...products.map((p) => p.vendidos));
+  const products = Object.values(vendasMap)
+    .sort((a, b) => b.vendidos - a.vendidos)
+    .slice(0, 5)
+    .map(p => ({
+       ...p,
+       receita: `R$ ${p.receita.toLocaleString('pt-BR')}`
+    }));
+
+  const maxSold = products.length > 0 ? Math.max(...products.map((p) => p.vendidos)) : 100;
 
   return (
     <div className="bg-card rounded-sm p-6 animate-fade-in-up animate-delay-5">
@@ -16,9 +40,9 @@ const TopProducts = () => {
       </h3>
       <div className="flex flex-col gap-4">
         {products.map((product, i) => (
-          <div key={product.name} className="flex flex-col gap-2">
+          <div key={`${product.name}-${i}`} className="flex flex-col gap-2">
             <div className="flex items-center justify-between">
-              <span className="text-sm text-foreground font-body font-medium">
+              <span className="text-sm text-foreground font-body font-medium whitespace-nowrap overflow-hidden text-ellipsis max-w-[200px]" title={product.name}>
                 {product.name}
               </span>
               <span className="text-xs text-muted-foreground font-body">
