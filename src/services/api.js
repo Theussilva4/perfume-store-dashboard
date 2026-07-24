@@ -1,8 +1,8 @@
 import axios from "axios";
 
-// O Vite agora cuida do proxy local de /api -> http://localhost:3001
+// Em produção, ele usa a URL da nuvem. Localmente, continua usando /api (proxy)
 const api = axios.create({
-  baseURL: "/api",
+  baseURL: import.meta.env.VITE_API_URL || "/api",
 });
 
 // 🔐 Interceptor - envia token automaticamente
