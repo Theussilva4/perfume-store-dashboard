@@ -187,21 +187,17 @@ export const rotulosFormaPagamento: Record<string, string> = {
 };
 
 export const rotulosStatus: Record<string, string> = {
-  aberto: "Aberto",
-  aguardando: "Aguardando Pagamento",
-  pago: "Pago",
-  separando: "Separando",
-  entregue: "Entregue",
-  cancelado: "Cancelado",
+  EM_ABERTO: "Em Aberto",
+  EM_SEPARACAO: "Em Separação",
+  FINALIZADO: "Finalizado",
+  CANCELADO: "Cancelado",
 };
 
 export const coresStatus: Record<string, string> = {
-  aberto: "text-slate-600 bg-slate-100",
-  aguardando: "text-amber-600 bg-amber-50",
-  pago: "text-primary bg-primary/10",
-  separando: "text-blue-600 bg-blue-50",
-  entregue: "text-success bg-success/10",
-  cancelado: "text-destructive bg-destructive/10",
+  EM_ABERTO: "text-slate-600 bg-slate-100",
+  EM_SEPARACAO: "text-blue-600 bg-blue-50",
+  FINALIZADO: "text-success bg-success/10",
+  CANCELADO: "text-destructive bg-destructive/10",
 };
 
 export const rotulosFilial: Record<string, string> = {

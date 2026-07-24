@@ -33,17 +33,19 @@ export interface Marca {
 export interface Cliente {
   codcliente: number;
   nome: string;
-  cpf_cnpj: string;
-  telefone:string;
-  email: string;
-  endereco:string;
-  numero: string;
-  bairro: string;
-  cidade: string;
-  estado: string;
-  cep: string;
-  data_cadastro: string;
-  ativo: string
+  cpf_cnpj?: string;
+  telefone?: string;
+  whatsapp?: string;
+  email?: string;
+  endereco?: string;
+  numero?: string;
+  bairro?: string;
+  cidade?: string;
+  estado?: string;
+  cep?: string;
+  observacoes?: string;
+  data_cadastro?: string;
+  ativo?: "S" | "N";
 }
 export interface Vendedor {
   codvendedor: number;

@@ -4,7 +4,8 @@ import { useBranch, filiais } from "@/contexts/BranchContext";
 import logo from "@/assets/logo.png";
 import {
   LayoutDashboard, Package, FolderOpen, Tag, Warehouse, ArrowDownToLine, ArrowUpFromLine,
-  ClipboardList, Users, BarChart3, Settings, Bell, LogOut, Menu, X, Building2,
+  ClipboardList, Users, BarChart3, Settings, Bell, LogOut, Menu, X, Building2, Truck,
+  DollarSign, Percent
 } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -26,14 +27,21 @@ const navSections = [
       { label: "Categorias", key: "/categorias", icon: FolderOpen },
       { label: "Marcas", key: "/marcas", icon: Tag },
       { label: "Clientes", key: "/clientes", icon: Users },
-      
+      { label: "Fornecedores", key: "/fornecedores", icon: Truck },
+    ],
+  },
+  {
+    label: "Comercial",
+    items: [
+      { label: "Tabela de Preços", key: "/precos", icon: DollarSign },
+      { label: "Promoções", key: "/promocoes", icon: Percent },
     ],
   },
   {
     label: "Estoque",
     items: [
       { label: "Controle", key: "/estoque", icon: Warehouse },
-      { label: "Compras", key: "/estoque/entradas", icon: ArrowDownToLine },
+      { label: "Compras", key: "/compras", icon: ArrowDownToLine },
       { label: "Saídas", key: "/estoque/saidas", icon: ArrowUpFromLine },
     ],
   },

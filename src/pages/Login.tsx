@@ -28,7 +28,7 @@ const Login = () => {
       const data = await loginRequest(login, password);
       console.log("🟢 RESPOSTA:", data);
 
-      if (password === "padrao") {
+      if (data.forceChangePassword) {
         console.log("🟠 Primeiro acesso detectado. Redirecionando para Setup.");
         // Guarda temporariamente as credenciais para autorizar a requisição GET de update de senha
         localStorage.setItem("tmp_usuario_setup", JSON.stringify({ token: data.token, usuario: data.usuario }));

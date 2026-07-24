@@ -19,3 +19,8 @@ export async function deleteCliente(id) {
   const res = await api.delete(`/cliente/${id}`);
   return res.data;
 }
+
+export async function alterarStatusCliente(id, ativo) {
+  const res = await api.patch(`/cliente/${id}/ativo`, { ativo });
+  return res.data;
+}

@@ -43,8 +43,8 @@ const SetupPassword = () => {
       const { token, usuario } = JSON.parse(tmpData);
 
       // Aqui você disparará a rota da sua API que altera a senha de fato do usuãrio
-      await api.put(`/usuarios/${usuario.login || usuario.id}/senha`, {
-         nova_senha: senha
+      await api.put(`/usuario/${usuario.id}`, {
+         senha: senha
       }, {
          headers: { Authorization: `Bearer ${token}` }
       });

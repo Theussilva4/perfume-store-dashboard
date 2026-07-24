@@ -19,10 +19,14 @@ import StockExit from "@/pages/StockExit";
 import Orders from "@/pages/Orders";
 import OrderDetail from "@/pages/OrderDetail";
 import Clients from "@/pages/Clients";
+import Suppliers from "@/pages/Suppliers";
 import Reports from "@/pages/Reports";
 import Alerts from "@/pages/Alerts";
 import SettingsPage from "@/pages/SettingsPage";
 import NotFound from "@/pages/NotFound";
+import Purchases from "@/pages/Purchases";
+import Prices from "@/pages/Prices";
+import Promotions from "@/pages/Promotions";
 
 const queryClient = new QueryClient();
 
@@ -49,7 +53,6 @@ const App = () => (
           <Routes>
             <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
             <Route path="/configurar-senha" element={<PublicRoute><SetupPassword /></PublicRoute>} />
-            <Route path="/usuarios/novo" element={<ProtectedRoute><Register /></ProtectedRoute>} />
             <Route path="/" element={<ProtectedRoute><AppLayout /></ProtectedRoute>}>
               <Route index element={<Dashboard />} />
               <Route path="produtos" element={<Products />} />
@@ -61,7 +64,12 @@ const App = () => (
               <Route path="pedidos" element={<Orders />} />
               <Route path="pedidos/:id" element={<OrderDetail />} />
               <Route path="clientes" element={<Clients />} />
+              <Route path="fornecedores" element={<Suppliers />} />
+              <Route path="compras" element={<Purchases />} />
+              <Route path="precos" element={<Prices />} />
+              <Route path="promocoes" element={<Promotions />} />
               <Route path="relatorios" element={<Reports />} />
+              <Route path="usuarios/novo" element={<Register />} />
               <Route path="alertas" element={<Alerts />} />
               <Route path="configuracoes" element={<SettingsPage />} />
             </Route>

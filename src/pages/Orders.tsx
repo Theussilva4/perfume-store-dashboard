@@ -7,6 +7,7 @@ import { getProdutos } from '@/services/produtosService'
 import { getFormasPagamento } from '@/services/formaPagamentoService'
 import { createPedido, getPedidos, updatePedido, alterarStatusPedido } from '@/services/pedidosService'
 import { useBranch, filiais } from "@/contexts/BranchContext";
+import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -14,14 +15,17 @@ import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus, Search, Eye, ClipboardList, Trash2, Pencil } from "lucide-react";
+import { Plus, Search, Eye, ClipboardList, Trash2, Pencil, ScanBarcode, FileText } from "lucide-react";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 import { useEffect } from "react";
-
+import { BarcodeScannerModal } from "@/components/BarcodeScannerModal";
+import * as comercialService from "@/services/comercialService";
+import { gerarEspelhoPedido } from "@/utils/pdfGenerator";
 
 
 const Orders = () => {
+  const { usuario } = useAuth();
   const [listaFiliais, setListaFiliais] = useState<any[]>([]);
   const [listaClientes, setListarClientes] = useState<any[]>([]);
   const [codigoCliente, setCodigoCliente] = useState("");
@@ -38,9 +42,10 @@ const Orders = () => {
   const [precoProduto, setPrecoProduto] = useState(0);
   const [buscaProdutoInput, setBuscaProdutoInput] = useState("");
   const [dialogProdutoOpen, setDialogProdutoOpen] = useState(false);
+  const [scannerOpen, setScannerOpen] = useState(false);
 
   const [idPedidoEdicao, setIdPedidoEdicao] = useState<string | null>(null);
-  const [statusAtualPedido, setStatusAtualPedido] = useState("aberto");
+  const [statusAtualPedido, setStatusAtualPedido] = useState("EM_ABERTO");
   const [codigoPlano, setCodigoPlano] = useState("");
   const [nomePlano, setNomePlano] = useState("");
   const [dialogPlanoOpen, setDialogPlanoOpen] = useState(false);
@@ -61,6 +66,7 @@ const Orders = () => {
   const [itensPedido, setItensPedido] = useState<ItemPedido[]>([]);
   const [produtoSelecionado, setProdutoSelecionado] = useState("");
   const [filialPedido, setFilialPedido] = useState("");
+  const [descontoPedido, setDescontoPedido] = useState(0);
   const [qtdSelecionada, setQtdSelecionada] = useState(1);
   const [loading, setLoading] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
@@ -77,14 +83,25 @@ const Orders = () => {
     setErro(null);
 
     try {
-      const [filiais, clientes, vendedores, produtos, pedidosAPI, formasPgtoAPI] = await Promise.all([
+      const [filiais, clientes, vendedores, produtosRAW, pedidosAPI, formasPgtoAPI, tabelaPrecos] = await Promise.all([
         getFilial(),
         getCliente(),
         getVendedor(),
         getProdutos(),
         getPedidos(),
-        getFormasPagamento()
+        getFormasPagamento(),
+        comercialService.listarTabela()
       ]);
+
+      const produtos = (produtosRAW || []).map((p: any) => {
+        const tb = tabelaPrecos.find((t: any) => String(t.codproduto) === String(p.codproduto));
+        return {
+          ...p,
+          preco_calculado: tb?.precificacao?.precoFinal || p.preco_promocao || p.preco_normal || 0,
+          tem_preco_tabela: !!(tb?.precificacao?.precoFinal),
+          desconto_maximo: tb?.precificacao?.descontoMaximo || 0
+        };
+      });
 
       setListaFiliais(filiais);
       setListarClientes(clientes);
@@ -125,8 +142,10 @@ const Orders = () => {
         return {
           ...p,
           id: String(numPedido),
-          numero: Number(numPedido),
+          numero: String(p.codigo_venda || numPedido),
           codcliente: codCliente,
+          subtotal: Number(p.subtotal || 0),
+          desconto: Number(p.desconto || 0),
           total: Number(p.valor_total || p.total || 0),
           data: p.data_pedido || p.data || new Date().toISOString(),
           filial: p.codfilial || p.filial,
@@ -321,7 +340,21 @@ const Orders = () => {
       (p) => String(p.codproduto) === produtoSelecionado
     );
 
-    if (!produto) return;
+    if (!produto) return false;
+
+    const precoOriginal = Number(produto.preco_calculado);
+    const precoInserido = Number(precoProduto);
+    
+    if (precoOriginal > 0 && precoInserido < precoOriginal) {
+      const percDesconto = ((precoOriginal - precoInserido) / precoOriginal) * 100;
+      const maxPermitido = Number(produto.desconto_maximo || 0);
+
+      // Add a small epsilon to avoid floating point issues (e.g. 6.000000001 > 6)
+      if (percDesconto > (maxPermitido + 0.01)) {
+        toast.error(`Desconto não permitido! O limite para este item é de ${maxPermitido.toFixed(2)}% (inserido: ${percDesconto.toFixed(2)}%).`);
+        return false;
+      }
+    }
 
     const existente = itensPedido.find(
       (i) => i.produtoId === String(produto.codproduto)
@@ -342,38 +375,65 @@ const Orders = () => {
           produtoId: String(produto.codproduto),
           nomeProduto: produto.descricao,
           quantidade: qtdSelecionada,
-          preco: Number(produto.preco_normal) || 0,
+          preco: precoProduto,
         },
       ]);
     }
 
     // limpa depois de adicionar
+    setBuscaProdutoInput("");
     setProdutoSelecionado("");
     setQtdSelecionada(1);
     setPrecoProduto(0);
+    return true;
   };
 
   function buscarProdutos() {
     if (!buscaProdutoInput) return;
 
-    const busca = buscaProdutoInput.toLowerCase();
+    const busca = buscaProdutoInput.toLowerCase().trim();
 
-    const produto = listarProdutos.find((p) =>
-      String(p.codproduto) === buscaProdutoInput ||
-      (p.descricao || "").toLowerCase().includes(busca)
+    // 1. Tentar busca exata por ID ou Código de Barras
+    let produto = listarProdutos.find((p) =>
+      String(p.codproduto) === busca ||
+      String(p.codigoBarras) === busca ||
+      String(p.codigo_barras) === busca
     );
 
+    // 2. Se não achou exato, busca por descrição
+    if (!produto) {
+      produto = listarProdutos.find((p) =>
+        (p.descricao || "").toLowerCase().includes(busca)
+      );
+    }
+
     if (produto) {
+      if (!produto.tem_preco_tabela) {
+        toast.error("Produto sem preço cadastrado na Tabela Comercial.");
+        return;
+      }
       setProdutoSelecionado(String(produto.codproduto));
-      setPrecoProduto(Number(produto.preco_normal) || 0);
+      setPrecoProduto(Number(produto.preco_calculado) || 0);
     } else {
       toast.error("Produto não encontrado");
     }
   }
 
-
-
-
+  const handleScanProduto = (text: string) => {
+    setBuscaProdutoInput(text);
+    const produtoEncontrado = listarProdutos.find(p => String(p.codigo_barras) === text || String(p.codigoBarras) === text || String(p.codproduto) === text);
+    if(produtoEncontrado) {
+       if (!produtoEncontrado.tem_preco_tabela) {
+         toast.error("Produto sem preço cadastrado na Tabela Comercial.");
+         return;
+       }
+       setProdutoSelecionado(String(produtoEncontrado.codproduto));
+       setPrecoProduto(Number(produtoEncontrado.preco_calculado) || 0);
+       toast.success("Produto encontrado!");
+    } else {
+       toast.error("Produto não encontrado pelo código lido.");
+    }
+  };
 
   const removerItem = (produtoId: string) => {
     setItensPedido((prev) => prev.filter((i) => i.produtoId !== produtoId));
@@ -384,31 +444,44 @@ const Orders = () => {
     setItensPedido((prev) => prev.map((i) => i.produtoId === produtoId ? { ...i, quantidade: novaQtd } : i));
   };
 
-  const totalPedido = itensPedido.reduce((s, i) => s + i.preco * i.quantidade, 0);
+  const subtotalPedido = itensPedido.reduce((s, i) => s + i.preco * i.quantidade, 0);
+  const totalPedido = subtotalPedido - descontoPedido;
 
   const handleCriarPedido = async () => {
-    if (!codigoCliente || itensPedido.length === 0) {
-      toast.error("Preencha cliente e adicione pelo menos um produto.");
+    if (!codigoCliente) {
+      toast.error("Selecione um cliente para o pedido.");
       return;
     }
-    else if (!codigoVendedor) {
-      toast.error("Preencha o Vendedor.");
+    if (!codigoVendedor) {
+      toast.error("Selecione um vendedor.");
+      return;
+    }
+    if (!filialPedido || filialPedido === "todas") {
+      toast.error("Selecione uma filial específica de destino.");
+      return;
+    }
+    if (!codigoPlano) {
+      toast.error("Selecione um plano de pagamento.");
+      return;
+    }
+    if (itensPedido.length === 0) {
+      toast.error("Adicione pelo menos um item ao pedido.");
       return;
     }
 
     try {
       const payload = {
         codcliente: codigoCliente,
-        codusur_vendedor: codigoVendedor,
+        codvendedor: codigoVendedor,
         codfilial: filialPedido,
         formaPagamento: codigoPlano,
-        status: idPedidoEdicao ? statusAtualPedido : "aberto",
+        status: statusAtualPedido,
+        desconto: descontoPedido,
         itens: itensPedido.map(i => ({
           codproduto: i.produtoId,
           quantidade: i.quantidade,
           preco_unitario: i.preco
-        })),
-        total: totalPedido
+        }))
       };
 
       if (idPedidoEdicao) {
@@ -430,6 +503,7 @@ const Orders = () => {
       setCodigoVendedor("");
       setNomeVendedor("");
       setItensPedido([]);
+      setDescontoPedido(0);
       setCodigoPlano("");
       setNomePlano("");
       setFilialPedido("");
@@ -464,9 +538,10 @@ const Orders = () => {
     if (vendReq) setNomeVendedor(vendReq.nome);
 
     setFilialPedido(String(pedido.codfilial || pedido.filial || ''));
-    setStatusAtualPedido(String(pedido.status || 'aberto').toLowerCase());
+    setStatusAtualPedido(String(pedido.status || 'EM_ABERTO').toUpperCase());
     setCodigoPlano(String(pedido.formaPagamento || ''));
     setNomePlano(pedido.nomeFormaPagamento || '');
+    setDescontoPedido(pedido.desconto || 0);
 
     // Convertendo itens de banco para nosso layout state
     const formatItens = (pedido.itens || []).map((i: any) => {
@@ -495,12 +570,25 @@ const Orders = () => {
           setCodigoCliente("");
           setTelefoneCliente("");
           setEnderecoCliente("");
-          setCodigoVendedor("");
-          setNomeVendedor("");
+
+          const vendedorLogado = listaVendedor.find(v => 
+            v.nome && usuario?.nome && v.nome.trim().toLowerCase() === usuario.nome.trim().toLowerCase()
+          );
+
+          if (vendedorLogado) {
+            setCodigoVendedor(String(vendedorLogado.codvendedor));
+            setNomeVendedor(vendedorLogado.nome);
+          } else {
+            setCodigoVendedor("");
+            setNomeVendedor("");
+          }
+
           setItensPedido([]);
+          setDescontoPedido(0);
           setCodigoPlano("");
           setNomePlano("");
           setFilialPedido("");
+          setStatusAtualPedido("EM_ABERTO");
           setDialogOpen(true);
         }}><Plus className="h-4 w-4 mr-2" /> Novo Pedido</Button>
       </div>
@@ -521,7 +609,74 @@ const Orders = () => {
       </div>
 
       <div className="bg-card rounded-lg border border-border overflow-hidden">
-        <div className="overflow-x-auto">
+        {/* VISUALIZAÇÃO MOBILE (CARDS) */}
+        <div className="grid grid-cols-1 gap-4 md:hidden p-4 bg-transparent">
+          {filtrados.map((pedido, i) => (
+            <div key={pedido.id || `ped-m-${i}`} className="bg-background border border-border rounded-lg p-4 space-y-3 shadow-sm">
+              <div className="flex justify-between items-start">
+                <div>
+                  <h4 className="font-semibold text-foreground text-sm">Pedido #{pedido.numero}</h4>
+                  <p className="text-base font-medium text-foreground mt-1">{pedido.nomeCliente}</p>
+                  <p className="text-xs text-muted-foreground">{pedido.telefoneCliente}</p>
+                </div>
+                <div className="text-right">
+                  <div className="font-bold text-primary">R$ {Number(pedido.total || 0).toLocaleString("pt-BR")}</div>
+                  <Badge variant="outline" className="text-[10px] mt-1">{pedido.nomeFilial}</Badge>
+                </div>
+              </div>
+              
+              <div className="flex items-center justify-between text-xs text-muted-foreground border-t border-border pt-3">
+                <span className="flex items-center gap-1">📅 {new Date(pedido.data).toLocaleDateString("pt-BR")}</span>
+                <span className="font-medium text-foreground">{pedido.nomeFormaPagamento}</span>
+              </div>
+              
+              <div className="flex items-center justify-between pt-2 border-t border-border">
+                <Select value={pedido.status} onValueChange={(v) => atualizarStatus(pedido.id, v as Pedido["status"])} disabled={pedido.status === 'FINALIZADO'}>
+                  <SelectTrigger className="h-8 text-xs border bg-muted/30 w-auto px-2">
+                    <Badge className={`${coresStatus[pedido.status]} border-0 text-[10px]`}>
+                      {rotulosStatus[pedido.status]}
+                    </Badge>
+                  </SelectTrigger>
+                  <SelectContent>
+                    {Object.entries(rotulosStatus).map(([k, v]) => (
+                      <SelectItem key={k} value={k}>{v}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => abrirModalEdicao(pedido)}
+                    disabled={pedido.status === 'FINALIZADO'}
+                    className={`p-2 rounded-md border border-border bg-background transition-colors flex items-center justify-center ${pedido.status === 'FINALIZADO' ? 'opacity-50 cursor-not-allowed text-muted-foreground' : 'text-muted-foreground hover:bg-muted hover:text-foreground'}`}
+                    title={pedido.status === 'FINALIZADO' ? "Pedidos finalizados não podem ser editados" : "Editar Pedido"}
+                  >
+                    <Pencil className="h-4 w-4" />
+                  </button>
+                  <button
+                    onClick={() => {
+                      setPedidoParaDetalhes(pedido);
+                      setDialogDetalhesOpen(true);
+                    }}
+                    className="p-2 rounded-md border border-border bg-background text-muted-foreground hover:bg-muted hover:text-foreground transition-colors flex items-center justify-center"
+                  >
+                    <Eye className="h-4 w-4" />
+                  </button>
+                  <button
+                    onClick={() => gerarEspelhoPedido(pedido)}
+                    className="p-2 rounded-md border border-border bg-background text-muted-foreground hover:bg-muted hover:text-foreground transition-colors flex items-center justify-center"
+                    title="Emitir Espelho (PDF)"
+                  >
+                    <FileText className="h-4 w-4 text-blue-500" />
+                  </button>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* VISUALIZAÇÃO DESKTOP (TABELA) */}
+        <div className="hidden md:block overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-border bg-muted/30">
@@ -538,7 +693,7 @@ const Orders = () => {
             <tbody>
               {filtrados.map((pedido, i) => (
                 <tr key={pedido.id || `ped-${i}`} className="border-b border-border last:border-0 hover:bg-muted/20 transition-colors">
-                  <td className="px-4 py-3 font-medium text-foreground">#{pedido.numero}</td>
+                  <td className="px-4 py-3 font-medium text-foreground">{pedido.numero}</td>
                   <td className="px-4 py-3">
                     <div className="font-medium text-foreground">{pedido.nomeCliente}</div>
                     <div className="text-xs text-muted-foreground">{pedido.telefoneCliente}</div>
@@ -546,7 +701,7 @@ const Orders = () => {
                   <td className="px-4 py-3 text-right font-medium">R$ {Number(pedido.total || 0).toLocaleString("pt-BR")}</td>
                   <td className="px-4 py-3 text-center text-muted-foreground">{pedido.nomeFormaPagamento}</td>
                   <td className="px-4 py-3 text-center">
-                    <Select value={pedido.status} onValueChange={(v) => atualizarStatus(pedido.id, v as Pedido["status"])}>
+                    <Select value={pedido.status} onValueChange={(v) => atualizarStatus(pedido.id, v as Pedido["status"])} disabled={pedido.status === 'FINALIZADO'}>
                       <SelectTrigger className="h-7 text-xs border-0 bg-transparent w-auto inline-flex">
                         <Badge className={`${coresStatus[pedido.status]} border-0 text-[10px]`}>
                           {rotulosStatus[pedido.status]}
@@ -566,8 +721,9 @@ const Orders = () => {
                   <td className="px-4 py-3 text-center">
                     <button
                       onClick={() => abrirModalEdicao(pedido)}
-                      className="p-1.5 rounded-md hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
-                      title="Editar Pedido"
+                      disabled={pedido.status === 'FINALIZADO'}
+                      className={`p-1.5 rounded-md transition-colors ${pedido.status === 'FINALIZADO' ? 'opacity-50 cursor-not-allowed text-muted-foreground' : 'hover:bg-muted text-muted-foreground hover:text-foreground'}`}
+                      title={pedido.status === 'FINALIZADO' ? "Pedidos finalizados não podem ser editados" : "Editar Pedido"}
                     >
                       <Pencil className="h-4 w-4" />
                     </button>
@@ -580,6 +736,13 @@ const Orders = () => {
                       title="Ver Detalhes"
                     >
                       <Eye className="h-4 w-4" />
+                    </button>
+                    <button
+                      onClick={() => gerarEspelhoPedido(pedido)}
+                      className="p-1.5 rounded-md hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
+                      title="Emitir Espelho (PDF)"
+                    >
+                      <FileText className="h-4 w-4 text-blue-500" />
                     </button>
                   </td>
                 </tr>
@@ -597,7 +760,24 @@ const Orders = () => {
       )}
 
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+        <DialogContent 
+          aria-describedby={undefined} 
+          className="w-[95vw] md:max-w-4xl lg:max-w-5xl max-h-[90vh] overflow-y-auto"
+          onInteractOutside={(e) => {
+            e.preventDefault();
+            if (dialogClienteOpen || dialogVendedorOpen || dialogPlanoOpen || scannerOpen) return;
+            if (window.confirm("Você tem um pedido em andamento. Deseja realmente fechar sem salvar?")) {
+              setDialogOpen(false);
+            }
+          }}
+          onEscapeKeyDown={(e) => {
+            e.preventDefault();
+            if (dialogClienteOpen || dialogVendedorOpen || dialogPlanoOpen || scannerOpen) return;
+            if (window.confirm("Você tem um pedido em andamento. Deseja realmente fechar sem salvar?")) {
+              setDialogOpen(false);
+            }
+          }}
+        >
           <DialogHeader>
             <DialogTitle className="font-display text-xl">{idPedidoEdicao ? "Editar Pedido" : "Novo Pedido"}</DialogTitle>
           </DialogHeader>
@@ -698,11 +878,11 @@ const Orders = () => {
 
 
 
-              <div className="grid grid-cols-12 gap-2 items-end mb-3">
+              <div className="grid grid-cols-12 gap-2 md:gap-3 items-end mb-3">
 
                 {/* CÓDIGO */}
-                <div className="col-span-3">
-                  <Label>Código</Label>
+                <div className="col-span-12 sm:col-span-6 md:col-span-3">
+                  <Label>Cód. Barras</Label>
                   <div className="flex gap-2">
                     <Input
                       ref={refCodigo}
@@ -720,15 +900,25 @@ const Orders = () => {
                     <Button
                       type="button"
                       variant="outline"
+                      className="px-2"
                       onClick={() => setDialogProdutoOpen(true)}
                     >
                       ...
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="px-2"
+                      onClick={() => setScannerOpen(true)}
+                      title="Ler Código de Barras"
+                    >
+                      <ScanBarcode className="h-4 w-4 text-primary" />
                     </Button>
                   </div>
                 </div>
 
                 {/* DESCRIÇÃO */}
-                <div className="col-span-3">
+                <div className="col-span-12 sm:col-span-6 md:col-span-3">
                   <Label>Descrição</Label>
                   <Input
                     value={
@@ -739,7 +929,7 @@ const Orders = () => {
                 </div>
 
                 {/* EMBALAGEM */}
-                <div className="col-span-2">
+                <div className="col-span-4 sm:col-span-4 md:col-span-2">
                   <Label>Emb.</Label>
                   <Input
                     value={
@@ -750,7 +940,7 @@ const Orders = () => {
                 </div>
 
                 {/* QUANTIDADE */}
-                <div className="col-span-2">
+                <div className="col-span-4 sm:col-span-4 md:col-span-2">
                   <Label>Qtd.</Label>
                   <Input
                     ref={refQtd}
@@ -767,7 +957,7 @@ const Orders = () => {
                 </div>
 
                 {/* PREÇO */}
-                <div className="col-span-2">
+                <div className="col-span-4 sm:col-span-4 md:col-span-2">
                   <Label>Preço</Label>
                   <Input
                     ref={refPreco}
@@ -776,10 +966,10 @@ const Orders = () => {
                     onChange={(e) => setPrecoProduto(Number(e.target.value))}
                     onKeyDown={(e) => {
                       if (e.key === "Enter") {
-                        adicionarItem();
-                        setBuscaProdutoInput("");
-                        setProdutoSelecionado("");
-                        refCodigo.current?.focus();
+                        const sucesso = adicionarItem();
+                        if (sucesso) {
+                          refCodigo.current?.focus();
+                        }
                       }
                     }}
                   />
@@ -808,59 +998,89 @@ const Orders = () => {
                       <span className="text-foreground font-medium flex-1 overflow-hidden text-ellipsis whitespace-nowrap" title={item.nomeProduto}>
                         {item.nomeProduto}
                       </span>
-                      <div className="flex items-center gap-3">
-                        <div className="flex items-center gap-1.5 bg-background border px-1.5 py-0.5 rounded-md">
-                          <span className="text-xs text-muted-foreground select-none">Qtd:</span>
+                      <div className="flex items-center gap-4">
+                        <div className="flex flex-col w-16">
+                          <span className="text-[10px] text-muted-foreground uppercase tracking-wider mb-0.5">Qtd</span>
                           <input
                             type="number"
-                            className="w-12 bg-transparent text-xs outline-none text-center"
+                            className="w-full bg-background border rounded-md text-sm font-medium outline-none text-center h-7"
                             value={item.quantidade}
                             onChange={(e) => alterarQtdItem(item.produtoId, Number(e.target.value))}
                             min={1}
                           />
                         </div>
-                        <span className="text-muted-foreground w-20 text-right">R$ {((item.preco || 0) * (item.quantidade || 0)).toLocaleString("pt-BR")}</span>
-                        <button type="button" onClick={() => removerItem(item.produtoId)} className="text-destructive hover:text-destructive/80 p-1">
+                        <div className="flex items-center gap-4 text-right">
+                          <div className="flex flex-col w-20">
+                            <span className="text-[10px] text-muted-foreground uppercase tracking-wider mb-0.5">Unitário</span>
+                            <span className="text-sm font-medium text-foreground h-7 flex items-center justify-end">R$ {Number(item.preco || 0).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</span>
+                          </div>
+                          <div className="flex flex-col w-24">
+                            <span className="text-[10px] text-muted-foreground uppercase tracking-wider mb-0.5">Total</span>
+                            <span className="text-sm font-bold text-primary h-7 flex items-center justify-end">R$ {((item.preco || 0) * (item.quantidade || 0)).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</span>
+                          </div>
+                        </div>
+                        <button type="button" onClick={() => removerItem(item.produtoId)} className="text-destructive hover:text-destructive/80 p-1 ml-2 mt-4">
                           <Trash2 className="h-4 w-4" />
                         </button>
                       </div>
                     </div>
                   ))}
                   <div className="border-t border-border pt-2 flex justify-between font-medium">
-                    <span>Total</span>
+                    <span>Subtotal</span>
+                    <span className="text-muted-foreground">R$ {(subtotalPedido || 0).toLocaleString("pt-BR")}</span>
+                  </div>
+                  
+                  <div className="flex justify-between font-medium items-center">
+                    <span className="text-sm">Desconto</span>
+                    <div className="flex items-center">
+                      <span className="mr-2 text-sm text-muted-foreground">R$</span>
+                      <Input
+                        type="number"
+                        className="w-20 h-8 text-right bg-transparent"
+                        value={descontoPedido}
+                        onChange={(e) => setDescontoPedido(Number(e.target.value))}
+                        min={0}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="border-t border-border pt-2 flex justify-between font-bold text-lg">
+                    <span>Total Final</span>
                     <span className="text-primary">R$ {(totalPedido || 0).toLocaleString("pt-BR")}</span>
                   </div>
                 </div>
               )}
             </div>
 
-            <div className="space-y-2">
-              <Label>Plano de Pagamento</Label>
-              <div className="flex gap-2">
-                <Input
-                  value={codigoPlano}
-                  onChange={(e) => setCodigoPlano(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter") {
-                      buscarPlanoPorCodigo(e.currentTarget.value);
-                    }
-                  }}
-                  placeholder="Código"
-                  className="w-28"
-                />
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => setDialogPlanoOpen(true)}
-                >
-                  ...
-                </Button>
-                <Input
-                  value={nomePlano}
-                  readOnly
-                  placeholder="Nome do Plano"
-                  className="flex-1"
-                />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <div className="space-y-2 md:col-span-2">
+                <Label>Plano de Pagamento</Label>
+                <div className="flex gap-2">
+                  <Input
+                    value={codigoPlano}
+                    onChange={(e) => setCodigoPlano(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        buscarPlanoPorCodigo(e.currentTarget.value);
+                      }
+                    }}
+                    placeholder="Código"
+                    className="w-28"
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setDialogPlanoOpen(true)}
+                  >
+                    ...
+                  </Button>
+                  <Input
+                    value={nomePlano}
+                    readOnly
+                    placeholder="Nome do Plano"
+                    className="flex-1"
+                  />
+                </div>
               </div>
             </div>
           </div>
@@ -1087,6 +1307,11 @@ const Orders = () => {
           )}
         </DialogContent>
       </Dialog>
+      <BarcodeScannerModal 
+        open={scannerOpen} 
+        onOpenChange={setScannerOpen} 
+        onScan={handleScanProduto} 
+      />
     </div>
   );
 };

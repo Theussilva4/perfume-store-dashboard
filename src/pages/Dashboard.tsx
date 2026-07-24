@@ -1,42 +1,22 @@
 import { useEffect, useState } from "react";
 import KpiCard from "@/components/KpiCard";
-import SalesChart from "@/components/SalesChart";
 import RecentOrders from "@/components/RecentOrders";
 import TopProducts from "@/components/TopProducts";
 import StockAlert from "@/components/StockAlert";
-import { getPedidos } from "@/services/pedidosService";
-import { getProdutos } from "@/services/produtosService";
-import { getCliente } from "@/services/clienteService";
+import { getDashboardMetrics } from "@/services/dashboardService";
 import { useBranch } from "@/contexts/BranchContext";
+import { PackageOpen } from "lucide-react";
 
 const Dashboard = () => {
-  const { filialSelecionada, rotuloFilial } = useBranch();
-  
-  const [pedidos, setPedidos] = useState<any[]>([]);
-  const [produtos, setProdutos] = useState<any[]>([]);
+  const { rotuloFilial } = useBranch();
+  const [metrics, setMetrics] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     async function carregar() {
       try {
-        const [peds, prods, clis] = await Promise.all([
-          getPedidos(),
-          getProdutos(),
-          getCliente()
-        ]);
-        
-        const pTratados = (peds || []).map((p: any) => ({
-          ...p,
-          id: p.numpedido || p.numero || p.id || Math.random(),
-          status: String(p.status || "aberto").toLowerCase(),
-          codfilial: p.codfilial || p.filial,
-          data: p.data_pedido ? new Date(p.data_pedido).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
-          total: Number(p.valor_total || 0),
-          nomeCliente: (clis || []).find((c:any) => String(c.codcliente) === String(p.codcliente))?.nome || 'Cliente Desconhecido'
-        }));
-
-        setPedidos(pTratados);
-        setProdutos(prods || []);
+        const data = await getDashboardMetrics();
+        setMetrics(data);
       } catch (err) {
         console.error(err);
       } finally {
@@ -46,44 +26,102 @@ const Dashboard = () => {
     carregar();
   }, []);
 
-  const hoje = new Date().toISOString().split('T')[0];
+  if (loading) {
+    return <div className="p-8 text-center text-muted-foreground animate-pulse">Carregando métricas...</div>;
+  }
 
-  const pedidosFiltrados = pedidos.filter((o) => filialSelecionada === "todas" || String(o.codfilial) === String(filialSelecionada));
-  const pedidosHoje = pedidosFiltrados.filter((o) => o.data === hoje);
-  const vendasHoje = pedidosHoje.reduce((s, o) => s + o.total, 0);
-  const vendasMes = pedidosFiltrados.reduce((s, o) => s + o.total, 0);
+  if (!metrics) {
+    return <div className="p-8 text-center text-red-500">Erro ao carregar dashboard.</div>;
+  }
 
-  const estoqueBaixo = produtos.filter((p) => {
-     // Estimativa provisória de leitura de estoque por fallback caso a API detalhada de estoque individualize
-     const s = Number(p.estoque ?? p.quantidade ?? 0);
-     return s <= Number(p.estoqueMinimo || 5);
-  });
-  
-  const pedidosPendentes = pedidosFiltrados.filter((o) => ["aguardando", "pendente", "aberto"].includes(o.status));
+  // Converter formato da API para os componentes
+  const formatOrders = (metrics.ultimasVendas || []).map((o: any) => ({
+    id: o.codigo_venda || o.numpedido || o.uuid,
+    numero: o.codigo_venda || o.numpedido,
+    nomeCliente: o.mscliente?.nome || "Não informado",
+    total: Number(o.valor_total || 0),
+    status: String(o.status || "aberto").toLowerCase(),
+    data: new Date(o.data_pedido).toISOString().split('T')[0]
+  }));
+
+  const formatLowStock = (metrics.estoqueBaixo || []).map((p: any) => ({
+    id: p.uuid,
+    nome: p.descricao,
+    estoque: Number(p.saldo || 0),
+    estoqueMinimo: Number(p.estoque_minimo || 0),
+  }));
+
+  const formatTopProducts = (metrics.maisVendidos || []).map((p: any) => ({
+    id: Math.random().toString(),
+    nome: p.descricao,
+    vendidos: p.quantidade
+  }));
 
   return (
     <div className="flex gap-6 flex-col xl:flex-row">
       <div className="flex-1 flex flex-col gap-6 min-w-0">
         <div className="animate-fade-in-up animate-delay-1">
           <h2 className="font-display text-2xl md:text-3xl font-semibold text-primary">Dashboard</h2>
-          <p className="text-sm text-muted-foreground mt-1">{rotuloFilial} — Março 2026</p>
+          <p className="text-sm text-muted-foreground mt-1">{rotuloFilial}</p>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
-          <KpiCard label="Vendas Hoje" value={`R$ ${vendasHoje.toLocaleString("pt-BR")}`} change={`${pedidosHoje.length} pedidos`} positive delay="animate-delay-2" />
-          <KpiCard label="Vendas do Mês" value={`R$ ${vendasMes.toLocaleString("pt-BR")}`} change="+12,4% vs mês anterior" positive delay="animate-delay-2" />
-          <KpiCard label="Pedidos Hoje" value={String(pedidosHoje.length)} change={`${pedidosFiltrados.length} no mês`} positive delay="animate-delay-2" />
-          <KpiCard label="Estoque Baixo" value={String(estoqueBaixo.length)} change="itens precisam reposição" positive={false} delay="animate-delay-3" />
-          <KpiCard label="Aguardando Pgto" value={String(pedidosPendentes.length)} change="pedidos pendentes" positive={false} delay="animate-delay-3" />
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <KpiCard 
+            label="Venda do Dia" 
+            value={`R$ ${Number(metrics.vendaDia || 0).toLocaleString("pt-BR")}`} 
+            change="Hoje" 
+            positive 
+            delay="animate-delay-2" 
+          />
+          <KpiCard 
+            label="Venda do Mês" 
+            value={`R$ ${Number(metrics.vendaMes || 0).toLocaleString("pt-BR")}`} 
+            change="Mês atual" 
+            positive 
+            delay="animate-delay-2" 
+          />
+          <KpiCard 
+            label="Produtos Baixo Estoque" 
+            value={String((metrics.estoqueBaixo || []).length)} 
+            change="itens precisam reposição" 
+            positive={false} 
+            delay="animate-delay-3" 
+          />
+          <KpiCard 
+            label="Clientes Cadastrados" 
+            value={String(metrics.clientesCadastrados || 0)} 
+            change="ativos no sistema" 
+            positive 
+            delay="animate-delay-3" 
+          />
         </div>
 
-        <SalesChart pedidos={pedidosFiltrados} />
-        <StockAlert produtos={estoqueBaixo} />
+        <StockAlert produtos={formatLowStock} />
       </div>
 
       <div className="w-full xl:w-80 flex-shrink-0 flex flex-col gap-6">
-        <RecentOrders pedidos={pedidosFiltrados.slice(0, 7)} />
-        <TopProducts pedidos={pedidosFiltrados} produtos={produtos} />
+        <RecentOrders pedidos={formatOrders} />
+        
+        <div className="bg-card rounded-lg border border-border p-5 h-[400px] flex flex-col">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="font-medium text-foreground flex items-center gap-2">
+              <PackageOpen className="h-4 w-4 text-primary" />
+              Mais Vendidos (Mês)
+            </h3>
+          </div>
+          <div className="flex-1 overflow-y-auto space-y-4 pr-1">
+            {formatTopProducts.length === 0 ? (
+              <p className="text-sm text-muted-foreground text-center">Nenhum dado no mês.</p>
+            ) : (
+              formatTopProducts.map((p: any, i: number) => (
+                <div key={i} className="flex justify-between items-center text-sm border-b pb-2 last:border-0">
+                  <span className="truncate flex-1 pr-2">{p.nome}</span>
+                  <span className="font-semibold text-primary">{p.vendidos} un</span>
+                </div>
+              ))
+            )}
+          </div>
+        </div>
       </div>
     </div>
   );

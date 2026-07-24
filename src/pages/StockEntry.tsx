@@ -186,7 +186,21 @@ const StockEntry = () => {
 
       {/* Dialog Nova Compra */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogContent 
+          className="max-w-2xl max-h-[90vh] overflow-y-auto"
+          onInteractOutside={(e) => {
+            e.preventDefault();
+            if (window.confirm("Você tem um formulário em andamento. Deseja realmente fechar sem salvar?")) {
+              setDialogOpen(false);
+            }
+          }}
+          onEscapeKeyDown={(e) => {
+            e.preventDefault();
+            if (window.confirm("Você tem um formulário em andamento. Deseja realmente fechar sem salvar?")) {
+              setDialogOpen(false);
+            }
+          }}
+        >
           <DialogHeader>
             <DialogTitle className="font-display text-xl">Nova Compra</DialogTitle>
             <DialogDescription>Registre a compra com todos os custos para calcular o custo real.</DialogDescription>
@@ -225,7 +239,7 @@ const StockEntry = () => {
               <h3 className="text-sm font-medium text-foreground flex items-center gap-2">
                 <Receipt className="h-4 w-4 text-primary" /> Nota Fiscal
               </h3>
-              <div className="grid grid-cols-3 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <div className="space-y-2">
                   <Label>Fornecedor</Label>
                   <Input value={form.fornecedor} onChange={(e) => setForm({ ...form, fornecedor: e.target.value })} placeholder="Nome do fornecedor" />
@@ -304,7 +318,7 @@ const StockEntry = () => {
             </div>
 
             {/* Filial + Obs */}
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div className="space-y-2">
                 <Label>Filial Destino</Label>
                 <Select value={form.filial} onValueChange={(v) => setForm({ ...form, filial: v })}>

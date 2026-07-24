@@ -1,7 +1,8 @@
 import axios from "axios";
 
+// O Vite agora cuida do proxy local de /api -> http://localhost:3001
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL,
+  baseURL: "/api",
 });
 
 // 🔐 Interceptor - envia token automaticamente
@@ -20,6 +21,8 @@ api.interceptors.response.use(
   (error) => {
     if (error.response?.status === 401) {
       localStorage.removeItem("token");
+      localStorage.removeItem("auth_user");
+      localStorage.removeItem("auth_expiry");
       window.location.href = "/login";
     }
     return Promise.reject(error);

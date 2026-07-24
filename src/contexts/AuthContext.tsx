@@ -23,30 +23,24 @@ export const useAuth = () => {
 };
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
-  const [usuario, setUsuario] = useState<Usuario | null>(null);
-
-  // Tempo de validade do login (24 horas = 86400000ms)
   const TEMPO_EXPIRACAO_SESSAO = 24 * 60 * 60 * 1000;
 
-  // ✅ Recupera usuário ao recarregar a página validando o "prazo de validade"
-  useEffect(() => {
+  const [usuario, setUsuario] = useState<Usuario | null>(() => {
     const userStorage = localStorage.getItem("auth_user");
     const expiryDate = localStorage.getItem("auth_expiry");
 
-    // Verifica se existe o timer e se o tempo atual já ultrapassou o limite
     if (userStorage && expiryDate) {
       if (Date.now() > Number(expiryDate)) {
-        // Se a sessão expirou, limpamos o cache e exigimos novo login
         localStorage.removeItem("auth_user");
         localStorage.removeItem("token");
         localStorage.removeItem("auth_expiry");
-        setUsuario(null);
+        return null;
       } else {
-        // Se a sessão está em dia, loga silenciosamente 
-        setUsuario(JSON.parse(userStorage));
+        return JSON.parse(userStorage);
       }
     }
-  }, []);
+    return null;
+  });
 
   const entrar = (token: string, userData: any) => {
     localStorage.setItem("token", token);

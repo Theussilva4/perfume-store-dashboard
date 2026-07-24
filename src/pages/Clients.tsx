@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Users, Plus, Search, Pencil, Trash2, Package, TrendingUp, Percent } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
-import { getCliente, createCliente, updateCliente } from "@/services/clienteService";
+import { getCliente, createCliente, updateCliente, alterarStatusCliente } from "@/services/clienteService";
 import { toast } from "sonner";
 import { Cliente } from "@/types";
 import { Button } from "@/components/ui/button";
@@ -12,6 +12,7 @@ const clienteVazio: Omit<Cliente, "codcliente"> = {
   nome: "",
   cpf_cnpj: "",
   telefone: "",
+  whatsapp: "",
   email: "",
   endereco: "",
   numero: "",
@@ -19,6 +20,7 @@ const clienteVazio: Omit<Cliente, "codcliente"> = {
   cidade: "",
   estado: "",
   cep: "",
+  observacoes: "",
   data_cadastro: "",
   ativo: "S",
 };
@@ -30,6 +32,7 @@ function mapearCliente(c: any): Cliente {
     nome: c.nome|| "",
     cpf_cnpj: c.cpf_cnpj|| "",
     telefone: c.telefone|| "",
+    whatsapp: c.whatsapp || "",
     email: c.email || "",
     endereco: c.endereco|| "",
     numero: c.numero|| "",
@@ -37,6 +40,7 @@ function mapearCliente(c: any): Cliente {
     cidade: c.cidade|| "",
     estado: c.estado|| "",
     cep: c.cep|| "",
+    observacoes: c.observacoes || "",
     data_cadastro: c.data_cadastro|| "",
     ativo: c.ativo|| "S"
   }
@@ -45,6 +49,7 @@ function mapearCliente(c: any): Cliente {
 
 const Clients = () => {
   const [search, setSearch] = useState("");
+  const [filtroAba, setFiltroAba] = useState<"S" | "N">("S");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [form, setForm] = useState<Omit<Cliente, "codcliente">>(clienteVazio);
   const [editandoCliente, setEditandoCliente] = useState<Cliente | null>(null);
@@ -84,6 +89,7 @@ const Clients = () => {
  const limpar = (v: string) => v.replace(/\D/g, "");
 
 const filtrados = ListaClientes.filter((c) => {
+  if (c.ativo !== filtroAba) return false;
   const termo = search.toLowerCase();
 
   return (
@@ -119,6 +125,18 @@ const filtrados = ListaClientes.filter((c) => {
       toast.error("Erro ao salvar cliente");
     }
   };
+
+  const handleToggleStatus = async (cliente: Cliente) => {
+    try {
+      const novoStatus = cliente.ativo === "S" ? "N" : "S";
+      await alterarStatusCliente(cliente.codcliente, novoStatus);
+      toast.success(novoStatus === "S" ? "Cliente reativado com sucesso!" : "Cliente inativado com sucesso!");
+      carregarClientes();
+    } catch (e) {
+      toast.error("Erro ao alterar status do cliente");
+    }
+  };
+
   function validarCPF(cpf: string) {
   cpf = cpf.replace(/\D/g, "");
 
@@ -224,15 +242,31 @@ function formatarCpfCnpj(valor: string) {
           </Button>
         </div>
 
-        {/* BUSCA */}
-        <div className="relative max-w-md">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4" />
-          <Input
-            placeholder="Buscar por nome, telefone ou CPF..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="pl-10"
-          />
+        {/* BUSCA E FILTROS */}
+        <div className="flex flex-col sm:flex-row gap-4 justify-between items-center">
+          <div className="relative w-full max-w-md">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Buscar por nome, telefone ou CPF..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="pl-10"
+            />
+          </div>
+          <div className="flex bg-muted/50 p-1 rounded-md w-full sm:w-auto overflow-x-auto">
+            <button
+              onClick={() => setFiltroAba("S")}
+              className={`px-4 py-1.5 text-sm font-medium rounded-sm transition-colors whitespace-nowrap ${filtroAba === "S" ? "bg-background shadow-sm text-foreground" : "text-muted-foreground hover:text-foreground"}`}
+            >
+              Ativos
+            </button>
+            <button
+              onClick={() => setFiltroAba("N")}
+              className={`px-4 py-1.5 text-sm font-medium rounded-sm transition-colors whitespace-nowrap ${filtroAba === "N" ? "bg-background shadow-sm text-foreground" : "text-muted-foreground hover:text-foreground"}`}
+            >
+              Inativos / Excluídos
+            </button>
+          </div>
         </div>
 
         {/* LISTA */}
@@ -270,9 +304,10 @@ function formatarCpfCnpj(valor: string) {
               </div>
 
               <button
-                className={`text-xs py-1 rounded-md border ${cliente.ativo === "S"
-                    ? "border-primary text-primary"
-                    : "border-destructive text-destructive"
+                onClick={() => handleToggleStatus(cliente)}
+                className={`text-xs py-1 rounded-md border transition-colors ${cliente.ativo === "S"
+                    ? "border-primary text-primary hover:bg-primary/10"
+                    : "border-destructive text-destructive hover:bg-destructive/10"
                   }`}
               >
                 {cliente.ativo === "S" ? "Ativo" : "Inativo"}
@@ -291,7 +326,21 @@ function formatarCpfCnpj(valor: string) {
 
       {/* DIALOG */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogContent 
+          className="max-w-2xl max-h-[90vh] overflow-y-auto"
+          onInteractOutside={(e) => {
+            e.preventDefault();
+            if (window.confirm("Você tem um formulário em andamento. Deseja realmente fechar sem salvar?")) {
+              setDialogOpen(false);
+            }
+          }}
+          onEscapeKeyDown={(e) => {
+            e.preventDefault();
+            if (window.confirm("Você tem um formulário em andamento. Deseja realmente fechar sem salvar?")) {
+              setDialogOpen(false);
+            }
+          }}
+        >
           <DialogHeader>
             <DialogTitle>
               {editandoCliente ? "Editar Cliente" : "Novo Cliente"}
@@ -328,6 +377,16 @@ function formatarCpfCnpj(valor: string) {
                 value={form.telefone}
                 onChange={(e) =>
                   setForm({ ...form, telefone: e.target.value })
+                }
+              />
+            </div>
+            
+            <div>
+              <Label>WhatsApp</Label>
+              <Input
+                value={form.whatsapp}
+                onChange={(e) =>
+                  setForm({ ...form, whatsapp: e.target.value })
                 }
               />
             </div>
@@ -398,6 +457,16 @@ function formatarCpfCnpj(valor: string) {
                 value={form.cep}
                 onChange={(e) =>
                   setForm({ ...form, cep: e.target.value })
+                }
+              />
+            </div>
+            
+            <div className="col-span-2">
+              <Label>Observações</Label>
+              <Input
+                value={form.observacoes}
+                onChange={(e) =>
+                  setForm({ ...form, observacoes: e.target.value })
                 }
               />
             </div>

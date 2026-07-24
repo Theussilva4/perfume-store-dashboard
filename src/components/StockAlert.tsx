@@ -1,6 +1,6 @@
 const StockAlert = ({ produtos = [] }: { produtos?: any[] }) => {
-  const lowStock = (produtos || []).slice(0, 7).map(item => ({
-     name: item.descricao || item.nomeProduto || `Produto ${item.codproduto}`,
+  const lowStock = (produtos || []).slice(0, 7).map((item, idx) => ({
+     name: item.nome || item.descricao || item.nomeProduto || `Produto ${item.codproduto || idx}`,
      estoque: Number(item.estoque || item.quantidade || 0)
   }));
 

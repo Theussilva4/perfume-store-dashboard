@@ -11,8 +11,10 @@ import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { Plus, Search, Pencil, Trash2, Package, TrendingUp, Percent } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Plus, Search, Pencil, Trash2, Package, TrendingUp, Percent, ScanBarcode } from "lucide-react";
 import { toast } from "sonner";
+import { BarcodeScannerModal } from "@/components/BarcodeScannerModal";
 
 const produtoVazio: Omit<Produto, "codproduto"> = {
   descricao: "", codcategoria: 0, resumo: "", marca: "",
@@ -33,10 +35,10 @@ function mapearProduto(p: any): Produto {
     resumo: p.resumo || "",
     marca: p.marca || "",
     codcategoria: Number(p.codcategoria),
-    precoCusto: Number(p.preco_normal || 0),
+    precoCusto: Number(p.custo || p.preco_normal || 0),
     precoVenda: Number(p.preco_promocao || p.preco_normal || 0),
     estoque: Number(p.msestoque?.[0]?.quantidade || 0),
-    estoqueMinimo: 5,
+    estoqueMinimo: Number(p.estoque_minimo || 5),
     estoquePorFilial: { matriz: 1, filial1: 5 },
     ativo: p.ativo === "S",
     codigoBarras: p.codigo_barras ? String(p.codigo_barras) : "",
@@ -54,6 +56,7 @@ const Products = () => {
   const [editandoProduto, setEditandoProduto] = useState<Produto | null>(null);
   const [form, setForm] = useState<Omit<Produto, "codproduto">>(produtoVazio);
   const [categorias, setCategorias] = useState<categoria[]>([]);
+  const [scannerOpen, setScannerOpen] = useState(false);
 
   const filtrados = listaProdutos.filter((p) => {
     const matchSearch =
@@ -116,8 +119,7 @@ const Products = () => {
         marca: form.marca,
         codcategoria: form.codcategoria,
         resumo: form.resumo,
-        preco_normal: form.precoCusto,
-        preco_promocao: form.precoVenda,
+        estoque_minimo: form.estoqueMinimo,
         ativo: form.ativo ? "S" : "N",
         codigo_barras: form.codigoBarras || null,
         volume_ml: form.volume || null,
@@ -233,35 +235,14 @@ const Products = () => {
                 )}
               </div>
 
-              {/* Precificação */}
+              {/* Precificação via Motor */}
               <div className="bg-muted/30 rounded-md p-2 space-y-1">
-                <div className="flex items-center justify-between text-xs">
-                  <span className="text-muted-foreground flex items-center gap-1"><Percent className="h-3 w-3" /> Margem</span>
-                  <span className={`font-medium ${pMargem >= 50 ? "text-primary" : "text-amber-600"}`}>{pMargem.toFixed(1)}%</span>
-                </div>
-                <div className="flex items-center justify-between text-xs">
-                  <span className="text-muted-foreground flex items-center gap-1"><TrendingUp className="h-3 w-3" /> Markup</span>
-                  <span className="font-medium text-foreground">{pMarkup.toFixed(2)}x</span>
-                </div>
-                <div className="flex items-center justify-between text-xs">
-                  <span className="text-muted-foreground">Lucro</span>
-                  <span className="font-medium text-primary">R$ {pLucro.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</span>
-                </div>
+                <p className="text-xs text-muted-foreground text-center">Precificação movida para o Módulo Comercial.</p>
               </div>
 
               <div className="flex items-end justify-between mt-auto pt-2 border-t border-border">
                 <div>
-                  <p className="text-lg font-semibold text-foreground">
-                    R$ {produto.precoVenda.toLocaleString("pt-BR")}
-                  </p>
-                  <p className="text-[10px] text-muted-foreground">
-                    Custo: R$ {produto.precoCusto.toLocaleString("pt-BR")}
-                  </p>
-                  {produto.precoPromocional != null && produto.precoPromocional > 0 && (
-                    <p className="text-[10px] text-primary">
-                      Promo: R$ {produto.precoPromocional.toLocaleString("pt-BR")}
-                    </p>
-                  )}
+                   <p className="text-[10px] text-muted-foreground">Preços no menu Comercial</p>
                 </div>
                 <div className="text-right">
                   <p className="text-sm font-medium text-foreground">{produto.estoque}</p>
@@ -291,7 +272,21 @@ const Products = () => {
       )}
 
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogContent 
+          className="max-w-2xl max-h-[90vh] overflow-y-auto"
+          onInteractOutside={(e) => {
+            e.preventDefault();
+            if (window.confirm("Você tem um formulário em andamento. Deseja realmente fechar sem salvar?")) {
+              setDialogOpen(false);
+            }
+          }}
+          onEscapeKeyDown={(e) => {
+            e.preventDefault();
+            if (window.confirm("Você tem um formulário em andamento. Deseja realmente fechar sem salvar?")) {
+              setDialogOpen(false);
+            }
+          }}
+        >
           <DialogHeader>
             <DialogTitle className="font-display text-xl">
               {editandoProduto ? "Editar Produto" : "Novo Produto"}
@@ -301,98 +296,73 @@ const Products = () => {
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-5">
-            {/* Dados básicos */}
-            <div className="grid grid-cols-2 gap-4">
-              <div className="col-span-2 space-y-2">
-                <Label>Nome</Label>
-                <Input value={form.descricao} onChange={(e) => setForm({ ...form, descricao: e.target.value })} />
-              </div>
-              <div className="space-y-2">
-                <Label>Marca</Label>
-                <Input value={form.marca} onChange={(e) => setForm({ ...form, marca: e.target.value })} />
-              </div>
-              <div className="space-y-2">
-                <Label>Categoria</Label>
-                <Select
-                  value={String(form.codcategoria)}
-                  onValueChange={(v) => handleCategoriaChange(Number(v))}
-                >
-                  <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
-                  <SelectContent>
-                    {categorias.map((c) => (
-                      <SelectItem key={c.codcategoria} value={String(c.codcategoria)}>
-                        {c.categoria}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <Label>Código de Barras</Label>
-                <Input value={form.codigoBarras || ""} onChange={(e) => setForm({ ...form, codigoBarras: e.target.value })} placeholder="EAN" />
-              </div>
-              <div className="space-y-2">
-                <Label>Volume (ml)</Label>
-                <Input type="number" value={form.volume || ""} onChange={(e) => setForm({ ...form, volume: e.target.value ? Number(e.target.value) : undefined })} placeholder="Ex: 100" />
-              </div>
-              <div className="col-span-2 space-y-2">
-                <Label>Descrição</Label>
-                <Textarea value={form.resumo} onChange={(e) => setForm({ ...form, resumo: e.target.value })} rows={2} />
-              </div>
-            </div>
-
-            {/* Precificação */}
-            <div className="border-t border-border pt-4">
-              <h3 className="text-sm font-medium text-foreground mb-3 flex items-center gap-2">
-                <TrendingUp className="h-4 w-4 text-primary" /> Precificação
-              </h3>
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-                <div className="space-y-2">
-                  <Label>Preço de Custo (R$)</Label>
-                  <Input type="number" value={form.precoCusto} onChange={(e) => setForm({ ...form, precoCusto: Number(e.target.value) })} />
-                </div>
-                <div className="space-y-2">
-                  <Label>Preço de Venda (R$)</Label>
-                  <Input type="number" value={form.precoVenda} onChange={(e) => setForm({ ...form, precoVenda: Number(e.target.value) })} />
-                </div>
-                <div className="space-y-2">
-                  <Label>Preço Promocional (R$)</Label>
-                  <Input type="number" value={form.precoPromocional || ""} onChange={(e) => setForm({ ...form, precoPromocional: e.target.value ? Number(e.target.value) : undefined })} placeholder="Opcional" />
-                </div>
-              </div>
-
-              {/* Métricas calculadas */}
-              {form.precoCusto > 0 && (
-                <div className="bg-primary/5 border border-primary/20 rounded-lg p-3 mt-3 grid grid-cols-3 gap-3">
-                  <div className="text-center">
-                    <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Margem</p>
-                    <p className={`text-lg font-bold ${margem >= 50 ? "text-primary" : "text-amber-600"}`}>{margem.toFixed(1)}%</p>
+            <Tabs defaultValue="geral" className="w-full">
+              <TabsList className="grid w-full grid-cols-2">
+                <TabsTrigger value="geral">Geral</TabsTrigger>
+                <TabsTrigger value="estoque">Estoque</TabsTrigger>
+              </TabsList>
+              
+              <TabsContent value="geral" className="space-y-4 mt-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="col-span-2 space-y-2">
+                    <Label>Nome</Label>
+                    <Input value={form.descricao} onChange={(e) => setForm({ ...form, descricao: e.target.value })} />
                   </div>
-                  <div className="text-center">
-                    <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Markup</p>
-                    <p className="text-lg font-bold text-foreground">{markup.toFixed(2)}x</p>
+                  <div className="space-y-2">
+                    <Label>Marca</Label>
+                    <Input value={form.marca} onChange={(e) => setForm({ ...form, marca: e.target.value })} />
                   </div>
-                  <div className="text-center">
-                    <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Lucro Unit.</p>
-                    <p className="text-lg font-bold text-primary">R$ {lucroUnitario.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</p>
+                  <div className="space-y-2">
+                    <Label>Categoria</Label>
+                    <Select
+                      value={String(form.codcategoria)}
+                      onValueChange={(v) => handleCategoriaChange(Number(v))}
+                    >
+                      <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
+                      <SelectContent>
+                        {categorias.map((c) => (
+                          <SelectItem key={c.codcategoria} value={String(c.codcategoria)}>
+                            {c.categoria}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Código de Barras</Label>
+                    <div className="flex gap-2">
+                      <Input value={form.codigoBarras || ""} onChange={(e) => setForm({ ...form, codigoBarras: e.target.value })} placeholder="EAN" />
+                      <Button type="button" variant="outline" className="px-3" onClick={() => setScannerOpen(true)} title="Ler Código de Barras">
+                        <ScanBarcode className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Volume (ml)</Label>
+                    <Input type="number" value={form.volume || ""} onChange={(e) => setForm({ ...form, volume: e.target.value ? Number(e.target.value) : undefined })} placeholder="Ex: 100" />
+                  </div>
+                  <div className="col-span-2 space-y-2">
+                    <Label>Descrição</Label>
+                    <Textarea value={form.resumo} onChange={(e) => setForm({ ...form, resumo: e.target.value })} rows={2} />
                   </div>
                 </div>
-              )}
-            </div>
+              </TabsContent>
 
-            {/* Estoque */}
-            <div className="border-t border-border pt-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label>Estoque Atual</Label>
-                  <Input type="number" value={form.estoque} onChange={(e) => setForm({ ...form, estoque: Number(e.target.value) })} />
+
+
+              <TabsContent value="estoque" className="space-y-4 mt-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>Estoque Atual (Exibição)</Label>
+                    <Input type="number" value={form.estoque} disabled />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Estoque Mínimo</Label>
+                    <Input type="number" value={form.estoqueMinimo} onChange={(e) => setForm({ ...form, estoqueMinimo: Number(e.target.value) })} />
+                  </div>
                 </div>
-                <div className="space-y-2">
-                  <Label>Estoque Mínimo</Label>
-                  <Input type="number" value={form.estoqueMinimo} onChange={(e) => setForm({ ...form, estoqueMinimo: Number(e.target.value) })} />
-                </div>
-              </div>
-            </div>
+              </TabsContent>
+            </Tabs>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setDialogOpen(false)}>Cancelar</Button>
@@ -400,6 +370,14 @@ const Products = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+      <BarcodeScannerModal 
+        open={scannerOpen} 
+        onOpenChange={setScannerOpen} 
+        onScan={(text) => {
+          setForm({ ...form, codigoBarras: text });
+          toast.success("Código lido com sucesso!");
+        }} 
+      />
     </div>
   );
 };

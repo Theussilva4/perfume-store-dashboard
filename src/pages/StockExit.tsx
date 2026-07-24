@@ -87,7 +87,21 @@ const StockExit = () => {
       )}
 
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="max-w-md">
+        <DialogContent 
+          className="max-w-md"
+          onInteractOutside={(e) => {
+            e.preventDefault();
+            if (window.confirm("Você tem um formulário em andamento. Deseja realmente fechar sem salvar?")) {
+              setDialogOpen(false);
+            }
+          }}
+          onEscapeKeyDown={(e) => {
+            e.preventDefault();
+            if (window.confirm("Você tem um formulário em andamento. Deseja realmente fechar sem salvar?")) {
+              setDialogOpen(false);
+            }
+          }}
+        >
           <DialogHeader>
             <DialogTitle className="font-display text-xl">Nova Saída de Estoque</DialogTitle>
           </DialogHeader>
@@ -114,7 +128,7 @@ const StockExit = () => {
                 </SelectContent>
               </Select>
             </div>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label>Quantidade</Label>
                 <Input type="number" value={form.quantidade} onChange={(e) => setForm({ ...form, quantidade: Number(e.target.value) })} />

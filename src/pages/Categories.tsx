@@ -113,7 +113,21 @@ const Categories = () => {
       </div>
 
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="max-w-sm">
+        <DialogContent 
+          className="max-w-sm"
+          onInteractOutside={(e) => {
+            e.preventDefault();
+            if (window.confirm("Você tem um formulário em andamento. Deseja realmente fechar sem salvar?")) {
+              setDialogOpen(false);
+            }
+          }}
+          onEscapeKeyDown={(e) => {
+            e.preventDefault();
+            if (window.confirm("Você tem um formulário em andamento. Deseja realmente fechar sem salvar?")) {
+              setDialogOpen(false);
+            }
+          }}
+        >
           <DialogHeader>
             <DialogTitle className="font-display text-xl">{editando ? "Editar Categoria" : "Nova Categoria"}</DialogTitle>
             <DialogDescription>Defina o nome e a margem padrão de lucro.</DialogDescription>
