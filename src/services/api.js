@@ -1,8 +1,9 @@
 import axios from "axios";
 
-// Em produção, ele usa a URL da nuvem. Localmente, continua usando /api (proxy)
+const isLocalhost = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1";
+
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || "/api",
+  baseURL: isLocalhost ? "/api" : "https://deassisdev-api-site-matheus.bwb8as.easypanel.host/api",
 });
 
 // 🔐 Interceptor - envia token automaticamente
