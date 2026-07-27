@@ -4,7 +4,7 @@ import { DollarSign, Search, Edit2, TrendingUp, TrendingDown, AlertTriangle } fr
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import * as comercialService from "@/services/comercialService";
@@ -110,43 +110,43 @@ const Prices = () => {
           </div>
         </CardHeader>
         <CardContent>
-          <div className="rounded-md border overflow-x-auto">
-            <Table className="whitespace-nowrap">
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Produto</TableHead>
-                  <TableHead className="text-right">Custo</TableHead>
-                  <TableHead className="text-right">Preço Base</TableHead>
-                  <TableHead className="text-center">Margem</TableHead>
-                  <TableHead className="text-center">Markup</TableHead>
-                  <TableHead className="text-center">Desc. Máx</TableHead>
-                  <TableHead className="text-right">Ação</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {isLoading ? (
-                  <TableRow><TableCell colSpan={6} className="text-center">Carregando...</TableCell></TableRow>
-                ) : filtered.length === 0 ? (
-                  <TableRow><TableCell colSpan={7} className="text-center">Nenhum produto encontrado</TableCell></TableRow>
-                ) : (
-                  filtered.map((p: any) => (
-                    <TableRow key={p.codproduto}>
-                      <TableCell className="font-medium">{p.descricao}</TableCell>
-                      <TableCell className="text-right">R$ {p.precificacao.custoBase?.toFixed(2)}</TableCell>
-                      <TableCell className="text-right">R$ {p.precificacao.precoBase?.toFixed(2)}</TableCell>
-                      <TableCell className="text-center">{p.precificacao.margem?.toFixed(1)}%</TableCell>
-                      <TableCell className="text-center">{p.precificacao.markup?.toFixed(2)}x</TableCell>
-                      <TableCell className="text-center">{p.precificacao.descontoMaximo?.toFixed(1)}%</TableCell>
-                      <TableCell className="text-right">
-                        <Button variant="ghost" size="sm" onClick={() => handleEdit(p)}>
-                          <Edit2 className="h-4 w-4" />
-                        </Button>
-                      </TableCell>
-                    </TableRow>
-                  ))
-                )}
-              </TableBody>
-            </Table>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 mt-4">
+            {isLoading ? (
+              <div className="col-span-full text-center py-8 text-muted-foreground">Carregando...</div>
+            ) : filtered.length === 0 ? (
+              <div className="col-span-full text-center py-8 text-muted-foreground">Nenhum produto encontrado</div>
+            ) : (
+              filtered.map((p: any) => (
+                <div key={p.codproduto} className="bg-card rounded-lg border border-border p-5 flex flex-col gap-3">
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <h3 className="font-medium text-sm text-foreground">{p.descricao}</h3>
+                      <p className="text-xs text-muted-foreground">Cód: {p.codproduto}</p>
+                    </div>
+                    <Button variant="ghost" size="sm" onClick={() => handleEdit(p)} className="h-8 w-8 p-0">
+                      <Edit2 className="h-4 w-4 text-muted-foreground" />
+                    </Button>
+                  </div>
+                  
+                  <div className="grid grid-cols-2 gap-2 mt-2">
+                    <div className="bg-muted/30 p-2 rounded">
+                      <p className="text-[10px] text-muted-foreground uppercase">Custo</p>
+                      <p className="font-medium text-sm">R$ {p.precificacao.custoBase?.toFixed(2) || "0.00"}</p>
+                    </div>
+                    <div className="bg-primary/10 p-2 rounded">
+                      <p className="text-[10px] text-primary uppercase font-semibold">Preço Base</p>
+                      <p className="font-bold text-sm text-primary">R$ {p.precificacao.precoBase?.toFixed(2) || "0.00"}</p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-2 flex-wrap mt-2">
+                    <Badge variant="secondary" className="text-[10px]">Mg: {p.precificacao.margem?.toFixed(1) || "0"}%</Badge>
+                    <Badge variant="outline" className="text-[10px]">Mkup: {p.precificacao.markup?.toFixed(2) || "0"}x</Badge>
+                    <Badge variant="outline" className="text-[10px]">Desc. Máx: {p.precificacao.descontoMaximo?.toFixed(1) || "0"}%</Badge>
+                  </div>
+                </div>
+              ))
+            )}
           </div>
         </CardContent>
       </Card>
