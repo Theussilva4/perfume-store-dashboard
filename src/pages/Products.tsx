@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 
-import { getProdutos, updateProduto, createProduto } from "@/services/produtosService";
+import { getProdutos, updateProduto, createProduto, alterarStatusProduto } from "@/services/produtosService";
 import { getCategorias, updateCategoria, createCategoria } from "@/services/categoriaService";
 import { Produto, categoria } from "@/types";
 
@@ -145,17 +145,7 @@ const Products = () => {
 
   const atualizarStatusAtivo = async (produto: Produto, isAtivo: boolean) => {
     try {
-      const corpoRequisicao = {
-        descricao: produto.descricao,
-        marca: produto.marca,
-        codcategoria: produto.codcategoria,
-        resumo: produto.resumo,
-        estoque_minimo: produto.estoqueMinimo,
-        ativo: isAtivo ? "S" : "N",
-        codigo_barras: produto.codigoBarras || null,
-        volume_ml: produto.volume || null,
-      };
-      await updateProduto(produto.codproduto, corpoRequisicao);
+      await alterarStatusProduto(produto.codproduto, isAtivo ? "S" : "N");
       setListaProdutos((prev) =>
         prev.map((p) =>
           p.codproduto === produto.codproduto ? { ...p, ativo: isAtivo } : p
