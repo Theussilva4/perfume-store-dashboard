@@ -381,21 +381,11 @@ function formatarCpfCnpj(valor: string) {
             </div>
 
             <div>
-              <Label>Telefone <span className="text-destructive">*</span></Label>
+              <Label>Telefone / WhatsApp <span className="text-destructive">*</span></Label>
               <Input
                 value={form.telefone}
                 onChange={(e) =>
                   setForm({ ...form, telefone: e.target.value })
-                }
-              />
-            </div>
-            
-            <div>
-              <Label>WhatsApp</Label>
-              <Input
-                value={form.whatsapp}
-                onChange={(e) =>
-                  setForm({ ...form, whatsapp: e.target.value })
                 }
               />
             </div>
