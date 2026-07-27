@@ -145,7 +145,7 @@ const Promotions = () => {
         </CardHeader>
         <CardContent>
           <div className="rounded-md border overflow-x-auto">
-            <Table>
+            <Table className="whitespace-nowrap">
               <TableHeader>
                 <TableRow>
                   <TableHead>Campanha</TableHead>
@@ -203,7 +203,7 @@ const Promotions = () => {
         if(!open) resetForm();
       }}>
         <DialogContent 
-          className="max-w-4xl max-h-[90vh] overflow-y-auto"
+          className="w-[95vw] sm:max-w-4xl max-h-[90vh] overflow-y-auto"
           onInteractOutside={(e) => {
             e.preventDefault();
             if (window.confirm("Você tem um formulário em andamento. Deseja realmente fechar sem salvar?")) {
@@ -251,9 +251,9 @@ const Promotions = () => {
               </div>
               <div className="space-y-2 lg:col-span-2">
                 <label className="text-sm font-medium">Período</label>
-                <div className="flex items-center gap-2">
+                <div className="flex flex-col sm:flex-row sm:items-center gap-2">
                   <Input type="date" value={dataInicio} onChange={(e) => setDataInicio(e.target.value)} />
-                  <span className="text-muted-foreground">até</span>
+                  <span className="text-muted-foreground hidden sm:inline">até</span>
                   <Input type="date" value={dataFim} onChange={(e) => setDataFim(e.target.value)} />
                 </div>
               </div>
@@ -262,7 +262,7 @@ const Promotions = () => {
             {/* Adição de Produtos */}
             <div className="space-y-4">
               <h3 className="text-lg font-medium border-b pb-2">Produtos Participantes</h3>
-              <div className="flex gap-2">
+              <div className="flex flex-col sm:flex-row gap-2">
                 <Select value={selectedProductId} onValueChange={setSelectedProductId}>
                   <SelectTrigger className="flex-1"><SelectValue placeholder="Selecione um produto..." /></SelectTrigger>
                   <SelectContent>
@@ -276,7 +276,7 @@ const Promotions = () => {
 
               {itens.length > 0 && (
                 <div className="rounded-md border overflow-x-auto">
-                  <Table>
+                  <Table className="whitespace-nowrap">
                     <TableHeader>
                       <TableRow>
                         <TableHead>Produto</TableHead>

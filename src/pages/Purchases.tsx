@@ -173,7 +173,7 @@ const Purchases = () => {
 
       <div className="bg-card rounded-lg border border-border overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="w-full text-sm">
+          <table className="w-full text-sm whitespace-nowrap">
             <thead>
               <tr className="border-b border-border bg-muted/30">
                 <th className="text-left px-4 py-3 font-medium text-muted-foreground">Código</th>
@@ -225,7 +225,7 @@ const Purchases = () => {
       {/* DIALOG DE NOVA COMPRA */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent 
-          className="max-w-2xl max-h-[90vh] overflow-y-auto"
+          className="w-[95vw] sm:max-w-2xl max-h-[90vh] overflow-y-auto"
           onInteractOutside={(e) => {
             e.preventDefault();
             if (window.confirm("Você tem um formulário em andamento. Deseja realmente fechar sem salvar?")) {
@@ -270,7 +270,7 @@ const Purchases = () => {
 
             <div className="space-y-2">
               <Label>Fornecedor</Label>
-              <div className="flex gap-2">
+              <div className="flex flex-col sm:flex-row gap-2">
                 <Button type="button" variant="outline" onClick={() => setDialogFornecedorOpen(true)}>
                   Buscar
                 </Button>
@@ -284,7 +284,7 @@ const Purchases = () => {
               <div className="grid grid-cols-1 md:grid-cols-12 gap-3 items-end mb-4">
                 <div className="md:col-span-4">
                   <Label>Produto</Label>
-                  <div className="flex gap-2">
+                  <div className="flex flex-col sm:flex-row gap-2">
                     <Button type="button" variant="outline" onClick={() => setDialogProdutoOpen(true)}>
                       ...
                     </Button>
@@ -402,7 +402,7 @@ const Purchases = () => {
       
       {/* DIALOG DETALHES COMPRA */}
       <Dialog open={dialogDetalhesOpen} onOpenChange={setDialogDetalhesOpen}>
-        <DialogContent className="max-w-lg">
+        <DialogContent className="w-[95vw] sm:max-w-lg max-h-[90vh] overflow-y-auto">
           <DialogHeader><DialogTitle>Detalhes da Compra #{compraSelecionada?.codigo_compra}</DialogTitle></DialogHeader>
           {compraSelecionada && (
             <div className="space-y-4">

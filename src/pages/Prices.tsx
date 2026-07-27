@@ -93,12 +93,12 @@ const Prices = () => {
 
       <Card>
         <CardHeader>
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <div>
               <CardTitle>Produtos e Precificação</CardTitle>
               <CardDescription>Consulte e altere o preço base dos seus produtos</CardDescription>
             </div>
-            <div className="relative w-72">
+            <div className="relative w-full sm:w-72">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
                 placeholder="Buscar produto..."
@@ -111,7 +111,7 @@ const Prices = () => {
         </CardHeader>
         <CardContent>
           <div className="rounded-md border overflow-x-auto">
-            <Table>
+            <Table className="whitespace-nowrap">
               <TableHeader>
                 <TableRow>
                   <TableHead>Produto</TableHead>
@@ -151,10 +151,9 @@ const Prices = () => {
         </CardContent>
       </Card>
 
-      {/* Modal de Precificação */}
       <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
         <DialogContent 
-          className="sm:max-w-[600px]"
+          className="w-[95vw] sm:max-w-[600px] overflow-y-auto max-h-[90vh]"
           onInteractOutside={(e) => {
             e.preventDefault();
             if (window.confirm("Você tem um formulário em andamento. Deseja realmente fechar sem salvar?")) {
@@ -176,7 +175,7 @@ const Prices = () => {
           </DialogHeader>
 
           <div className="grid gap-6 py-4">
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <label className="text-sm font-medium">Preço de Custo (R$)</label>
                 <Input
@@ -215,7 +214,7 @@ const Prices = () => {
                 <h3 className="font-semibold">Simulador de Rentabilidade</h3>
               </div>
               
-              <div className="grid grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div>
                   <p className="text-xs opacity-80 uppercase tracking-wider">Lucro Bruto</p>
                   <p className="text-xl font-bold">R$ {lucro.toFixed(2)}</p>
