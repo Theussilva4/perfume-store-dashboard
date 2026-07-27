@@ -141,17 +141,38 @@ const Products = () => {
     }
   };
 
-  const handleRemover = (codproduto: number) => {
-    setListaProdutos((prev) => prev.filter((p) => p.codproduto !== codproduto));
-    toast.success("Produto removido!");
+  const atualizarStatusAtivo = async (produto: Produto, isAtivo: boolean) => {
+    try {
+      const corpoRequisicao = {
+        descricao: produto.descricao,
+        marca: produto.marca,
+        codcategoria: produto.codcategoria,
+        resumo: produto.resumo,
+        estoque_minimo: produto.estoqueMinimo,
+        ativo: isAtivo ? "S" : "N",
+        codigo_barras: produto.codigoBarras || null,
+        volume_ml: produto.volume || null,
+      };
+      await updateProduto(produto.codproduto, corpoRequisicao);
+      setListaProdutos((prev) =>
+        prev.map((p) =>
+          p.codproduto === produto.codproduto ? { ...p, ativo: isAtivo } : p
+        )
+      );
+      toast.success(isAtivo ? "Produto ativado com sucesso!" : "Produto inativado com sucesso!");
+    } catch (error) {
+      toast.error("Erro ao alterar status do produto");
+    }
   };
 
-  const alternarAtivo = (codproduto: number) => {
-    setListaProdutos((prev) =>
-      prev.map((p) =>
-        p.codproduto === codproduto ? { ...p, ativo: !p.ativo } : p
-      )
-    );
+  const handleRemover = (produto: Produto) => {
+    if (window.confirm("Deseja inativar este produto? Ele não será excluído definitivamente.")) {
+      atualizarStatusAtivo(produto, false);
+    }
+  };
+
+  const alternarAtivo = (produto: Produto) => {
+    atualizarStatusAtivo(produto, !produto.ativo);
   };
 
   // Pré-preencher margem com a da categoria
@@ -214,7 +235,7 @@ const Products = () => {
                   <button onClick={() => abrirEdicao(produto)} className="p-1.5 rounded-md hover:bg-muted text-muted-foreground hover:text-foreground transition-colors">
                     <Pencil className="h-3.5 w-3.5" />
                   </button>
-                  <button onClick={() => handleRemover(produto.codproduto)} className="p-1.5 rounded-md hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors">
+                  <button onClick={() => handleRemover(produto)} className="p-1.5 rounded-md hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors">
                     <Trash2 className="h-3.5 w-3.5" />
                   </button>
                 </div>
@@ -251,7 +272,7 @@ const Products = () => {
               </div>
 
               <button
-                onClick={() => alternarAtivo(produto.codproduto)}
+                onClick={() => alternarAtivo(produto)}
                 className={`text-xs py-1 rounded-md border transition-colors ${produto.ativo
                   ? "border-primary/20 text-primary hover:bg-primary/5"
                   : "border-destructive/20 text-destructive hover:bg-destructive/5"
