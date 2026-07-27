@@ -1,35 +1,90 @@
-import { useState } from "react";
-import { produtos, obterEstoqueProduto, rotulosFilial } from "@/data/mockData";
+import { useState, useEffect } from "react";
 import { useBranch } from "@/contexts/BranchContext";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Search, AlertTriangle, Package } from "lucide-react";
+import { getEstoque } from "@/services/estoqueService";
+import { getProdutos } from "@/services/produtosService";
 
 const Stock = () => {
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState("all");
+  const [mostrarInativos, setMostrarInativos] = useState(false);
   const { filialSelecionada, rotuloFilial } = useBranch();
+  
+  const [produtosAPI, setProdutosAPI] = useState<any[]>([]);
+  const [estoquesAPI, setEstoquesAPI] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const obterEstoque = (p: typeof produtos[0]) => obterEstoqueProduto(p, filialSelecionada);
+  useEffect(() => {
+    carregarDados();
+  }, []);
 
-  const filtrados = produtos.filter((p) => {
-    const matchSearch = p.nome.toLowerCase().includes(search.toLowerCase());
-    const estoque = obterEstoque(p);
-    if (filter === "low") return matchSearch && estoque <= p.estoqueMinimo && estoque > 0;
-    if (filter === "out") return matchSearch && estoque === 0;
+  async function carregarDados() {
+    setLoading(true);
+    try {
+      const [prod, est] = await Promise.all([getProdutos(), getEstoque()]);
+      setProdutosAPI(Array.isArray(prod) ? prod : []);
+      setEstoquesAPI(Array.isArray(est) ? est : []);
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  // Função auxiliar para obter estoque do produto baseado na filial selecionada
+  const obterEstoque = (codproduto: number) => {
+    const estoquesDoProduto = estoquesAPI.filter(e => e.codproduto === codproduto);
+    if (filialSelecionada === "todas") {
+      return estoquesDoProduto.reduce((acc, curr) => acc + curr.quantidade, 0);
+    }
+    const estoqueFilial = estoquesDoProduto.find(e => String(e.codfilial) === String(filialSelecionada));
+    return estoqueFilial ? estoqueFilial.quantidade : 0;
+  };
+  
+  const obterEstoquePorFilial = (codproduto: number, codfilial: number) => {
+    const estoque = estoquesAPI.find(e => e.codproduto === codproduto && e.codfilial === codfilial);
+    return estoque ? estoque.quantidade : 0;
+  };
+
+  const listaFormatada = produtosAPI.map(p => ({
+    ...p,
+    estoqueAtual: obterEstoque(p.codproduto),
+    estoqueMatriz: obterEstoquePorFilial(p.codproduto, 1),
+    estoqueFilial1: obterEstoquePorFilial(p.codproduto, 2)
+  }));
+
+  const filtrados = listaFormatada.filter((p) => {
+    if (!mostrarInativos && p.ativo !== "S") return false;
+    
+    const matchSearch = (p.descricao || "").toLowerCase().includes(search.toLowerCase());
+    const estoque = p.estoqueAtual;
+    const minimo = p.estoque_minimo || 0;
+    if (filter === "low") return matchSearch && estoque <= minimo && estoque > 0;
+    if (filter === "out") return matchSearch && estoque <= 0;
     return matchSearch;
   });
 
-  const contagemBaixo = produtos.filter((p) => { const s = obterEstoque(p); return s <= p.estoqueMinimo && s > 0; }).length;
-  const contagemZerado = produtos.filter((p) => obterEstoque(p) === 0).length;
+  const contagemBaixo = listaFormatada.filter((p) => {
+    if (!mostrarInativos && p.ativo !== "S") return false;
+    return p.estoqueAtual <= (p.estoque_minimo || 0) && p.estoqueAtual > 0;
+  }).length;
+  
+  const contagemZerado = listaFormatada.filter((p) => {
+    if (!mostrarInativos && p.ativo !== "S") return false;
+    return p.estoqueAtual <= 0;
+  }).length;
+
+  const totalProdutosCount = listaFormatada.filter((p) => mostrarInativos ? true : p.ativo === "S").length;
 
   return (
     <div className="space-y-6 animate-fade-in-up">
       <div>
         <h2 className="font-display text-2xl md:text-3xl font-semibold text-primary">Controle de Estoque</h2>
         <p className="text-sm text-muted-foreground mt-1">
-          {rotuloFilial} • {produtos.length} produtos • {contagemBaixo} estoque baixo • {contagemZerado} sem estoque
+          {rotuloFilial} • {totalProdutosCount} produtos • {contagemBaixo} estoque baixo • {contagemZerado} sem estoque
         </p>
       </div>
 
@@ -63,10 +118,78 @@ const Stock = () => {
             <SelectItem value="out">Sem Estoque</SelectItem>
           </SelectContent>
         </Select>
+        <button
+          onClick={() => setMostrarInativos(!mostrarInativos)}
+          className={`px-4 py-2 text-sm font-medium rounded-md border transition-colors ${
+            mostrarInativos 
+              ? "bg-primary text-primary-foreground border-primary hover:bg-primary/90" 
+              : "bg-background text-foreground border-input hover:bg-accent hover:text-accent-foreground"
+          }`}
+        >
+          {mostrarInativos ? "Ocultar Inativos" : "Todos os Produtos"}
+        </button>
       </div>
 
       <div className="bg-card rounded-lg border border-border overflow-hidden">
-        <div className="overflow-x-auto">
+        {/* VISÃO MOBILE */}
+        <div className="grid grid-cols-1 gap-4 p-4 md:hidden">
+          {loading ? (
+            <div className="text-center py-4 text-muted-foreground">Carregando estoque...</div>
+          ) : filtrados.map((p) => {
+            const estoque = p.estoqueAtual;
+            const minimo = p.estoque_minimo || 0;
+            const estaBaixo = estoque <= minimo && estoque > 0;
+            const estaZerado = estoque <= 0;
+            return (
+              <div key={p.codproduto} className="bg-background rounded-lg border border-border p-4 shadow-sm flex flex-col gap-3">
+                <div className="flex justify-between items-start">
+                  <div>
+                    <div className="font-medium text-foreground">{p.descricao}</div>
+                    <div className="text-xs text-muted-foreground">{p.marca || "-"} • {p.mscategoria?.categoria || "-"}</div>
+                  </div>
+                  {estaZerado ? (
+                    <Badge variant="destructive" className="text-[10px]">Sem Estoque</Badge>
+                  ) : estaBaixo ? (
+                    <Badge className="bg-amber-100 text-amber-700 text-[10px]">Baixo</Badge>
+                  ) : (
+                    <Badge variant="secondary" className="text-[10px]">Normal</Badge>
+                  )}
+                </div>
+
+                <div className="grid grid-cols-2 gap-2 text-sm pt-2 border-t border-border mt-2">
+                  {filialSelecionada === "todas" ? (
+                    <>
+                      <div>
+                        <span className="text-xs text-muted-foreground block">Matriz</span>
+                        <span className="font-medium">{p.estoqueMatriz}</span>
+                      </div>
+                      <div>
+                        <span className="text-xs text-muted-foreground block">Filial 1</span>
+                        <span className="font-medium">{p.estoqueFilial1}</span>
+                      </div>
+                      <div>
+                        <span className="text-xs text-muted-foreground block">Total</span>
+                        <span className="font-semibold text-primary">{estoque}</span>
+                      </div>
+                    </>
+                  ) : (
+                    <div>
+                      <span className="text-xs text-muted-foreground block">Estoque Atual</span>
+                      <span className="font-medium text-primary">{estoque}</span>
+                    </div>
+                  )}
+                  <div>
+                    <span className="text-xs text-muted-foreground block">Estoque Mínimo</span>
+                    <span className="font-medium text-muted-foreground">{minimo}</span>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
+        {/* VISÃO DESKTOP */}
+        <div className="hidden md:block overflow-x-auto">
           <table className="w-full text-sm whitespace-nowrap">
             <thead>
               <tr className="border-b border-border bg-muted/30">
@@ -86,27 +209,32 @@ const Stock = () => {
               </tr>
             </thead>
             <tbody>
-              {filtrados.map((p) => {
-                const estoque = obterEstoque(p);
-                const estaBaixo = estoque <= p.estoqueMinimo && estoque > 0;
-                const estaZerado = estoque === 0;
+              {loading ? (
+                <tr>
+                  <td colSpan={6} className="text-center py-4 text-muted-foreground">Carregando estoque...</td>
+                </tr>
+              ) : filtrados.map((p) => {
+                const estoque = p.estoqueAtual;
+                const minimo = p.estoque_minimo || 0;
+                const estaBaixo = estoque <= minimo && estoque > 0;
+                const estaZerado = estoque <= 0;
                 return (
-                  <tr key={p.id} className="border-b border-border last:border-0 hover:bg-muted/20 transition-colors">
+                  <tr key={p.codproduto} className="border-b border-border last:border-0 hover:bg-muted/20 transition-colors">
                     <td className="px-4 py-3">
-                      <div className="font-medium text-foreground">{p.nome}</div>
-                      <div className="text-xs text-muted-foreground">{p.marca}</div>
+                      <div className="font-medium text-foreground">{p.descricao}</div>
+                      <div className="text-xs text-muted-foreground">{p.marca || "-"}</div>
                     </td>
-                    <td className="px-4 py-3 text-muted-foreground">{p.categoria}</td>
+                    <td className="px-4 py-3 text-muted-foreground">{p.mscategoria?.categoria || "-"}</td>
                     {filialSelecionada === "todas" ? (
                       <>
-                        <td className="px-4 py-3 text-center font-medium">{p.estoquePorFilial.matriz}</td>
-                        <td className="px-4 py-3 text-center font-medium">{p.estoquePorFilial.filial1}</td>
-                        <td className="px-4 py-3 text-center font-semibold text-primary">{p.estoque}</td>
+                        <td className="px-4 py-3 text-center font-medium">{p.estoqueMatriz}</td>
+                        <td className="px-4 py-3 text-center font-medium">{p.estoqueFilial1}</td>
+                        <td className="px-4 py-3 text-center font-semibold text-primary">{estoque}</td>
                       </>
                     ) : (
                       <td className="px-4 py-3 text-center font-medium">{estoque}</td>
                     )}
-                    <td className="px-4 py-3 text-center text-muted-foreground">{p.estoqueMinimo}</td>
+                    <td className="px-4 py-3 text-center text-muted-foreground">{minimo}</td>
                     <td className="px-4 py-3 text-center">
                       {estaZerado ? (
                         <Badge variant="destructive" className="text-[10px]">Sem Estoque</Badge>
@@ -124,10 +252,10 @@ const Stock = () => {
         </div>
       </div>
 
-      {filtrados.length === 0 && (
+      {!loading && filtrados.length === 0 && (
         <div className="text-center py-12 text-muted-foreground">
           <Package className="h-12 w-12 mx-auto mb-3 opacity-30" />
-          <p>Nenhum produto encontrado.</p>
+          <p>Nenhum produto encontrado no estoque.</p>
         </div>
       )}
     </div>

@@ -10,6 +10,15 @@ export async function createPedido(dados) {
   return res.data;
 }
 
+export const cancelarPedido = async (id, motivo_cancelamento, codusur_cancelou) => {
+  const response = await api.patch(`/pedidos/${id}/status`, { 
+    status: "CANCELADO", 
+    motivo_cancelamento,
+    codusur_cancelou 
+  });
+  return response.data;
+};
+
 export async function updatePedido(id, dados) {
   const res = await api.put(`/pedidos/${id}`, dados);
   return res.data;

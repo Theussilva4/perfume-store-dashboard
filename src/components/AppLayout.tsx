@@ -7,60 +7,11 @@ import {
   ClipboardList, Users, BarChart3, Settings, Bell, LogOut, Menu, X, Building2, Truck,
   DollarSign, Percent
 } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-
-const navSections = [
-  {
-    label: "Principal",
-    items: [
-      { label: "Dashboard", key: "/", icon: LayoutDashboard },
-      { label: "Pedidos", key: "/pedidos", icon: ClipboardList, badge: 2 },
-    ],
-  },
-  {
-    label: "Cadastro",
-    items: [
-      { label: "Produtos", key: "/produtos", icon: Package },
-      { label: "Categorias", key: "/categorias", icon: FolderOpen },
-      { label: "Marcas", key: "/marcas", icon: Tag },
-      { label: "Clientes", key: "/clientes", icon: Users },
-      { label: "Fornecedores", key: "/fornecedores", icon: Truck },
-    ],
-  },
-  {
-    label: "Comercial",
-    items: [
-      { label: "Tabela de Preços", key: "/precos", icon: DollarSign },
-      { label: "Promoções", key: "/promocoes", icon: Percent },
-    ],
-  },
-  {
-    label: "Estoque",
-    items: [
-      { label: "Controle", key: "/estoque", icon: Warehouse },
-      { label: "Compras", key: "/compras", icon: ArrowDownToLine },
-      { label: "Saídas", key: "/estoque/saidas", icon: ArrowUpFromLine },
-    ],
-  },
-  {
-    label: "Análises",
-    items: [
-     
-      { label: "Relatórios", key: "/relatorios", icon: BarChart3 },
-    ],
-  },
-  {
-    label: "Sistema",
-    items: [
-      { label: "Alertas", key: "/alertas", icon: Bell },
-      { label: "Colaboradores", key: "/usuarios/novo", icon: Users },
-      { label: "Configurações", key: "/configuracoes", icon: Settings },
-    ],
-  },
-];
+import { getPedidos } from "@/services/pedidosService";
 
 const AppLayout = () => {
   const { usuario, sair } = useAuth();
@@ -68,6 +19,80 @@ const AppLayout = () => {
   const location = useLocation();
   const { filialSelecionada, setFilialSelecionada } = useBranch();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [pendingOrdersCount, setPendingOrdersCount] = useState(0);
+
+  // Fetch pedidos to update the badge
+  useEffect(() => {
+    let mounted = true;
+    async function loadOrders() {
+      try {
+        const pedidos = await getPedidos();
+        if (mounted && Array.isArray(pedidos)) {
+          const count = pedidos.filter(p => p.status === "EM_ABERTO" || p.status === "EM_SEPARACAO").length;
+          setPendingOrdersCount(count);
+        }
+      } catch (error) {
+        console.error("Erro ao buscar pedidos para o badge", error);
+      }
+    }
+    loadOrders();
+
+    window.addEventListener('pedidosChanged', loadOrders);
+
+    return () => { 
+      mounted = false; 
+      window.removeEventListener('pedidosChanged', loadOrders);
+    };
+  }, [location.pathname]);
+
+  const navSections = [
+    {
+      label: "Principal",
+      items: [
+        { label: "Dashboard", key: "/", icon: LayoutDashboard },
+        { label: "Pedidos", key: "/pedidos", icon: ClipboardList, badge: pendingOrdersCount > 0 ? pendingOrdersCount : undefined },
+      ],
+    },
+    {
+      label: "Cadastro",
+      items: [
+        { label: "Produtos", key: "/produtos", icon: Package },
+        { label: "Categorias", key: "/categorias", icon: FolderOpen },
+        { label: "Marcas", key: "/marcas", icon: Tag },
+        { label: "Clientes", key: "/clientes", icon: Users },
+        { label: "Fornecedores", key: "/fornecedores", icon: Truck },
+      ],
+    },
+    {
+      label: "Comercial",
+      items: [
+        { label: "Tabela de Preços", key: "/precos", icon: DollarSign },
+        { label: "Promoções", key: "/promocoes", icon: Percent },
+      ],
+    },
+    {
+      label: "Estoque",
+      items: [
+        { label: "Controle", key: "/estoque", icon: Warehouse },
+        { label: "Compras", key: "/compras", icon: ArrowDownToLine },
+        { label: "Saídas", key: "/estoque/saidas", icon: ArrowUpFromLine },
+      ],
+    },
+    {
+      label: "Análises",
+      items: [
+        { label: "Relatórios", key: "/relatorios", icon: BarChart3 },
+      ],
+    },
+    {
+      label: "Sistema",
+      items: [
+        { label: "Alertas", key: "/alertas", icon: Bell },
+        { label: "Colaboradores", key: "/usuarios/novo", icon: Users },
+        { label: "Configurações", key: "/configuracoes", icon: Settings },
+      ],
+    },
+  ];
 
   const isActive = (key: string) => {
     if (key === "/") return location.pathname === "/";
@@ -166,7 +191,7 @@ const AppLayout = () => {
         </div>
       )}
 
-      <div className="lg:ml-56 flex-1 min-h-screen flex flex-col">
+      <div className="lg:ml-56 flex-1 min-h-screen flex flex-col min-w-0">
         <header className="lg:hidden sticky top-0 bg-card border-b border-border px-4 py-3 flex items-center gap-3 z-30">
           <button onClick={() => setMobileOpen(true)} className="text-foreground">
             <Menu className="h-5 w-5" />
@@ -174,7 +199,7 @@ const AppLayout = () => {
           <img src={logo} alt="TassiAchando" className="w-8 h-8 rounded-full" />
           <span className="font-display text-sm font-semibold text-primary">TassiAchando</span>
         </header>
-        <main className="flex-1 p-4 md:p-6 lg:p-8">
+        <main className="flex-1 p-4 md:p-6 lg:p-8 w-full max-w-full overflow-x-hidden">
           <Outlet />
         </main>
       </div>

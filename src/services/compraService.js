@@ -14,3 +14,8 @@ export const getCompraById = async (uuid) => {
   const response = await api.get(`/compras/${uuid}`);
   return response.data;
 };
+
+export const cancelarCompra = async (uuid, motivo_cancelamento) => {
+  const response = await api.patch(`/compras/${uuid}/status`, { status: "CANCELADA", motivo_cancelamento });
+  return response.data;
+};

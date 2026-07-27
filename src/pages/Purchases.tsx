@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
-import { ShoppingCart, Plus, Search, Eye, ClipboardList } from "lucide-react";
-import { getCompras, createCompra } from "@/services/compraService";
+import { ShoppingCart, Plus, Search, Eye, ClipboardList, Trash2 } from "lucide-react";
+import { getCompras, createCompra, getCompraById, cancelarCompra } from "@/services/compraService";
 import { getFornecedores } from "@/services/fornecedorService";
 import { getProdutos } from "@/services/produtosService";
 import { getFilial } from "@/services/filialService";
@@ -21,14 +21,18 @@ const Purchases = () => {
   
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [dialogDetalhesOpen, setDialogDetalhesOpen] = useState(false);
+  const [dialogCancelarOpen, setDialogCancelarOpen] = useState(false);
+  const [motivoCancelamento, setMotivoCancelamento] = useState("");
   const [compraSelecionada, setCompraSelecionada] = useState<any | null>(null);
   const { filialSelecionada, rotuloFilial } = useBranch();
   
   // States para nova compra
   const [fornecedorBusca, setFornecedorBusca] = useState("");
   const [fornecedorUuid, setFornecedorUuid] = useState("");
+  const [fornecedorCod, setFornecedorCod] = useState("");
   const [fornecedorNome, setFornecedorNome] = useState("");
   const [dialogFornecedorOpen, setDialogFornecedorOpen] = useState(false);
   
@@ -74,10 +78,10 @@ const Purchases = () => {
     // filtro de filial
     const matchFilial = filialSelecionada === "todas" || 
       String(c.codfilial) === String(filialSelecionada) ||
-      String(c.filial?.codfilial) === String(filialSelecionada);
+      String(c.msfilial?.codfilial) === String(filialSelecionada);
       
     // filtro de texto
-    const fornecedor = (c.fornecedor?.nome || "").toLowerCase();
+    const fornecedor = (c.msfornecedor?.nome || "").toLowerCase();
     const termo = search.toLowerCase();
     const matchSearch = fornecedor.includes(termo) || String(c.codigo_compra || "").includes(termo);
     
@@ -119,15 +123,16 @@ const Purchases = () => {
     if (!filialDestino || filialDestino === "todas") return toast.error("Selecione uma filial de destino");
     if (itensCompra.length === 0) return toast.error("Adicione itens à compra");
     
+    setIsSubmitting(true);
     try {
       const payload = {
-        fornecedor_uuid: fornecedorUuid,
+        codfornecedor: parseInt(fornecedorCod),
         codfilial: parseInt(filialDestino),
         status: statusCompra,
         itens: itensCompra.map(i => ({
-          codproduto: i.codproduto,
-          quantidade: i.quantidade,
-          custo_unitario: i.custo_unitario
+          codproduto: parseInt(i.codproduto),
+          quantidade: Number(i.quantidade),
+          custo_unitario: Number(i.custo_unitario)
         }))
       };
       
@@ -136,6 +141,7 @@ const Purchases = () => {
       
       // Limpar form
       setFornecedorUuid("");
+      setFornecedorCod("");
       setFornecedorNome("");
       setFilialDestino("");
       setItensCompra([]);
@@ -144,6 +150,39 @@ const Purchases = () => {
     } catch (error) {
       console.error(error);
       toast.error("Erro ao registrar compra");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const abrirDetalhes = async (compra: any) => {
+    try {
+      const detalhes = await getCompraById(compra.uuid);
+      setCompraSelecionada(detalhes);
+      setDialogDetalhesOpen(true);
+    } catch (error) {
+      toast.error("Erro ao buscar detalhes da compra");
+    }
+  };
+
+  const handleCancelarCompra = async () => {
+    if (motivoCancelamento.trim().length < 15) {
+      return toast.error("O motivo do cancelamento deve ter pelo menos 15 caracteres.");
+    }
+
+    setIsSubmitting(true);
+    try {
+      await cancelarCompra(compraSelecionada.uuid, motivoCancelamento);
+      toast.success("Compra cancelada e estoque estornado com sucesso!");
+      setDialogCancelarOpen(false);
+      setMotivoCancelamento("");
+      setDialogDetalhesOpen(false);
+      carregarDados();
+    } catch (error: any) {
+      console.error(error);
+      toast.error(error.response?.data?.error || "Erro ao cancelar a compra");
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -188,20 +227,20 @@ const Purchases = () => {
               {comprasFiltradas.map((compra, i) => (
                 <tr key={compra.uuid || `compra-${i}`} className="border-b border-border last:border-0 hover:bg-muted/20 transition-colors">
                   <td className="px-4 py-3 font-medium text-foreground">{compra.codigo_compra}</td>
-                  <td className="px-4 py-3">{new Date(compra.created_at).toLocaleDateString("pt-BR")}</td>
-                  <td className="px-4 py-3">{compra.fornecedor?.nome || 'N/A'}</td>
+                  <td className="px-4 py-3">{new Date(compra.created_at || compra.data_compra).toLocaleDateString("pt-BR")}</td>
+                  <td className="px-4 py-3">{compra.msfornecedor?.nome || 'N/A'}</td>
                   <td className="px-4 py-3 text-right font-medium">R$ {Number(compra.valor_total || 0).toLocaleString("pt-BR")}</td>
                   <td className="px-4 py-3 text-center">
-                    <Badge variant="outline" className={compra.status === 'CONCLUIDA' ? 'text-green-600 border-green-600' : ''}>
+                    <Badge variant="outline" className={
+                      compra.status === 'FINALIZADA' || compra.status === 'CONCLUIDA' ? 'text-green-600 border-green-600 bg-green-50' : 
+                      compra.status === 'CANCELADA' ? 'text-red-600 border-red-600 bg-red-50' : ''
+                    }>
                       {compra.status}
                     </Badge>
                   </td>
                   <td className="px-4 py-3 text-center">
                     <button
-                      onClick={() => {
-                        setCompraSelecionada(compra);
-                        setDialogDetalhesOpen(true);
-                      }}
+                      onClick={() => abrirDetalhes(compra)}
                       className="p-1.5 rounded-md hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
                       title="Ver Detalhes"
                     >
@@ -324,8 +363,10 @@ const Purchases = () => {
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setDialogOpen(false)}>Cancelar</Button>
-            <Button onClick={handleCriarCompra}>Registrar Compra</Button>
+            <Button variant="outline" onClick={() => setDialogOpen(false)} disabled={isSubmitting}>Cancelar</Button>
+            <Button onClick={handleCriarCompra} disabled={isSubmitting}>
+              {isSubmitting ? "Registrando..." : "Registrar Compra"}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -348,6 +389,7 @@ const Purchases = () => {
                   className="p-2 border rounded cursor-pointer hover:bg-muted"
                   onClick={() => {
                     setFornecedorUuid(f.uuid);
+                    setFornecedorCod(f.codfornecedor);
                     setFornecedorNome(f.nome);
                     setDialogFornecedorOpen(false);
                   }}
@@ -397,17 +439,17 @@ const Purchases = () => {
           {compraSelecionada && (
             <div className="space-y-4">
               <div>
-                <p className="text-sm font-semibold">Fornecedor: <span className="font-normal text-muted-foreground">{compraSelecionada.fornecedor?.nome}</span></p>
+                <p className="text-sm font-semibold">Fornecedor: <span className="font-normal text-muted-foreground">{compraSelecionada.msfornecedor?.nome}</span></p>
                 <p className="text-sm font-semibold">Status: <span className="font-normal text-muted-foreground">{compraSelecionada.status}</span></p>
-                <p className="text-sm font-semibold">Filial: <span className="font-normal text-muted-foreground">{compraSelecionada.filial?.filial || compraSelecionada.codfilial}</span></p>
-                <p className="text-sm font-semibold">Data: <span className="font-normal text-muted-foreground">{new Date(compraSelecionada.created_at).toLocaleString('pt-BR')}</span></p>
+                <p className="text-sm font-semibold">Filial: <span className="font-normal text-muted-foreground">{compraSelecionada.msfilial?.filial || compraSelecionada.codfilial}</span></p>
+                <p className="text-sm font-semibold">Data: <span className="font-normal text-muted-foreground">{new Date(compraSelecionada.data_compra || compraSelecionada.created_at).toLocaleString('pt-BR')}</span></p>
               </div>
               <div>
                 <h4 className="font-medium border-b pb-1 mb-2">Itens</h4>
                 <ul className="space-y-2 max-h-[250px] overflow-y-auto">
-                  {(compraSelecionada.itens || []).map((item: any, idx: number) => (
+                  {(compraSelecionada.mscompra_item || []).map((item: any, idx: number) => (
                     <li key={idx} className="flex justify-between text-sm">
-                      <span>{item.quantidade}x {item.produto?.descricao || `Produto ID: ${item.codproduto}`}</span>
+                      <span>{item.quantidade}x {item.msproduto?.descricao || `Produto ID: ${item.codproduto}`}</span>
                       <span className="font-medium text-muted-foreground">R$ {(item.quantidade * item.custo_unitario).toLocaleString("pt-BR")}</span>
                     </li>
                   ))}
@@ -417,8 +459,54 @@ const Purchases = () => {
                 <span className="font-semibold text-lg">Total</span>
                 <span className="font-bold text-lg text-primary">R$ {Number(compraSelecionada.valor_total || 0).toLocaleString("pt-BR")}</span>
               </div>
+              
+              {compraSelecionada.status !== "CANCELADA" && (
+                <div className="flex justify-end pt-4 border-t border-border mt-4">
+                  <Button 
+                    variant="destructive" 
+                    onClick={() => {
+                      setMotivoCancelamento("");
+                      setDialogCancelarOpen(true);
+                    }}
+                    className="w-full sm:w-auto"
+                  >
+                    <Trash2 className="h-4 w-4 mr-2" />
+                    Cancelar Compra (Estornar)
+                  </Button>
+                </div>
+              )}
             </div>
           )}
+        </DialogContent>
+      </Dialog>
+
+      {/* DIALOG CANCELAR COMPRA */}
+      <Dialog open={dialogCancelarOpen} onOpenChange={setDialogCancelarOpen}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>Cancelar Compra</DialogTitle></DialogHeader>
+          <div className="space-y-4 py-2">
+            <p className="text-sm text-muted-foreground">
+              ATENÇÃO: Esta ação irá estornar o estoque de todos os produtos recebidos nesta nota.
+              Essa operação não pode ser desfeita.
+            </p>
+            <div className="space-y-2">
+              <Label>Motivo do Cancelamento <span className="text-red-500">*</span></Label>
+              <Input 
+                placeholder="Descreva o motivo (mínimo 15 caracteres)..." 
+                value={motivoCancelamento} 
+                onChange={e => setMotivoCancelamento(e.target.value)} 
+              />
+              <p className="text-xs text-muted-foreground text-right">
+                {motivoCancelamento.length}/15 caracteres mínimos
+              </p>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDialogCancelarOpen(false)} disabled={isSubmitting}>Sair</Button>
+            <Button variant="destructive" onClick={handleCancelarCompra} disabled={isSubmitting || motivoCancelamento.trim().length < 15}>
+              {isSubmitting ? "Cancelando..." : "Confirmar Cancelamento"}
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>

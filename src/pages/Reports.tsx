@@ -1,5 +1,8 @@
-import { pedidos, produtos } from "@/data/mockData";
+import { pedidos, produtos as mockProdutos } from "@/data/mockData";
 import { useBranch } from "@/contexts/BranchContext";
+import { useState, useEffect } from "react";
+import { getEstoque } from "@/services/estoqueService";
+import { getProdutos } from "@/services/produtosService";
 import KpiCard from "@/components/KpiCard";
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, PieChart, Pie, Cell,
@@ -8,6 +11,39 @@ import {
 const Reports = () => {
   const { filialSelecionada, rotuloFilial } = useBranch();
   const pedidosFilial = pedidos.filter((o) => filialSelecionada === "todas" || o.filial === filialSelecionada);
+
+  const [produtosAPI, setProdutosAPI] = useState<any[]>([]);
+  const [estoquesAPI, setEstoquesAPI] = useState<any[]>([]);
+  const [loadingEstoque, setLoadingEstoque] = useState(true);
+
+  useEffect(() => {
+    async function loadData() {
+      try {
+        const [prod, est] = await Promise.all([getProdutos(), getEstoque()]);
+        setProdutosAPI(Array.isArray(prod) ? prod : []);
+        setEstoquesAPI(Array.isArray(est) ? est : []);
+      } catch (error) {
+        console.error(error);
+      } finally {
+        setLoadingEstoque(false);
+      }
+    }
+    loadData();
+  }, []);
+
+  const obterEstoque = (codproduto: number) => {
+    const estoquesDoProduto = estoquesAPI.filter(e => e.codproduto === codproduto);
+    if (filialSelecionada === "todas") {
+      return estoquesDoProduto.reduce((acc, curr) => acc + curr.quantidade, 0);
+    }
+    const estoqueFilial = estoquesDoProduto.find(e => String(e.codfilial) === String(filialSelecionada));
+    return estoqueFilial ? estoqueFilial.quantidade : 0;
+  };
+
+  const listaReposicao = produtosAPI.map(p => ({
+    ...p,
+    estoqueAtual: obterEstoque(p.codproduto)
+  })).filter(p => p.ativo === "S" && p.estoqueAtual <= (p.estoque_minimo || 0));
 
   const faturamentoTotal = pedidosFilial.filter((o) => o.status !== "cancelado").reduce((s, o) => s + o.total, 0);
   const pedidosValidos = pedidosFilial.filter((o) => o.status !== "cancelado");
@@ -30,7 +66,7 @@ const Reports = () => {
   pedidosFilial.forEach((o) => {
     if (o.status === "cancelado") return;
     o.itens.forEach((item) => {
-      const produto = produtos.find((p) => p.id === item.produtoId);
+      const produto = mockProdutos.find((p) => p.id === item.produtoId);
       const cat = produto?.categoria || "Outros";
       vendasPorCategoria[cat] = (vendasPorCategoria[cat] || 0) + item.preco * item.quantidade;
     });
@@ -41,7 +77,7 @@ const Reports = () => {
     .filter((o) => o.status !== "cancelado")
     .reduce((s, o) => {
       return s + o.itens.reduce((is, item) => {
-        const produto = produtos.find((p) => p.id === item.produtoId);
+        const produto = mockProdutos.find((p) => p.id === item.produtoId);
         return is + (produto?.precoCusto || 0) * item.quantidade;
       }, 0);
     }, 0);
@@ -145,6 +181,44 @@ const Reports = () => {
             </tbody>
           </table>
         </div>
+      </div>
+
+      <div className="bg-card rounded-lg border border-border p-6 mt-6">
+        <h3 className="text-xs text-muted-foreground uppercase tracking-widest mb-5">Relatório de Reposição de Estoque</h3>
+        {loadingEstoque ? (
+          <div className="text-center py-4 text-muted-foreground">Carregando dados de estoque...</div>
+        ) : listaReposicao.length === 0 ? (
+          <div className="text-center py-4 text-muted-foreground">Nenhum produto precisando de reposição no momento.</div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm whitespace-nowrap">
+              <thead>
+                <tr className="border-b border-border bg-muted/30">
+                  <th className="text-left px-4 py-3 font-medium text-muted-foreground">Produto</th>
+                  <th className="text-center px-4 py-3 font-medium text-muted-foreground">Estoque Atual</th>
+                  <th className="text-center px-4 py-3 font-medium text-muted-foreground">Estoque Mínimo</th>
+                  <th className="text-center px-4 py-3 font-medium text-muted-foreground">Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {listaReposicao.map((p) => (
+                  <tr key={p.codproduto} className="border-b border-border last:border-0 hover:bg-muted/20">
+                    <td className="px-4 py-3 font-medium text-foreground">{p.descricao}</td>
+                    <td className={`px-4 py-3 text-center font-medium ${p.estoqueAtual <= 0 ? 'text-destructive' : 'text-amber-600'}`}>{p.estoqueAtual}</td>
+                    <td className="px-4 py-3 text-center text-muted-foreground">{p.estoque_minimo || 0}</td>
+                    <td className="px-4 py-3 text-center">
+                      {p.estoqueAtual <= 0 ? (
+                        <span className="bg-destructive/10 text-destructive text-[10px] px-2 py-1 rounded-full font-medium border border-destructive/20">Sem Estoque</span>
+                      ) : (
+                        <span className="bg-amber-100 text-amber-700 text-[10px] px-2 py-1 rounded-full font-medium border border-amber-200">Baixo</span>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
     </div>
   );

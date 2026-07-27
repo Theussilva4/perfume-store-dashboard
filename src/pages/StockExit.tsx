@@ -102,7 +102,42 @@ const StockExit = () => {
       </div>
 
       <div className="bg-card rounded-lg border border-border overflow-hidden">
-        <div className="overflow-x-auto">
+        {/* VISÃO MOBILE */}
+        <div className="grid grid-cols-1 gap-4 p-4 md:hidden">
+          {saidasFiltradas.length === 0 ? (
+            <div className="text-center py-4 text-muted-foreground">Nenhuma saída registrada.</div>
+          ) : saidasFiltradas.map((e) => (
+            <div key={e.id} className="bg-background rounded-lg border border-border p-4 shadow-sm flex flex-col gap-3">
+              <div className="flex justify-between items-start">
+                <div>
+                  <div className="font-medium text-foreground">{e.produto?.descricao || `Cód: ${e.codproduto}`}</div>
+                  <div className="text-xs text-muted-foreground mt-1">
+                    <Badge variant="outline" className="text-[10px]">{getRotuloFilial(e.codfilial)}</Badge>
+                  </div>
+                </div>
+                <div className="text-right">
+                  <div className="text-xs text-muted-foreground">{new Date(e.data_mov || e.created_at).toLocaleDateString("pt-BR")}</div>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-2 text-sm pt-2 border-t border-border mt-1 items-center">
+                <div>
+                  <span className="text-xs text-muted-foreground block">Quantidade</span>
+                  <span className="font-medium text-destructive">-{e.quantidade}</span>
+                </div>
+                <div className="text-right">
+                  <span className="text-xs text-muted-foreground block">Motivo</span>
+                  <Badge variant="secondary" className="text-[10px]">
+                    {e.origem ? rotulosMotivo[e.origem.toUpperCase()] || e.origem : "—"}
+                  </Badge>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* VISÃO DESKTOP */}
+        <div className="hidden md:block overflow-x-auto">
           <table className="w-full text-sm whitespace-nowrap">
             <thead>
               <tr className="border-b border-border bg-muted/30">

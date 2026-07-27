@@ -5,7 +5,7 @@ import { getCliente } from '@/services/clienteService'
 import { getVendedor } from '@/services/vendedorService'
 import { getProdutos } from '@/services/produtosService'
 import { getFormasPagamento } from '@/services/formaPagamentoService'
-import { createPedido, getPedidos, updatePedido, alterarStatusPedido } from '@/services/pedidosService'
+import { createPedido, getPedidos, updatePedido, alterarStatusPedido, cancelarPedido } from '@/services/pedidosService'
 import { useBranch, filiais } from "@/contexts/BranchContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
@@ -60,6 +60,9 @@ const Orders = () => {
   const [filtroStatus, setFiltroStatus] = useState("all");
   const [filtroPeriodo, setFiltroPeriodo] = useState("all");
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [dialogCancelarOpen, setDialogCancelarOpen] = useState(false);
+  const [motivoCancelamento, setMotivoCancelamento] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [telefoneCliente, setTelefoneCliente] = useState("");
   const [enderecoCliente, setEnderecoCliente] = useState("");
   const [formaPagamento, setFormaPagamento] = useState<string>("pix");
@@ -154,6 +157,9 @@ const Orders = () => {
           nomeFormaPagamento: planoPgtoReq ? (planoPgtoReq.DESCRICAO || planoPgtoReq.descricao || planoPgtoReq.nome) : (p.formaPagamento || 'Não Informado'),
           nomeCliente: clienteReq ? clienteReq.nome : (p.nomeCliente || p.cliente?.nome || 'Cliente não encontrado'),
           telefoneCliente: clienteReq ? clienteReq.telefone : (p.telefoneCliente || p.cliente?.telefone || ''),
+          motivo_cancelamento: p.motivo_cancelamento,
+          data_cancelamento: p.data_cancelamento,
+          usuarioCancelou: p.msusuario_mspedido_codusur_cancelouTomsusuario?.nome,
           itens: itensTratados
         };
       });
@@ -493,6 +499,7 @@ const Orders = () => {
       }
 
       carregarDados();
+      window.dispatchEvent(new Event('pedidosChanged'));
 
       setDialogOpen(false);
       setIdPedidoEdicao(null);
@@ -521,8 +528,32 @@ const Orders = () => {
         prev.map((o) => (o.id === String(pedidoId) ? { ...o, status } : o))
       );
       toast.success("Status atualizado!");
+      window.dispatchEvent(new Event('pedidosChanged'));
     } catch {
       toast.error("Erro ao atualizar status do pedido.");
+    }
+  };
+
+  const handleCancelarPedido = async () => {
+    if (motivoCancelamento.trim().length < 15) {
+      return toast.error("O motivo do cancelamento deve ter pelo menos 15 caracteres.");
+    }
+
+    setIsSubmitting(true);
+    try {
+      const codusur_cancelou = usuario?.codusur || null;
+      await cancelarPedido(pedidoParaDetalhes.id, motivoCancelamento, codusur_cancelou);
+      toast.success("Pedido cancelado e estoque devolvido com sucesso!");
+      setDialogCancelarOpen(false);
+      setMotivoCancelamento("");
+      setDialogDetalhesOpen(false);
+      carregarDados();
+      window.dispatchEvent(new Event('pedidosChanged'));
+    } catch (error: any) {
+      console.error(error);
+      toast.error(error.response?.data?.error || "Erro ao cancelar o pedido");
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -1262,6 +1293,15 @@ const Orders = () => {
                 <p className="text-sm font-semibold">Pagamento: <span className="font-normal text-muted-foreground">{pedidoParaDetalhes.nomeFormaPagamento}</span></p>
               </div>
 
+              {pedidoParaDetalhes.status === "CANCELADO" && pedidoParaDetalhes.motivo_cancelamento && (
+                <div className="bg-red-50 p-3 rounded-md border border-red-100">
+                  <h4 className="font-semibold text-red-800 text-sm mb-1">Informações do Cancelamento</h4>
+                  <p className="text-sm text-red-700"><strong>Data:</strong> {new Date(pedidoParaDetalhes.data_cancelamento).toLocaleString("pt-BR")}</p>
+                  <p className="text-sm text-red-700"><strong>Usuário:</strong> {pedidoParaDetalhes.usuarioCancelou || 'Não informado'}</p>
+                  <p className="text-sm text-red-700"><strong>Motivo:</strong> {pedidoParaDetalhes.motivo_cancelamento}</p>
+                </div>
+              )}
+
               <div>
                 <h4 className="font-medium border-b pb-1 mb-2">Itens do Pedido</h4>
                 {(!pedidoParaDetalhes.itens || pedidoParaDetalhes.itens.length === 0) ? (
@@ -1287,8 +1327,22 @@ const Orders = () => {
                 <span className="font-bold text-lg text-primary">R$ {Number(pedidoParaDetalhes.total || 0).toLocaleString("pt-BR")}</span>
               </div>
 
-              <div className="flex gap-2">
-                <Button className="w-full mt-4" onClick={() => {
+              <div className="flex gap-2 justify-end pt-4 border-t border-border mt-4">
+                {pedidoParaDetalhes.status !== "CANCELADO" && (
+                  <Button 
+                    variant="destructive"
+                    className="mr-auto"
+                    onClick={() => {
+                      setMotivoCancelamento("");
+                      setDialogCancelarOpen(true);
+                    }}
+                  >
+                    <Trash2 className="h-4 w-4 mr-2" />
+                    Cancelar Pedido
+                  </Button>
+                )}
+
+                <Button onClick={() => {
                   let txt = `*Pedido #${pedidoParaDetalhes.numero}*\n`;
                   txt += `Cliente: ${pedidoParaDetalhes.nomeCliente}\n\n`;
                   txt += `*Itens:*\n`;
@@ -1307,6 +1361,37 @@ const Orders = () => {
           )}
         </DialogContent>
       </Dialog>
+      
+      {/* DIALOG CANCELAR PEDIDO */}
+      <Dialog open={dialogCancelarOpen} onOpenChange={setDialogCancelarOpen}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>Cancelar Pedido</DialogTitle></DialogHeader>
+          <div className="space-y-4 py-2">
+            <p className="text-sm text-muted-foreground">
+              ATENÇÃO: Se o pedido já estiver finalizado, o estoque será devolvido automaticamente.
+              Esta operação não pode ser desfeita.
+            </p>
+            <div className="space-y-2">
+              <Label>Motivo do Cancelamento <span className="text-red-500">*</span></Label>
+              <Input 
+                placeholder="Descreva o motivo (mínimo 15 caracteres)..." 
+                value={motivoCancelamento} 
+                onChange={e => setMotivoCancelamento(e.target.value)} 
+              />
+              <p className="text-xs text-muted-foreground text-right">
+                {motivoCancelamento.length}/15 caracteres mínimos
+              </p>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDialogCancelarOpen(false)} disabled={isSubmitting}>Voltar</Button>
+            <Button variant="destructive" onClick={handleCancelarPedido} disabled={isSubmitting || motivoCancelamento.trim().length < 15}>
+              {isSubmitting ? "Cancelando..." : "Confirmar Cancelamento"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       <BarcodeScannerModal 
         open={scannerOpen} 
         onOpenChange={setScannerOpen} 

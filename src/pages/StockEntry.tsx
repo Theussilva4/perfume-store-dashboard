@@ -136,7 +136,49 @@ const StockEntry = () => {
 
       {/* Tabela de compras */}
       <div className="bg-card rounded-lg border border-border overflow-hidden">
-        <div className="overflow-x-auto">
+        {/* VISÃO MOBILE */}
+        <div className="grid grid-cols-1 gap-4 p-4 md:hidden">
+          {listaCompras.length === 0 ? (
+            <div className="text-center py-4 text-muted-foreground">Nenhuma compra registrada.</div>
+          ) : listaCompras.map((c) => (
+            <div key={c.id} className="bg-background rounded-lg border border-border p-4 shadow-sm flex flex-col gap-3">
+              <div className="flex justify-between items-start">
+                <div>
+                  <div className="font-medium text-foreground">{c.nomeProduto}</div>
+                  <div className="text-xs text-muted-foreground">{c.marca}</div>
+                </div>
+                <Badge variant="outline" className="text-[10px] whitespace-nowrap bg-primary/5 text-primary">
+                  {new Date(c.dataCompra).toLocaleDateString("pt-BR")}
+                </Badge>
+              </div>
+
+              <div className="grid grid-cols-2 gap-2 text-sm pt-2 border-t border-border mt-1">
+                <div>
+                  <span className="text-xs text-muted-foreground block">Qtd</span>
+                  <span className="font-medium text-primary">+{c.quantidade}</span>
+                </div>
+                <div>
+                  <span className="text-xs text-muted-foreground block">NF</span>
+                  <span className="font-medium text-foreground">{c.notaFiscal || "—"}</span>
+                </div>
+                <div>
+                  <span className="text-xs text-muted-foreground block">Custo Unitário</span>
+                  <span className="font-medium">R$ {c.custoUnitario.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</span>
+                </div>
+                <div>
+                  <span className="text-xs text-muted-foreground block">Custo Real</span>
+                  <span className="font-semibold text-foreground">R$ {c.custoRealUnitario.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</span>
+                </div>
+              </div>
+              <div className="text-xs text-muted-foreground pt-2 border-t border-border mt-1">
+                <span className="font-medium">Fornecedor:</span> {c.fornecedor}
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* VISÃO DESKTOP */}
+        <div className="hidden md:block overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-border bg-muted/30">

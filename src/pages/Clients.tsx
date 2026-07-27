@@ -49,6 +49,7 @@ function mapearCliente(c: any): Cliente {
 
 const Clients = () => {
   const [search, setSearch] = useState("");
+  const fastMode = localStorage.getItem("fastClientMode") !== "false";
   const [filtroAba, setFiltroAba] = useState<"S" | "N">("S");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [form, setForm] = useState<Omit<Cliente, "codcliente">>(clienteVazio);
@@ -105,8 +106,25 @@ const filtrados = ListaClientes.filter((c) => {
   );
 
   const handleSalvar = async () => {
-    if(!validarCpfCnpj(form.cpf_cnpj)){
-      toast.error("CPF ou CNPJ INVALIDO");
+    const camposFaltando = [];
+    if (!form.nome || form.nome.trim() === "") camposFaltando.push("Nome");
+    if (!form.telefone || form.telefone.trim() === "") camposFaltando.push("Telefone");
+
+    if (!fastMode) {
+      if (!form.cpf_cnpj || form.cpf_cnpj.trim() === "") camposFaltando.push("CPF/CNPJ");
+      if (!form.endereco || form.endereco.trim() === "") camposFaltando.push("Endereço");
+      if (!form.bairro || form.bairro.trim() === "") camposFaltando.push("Bairro");
+      if (!form.cidade || form.cidade.trim() === "") camposFaltando.push("Cidade");
+    }
+    
+    if (camposFaltando.length > 0) {
+      toast.error(`Preencha os campos obrigatórios: ${camposFaltando.join(", ")}`);
+      return;
+    }
+
+    if (form.cpf_cnpj && !validarCpfCnpj(form.cpf_cnpj)){
+      toast.error("CPF ou CNPJ INVÁLIDO");
+      return;
     }
     try {
       if (editandoCliente) {
@@ -121,8 +139,9 @@ const filtrados = ListaClientes.filter((c) => {
       setDialogOpen(false);
       setEditandoCliente(null);
 
-    } catch (error) {
-      toast.error("Erro ao salvar cliente");
+    } catch (error: any) {
+      console.error(error);
+      toast.error(error.response?.data?.error || "Erro ao salvar cliente");
     }
   };
 
@@ -342,7 +361,7 @@ function formatarCpfCnpj(valor: string) {
 
           <div className="grid grid-cols-2 gap-4">
             <div className="col-span-2">
-              <Label>Nome</Label>
+              <Label>Nome <span className="text-destructive">*</span></Label>
               <Input
                 value={form.nome}
                 onChange={(e) =>
@@ -352,7 +371,7 @@ function formatarCpfCnpj(valor: string) {
             </div>
 
             <div>
-              <Label>CPF/CNPJ</Label>
+              <Label>CPF/CNPJ {!fastMode && <span className="text-destructive">*</span>}</Label>
               <Input
                 value={formatarCpfCnpj(form.cpf_cnpj)}
                 onChange={(e) =>
@@ -362,7 +381,7 @@ function formatarCpfCnpj(valor: string) {
             </div>
 
             <div>
-              <Label>Telefone</Label>
+              <Label>Telefone <span className="text-destructive">*</span></Label>
               <Input
                 value={form.telefone}
                 onChange={(e) =>
@@ -392,7 +411,7 @@ function formatarCpfCnpj(valor: string) {
             </div>
 
             <div className="col-span-2">
-              <Label>Endereço</Label>
+              <Label>Endereço {!fastMode && <span className="text-destructive">*</span>}</Label>
               <Input
                 value={form.endereco}
                 onChange={(e) =>
@@ -412,7 +431,7 @@ function formatarCpfCnpj(valor: string) {
             </div>
 
             <div>
-              <Label>Bairro</Label>
+              <Label>Bairro {!fastMode && <span className="text-destructive">*</span>}</Label>
               <Input
                 value={form.bairro}
                 onChange={(e) =>
@@ -422,7 +441,7 @@ function formatarCpfCnpj(valor: string) {
             </div>
 
             <div>
-              <Label>Cidade</Label>
+              <Label>Cidade {!fastMode && <span className="text-destructive">*</span>}</Label>
               <Input
                 value={form.cidade}
                 onChange={(e) =>

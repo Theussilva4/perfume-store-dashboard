@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
 import logo from "@/assets/logo.png";
 
@@ -13,9 +14,11 @@ const SettingsPage = () => {
     address: "Rua Exemplo, 123 — São Paulo, SP",
     instagram: "@tassiachando",
     facebook: "",
+    fastClientMode: localStorage.getItem("fastClientMode") !== "false", // default to true
   });
 
   const handleSave = () => {
+    localStorage.setItem("fastClientMode", String(form.fastClientMode));
     toast.success("Configurações salvas!");
   };
 
@@ -57,6 +60,17 @@ const SettingsPage = () => {
             <Label>Endereço</Label>
             <Input value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} />
           </div>
+        </div>
+
+        <div className="flex items-center justify-between border-t border-border pt-6 mt-6">
+          <div>
+            <p className="text-sm font-medium text-foreground">Cadastro Rápido de Clientes (Modo Teste)</p>
+            <p className="text-xs text-muted-foreground">Se ativo, permite cadastrar clientes exigindo apenas Nome e Telefone. Se desativado, exigirá CPF e Endereço completos.</p>
+          </div>
+          <Switch 
+            checked={form.fastClientMode} 
+            onCheckedChange={(checked) => setForm({ ...form, fastClientMode: checked })} 
+          />
         </div>
 
         <Button onClick={handleSave}>Salvar Configurações</Button>

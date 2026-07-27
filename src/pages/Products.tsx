@@ -212,14 +212,12 @@ const Products = () => {
         </Button>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+      {/* VISÃO MOBILE (CARDS) */}
+      <div className="grid grid-cols-1 gap-4 md:hidden">
         {filtrados.map((produto) => {
           const categoriaEncontrada = categorias.find(
             (c) => c.codcategoria === Number(produto.codcategoria)
           );
-          const pMargem = produto.precoCusto > 0 ? ((produto.precoVenda - produto.precoCusto) / produto.precoCusto) * 100 : 0;
-          const pMarkup = produto.precoCusto > 0 ? produto.precoVenda / produto.precoCusto : 0;
-          const pLucro = produto.precoVenda - produto.precoCusto;
 
           return (
             <div
@@ -232,10 +230,10 @@ const Products = () => {
                 </div>
                 <div className="flex gap-1">
                   <button onClick={() => abrirEdicao(produto)} className="p-1.5 rounded-md hover:bg-muted text-muted-foreground hover:text-foreground transition-colors">
-                    <Pencil className="h-3.5 w-3.5" />
+                    <Pencil className="h-4 w-4" />
                   </button>
                   <button onClick={() => handleRemover(produto)} className="p-1.5 rounded-md hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors">
-                    <Trash2 className="h-3.5 w-3.5" />
+                    <Trash2 className="h-4 w-4" />
                   </button>
                 </div>
               </div>
@@ -277,6 +275,68 @@ const Products = () => {
             </div>
           );
         })}
+      </div>
+
+      {/* VISÃO DESKTOP (TABELA) */}
+      <div className="hidden md:block bg-card rounded-lg border border-border overflow-x-auto">
+        <table className="w-full text-sm text-left">
+          <thead className="bg-muted/50 text-muted-foreground">
+            <tr>
+              <th className="px-4 py-3 font-medium">Código</th>
+              <th className="px-4 py-3 font-medium">Produto</th>
+              <th className="px-4 py-3 font-medium">Marca</th>
+              <th className="px-4 py-3 font-medium">Categoria</th>
+              <th className="px-4 py-3 font-medium text-right">Estoque</th>
+              <th className="px-4 py-3 font-medium text-center">Status</th>
+              <th className="px-4 py-3 font-medium text-right">Ações</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-border">
+            {filtrados.map((produto) => {
+              const categoriaEncontrada = categorias.find(
+                (c) => c.codcategoria === Number(produto.codcategoria)
+              );
+              return (
+                <tr key={produto.codproduto} className={`hover:bg-muted/30 transition-colors ${!produto.ativo ? 'opacity-60' : ''}`}>
+                  <td className="px-4 py-3 text-muted-foreground">{produto.codproduto}</td>
+                  <td className="px-4 py-3">
+                    <div className="font-medium text-foreground">{produto.descricao}</div>
+                    {produto.volume && <div className="text-xs text-muted-foreground">{produto.volume}ml</div>}
+                  </td>
+                  <td className="px-4 py-3 text-muted-foreground">{produto.marca || "-"}</td>
+                  <td className="px-4 py-3 text-muted-foreground">{categoriaEncontrada?.categoria || "Sem Categoria"}</td>
+                  <td className="px-4 py-3 text-right">
+                    <span className="font-medium">{produto.estoque}</span>
+                    {produto.estoque <= produto.estoqueMinimo && (
+                      <Badge variant="destructive" className="ml-2 text-[10px]">Baixo</Badge>
+                    )}
+                  </td>
+                  <td className="px-4 py-3 text-center">
+                    <button
+                      onClick={() => alternarAtivo(produto)}
+                      className={`text-[10px] px-2 py-0.5 rounded-full border transition-colors ${produto.ativo
+                        ? "border-primary/20 text-primary hover:bg-primary/5"
+                        : "border-destructive/20 text-destructive hover:bg-destructive/5"
+                      }`}
+                    >
+                      {produto.ativo ? "Ativo" : "Inativo"}
+                    </button>
+                  </td>
+                  <td className="px-4 py-3 text-right">
+                    <div className="flex justify-end gap-1">
+                      <button onClick={() => abrirEdicao(produto)} className="p-1.5 rounded-md hover:bg-muted text-muted-foreground hover:text-foreground transition-colors" title="Editar">
+                        <Pencil className="h-4 w-4" />
+                      </button>
+                      <button onClick={() => handleRemover(produto)} className="p-1.5 rounded-md hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors" title="Inativar">
+                        <Trash2 className="h-4 w-4" />
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
       </div>
 
       {filtrados.length === 0 && (

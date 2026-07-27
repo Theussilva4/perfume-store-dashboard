@@ -44,6 +44,11 @@ export const criarPromocao = async (data) => {
   return res.data;
 };
 
+export const updatePromocao = async (codpromocao, data) => {
+  const res = await api.put(`/comercial/promocoes/${codpromocao}`, data);
+  return res.data;
+};
+
 export const deletarPromocao = async (codpromocao) => {
   const res = await api.delete(`/comercial/promocoes/${codpromocao}`);
   return res.data;
