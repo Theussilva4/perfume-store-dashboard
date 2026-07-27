@@ -57,6 +57,7 @@ const Products = () => {
   const [form, setForm] = useState<Omit<Produto, "codproduto">>(produtoVazio);
   const [categorias, setCategorias] = useState<categoria[]>([]);
   const [scannerOpen, setScannerOpen] = useState(false);
+  const [mostrarInativos, setMostrarInativos] = useState(false);
 
   const filtrados = listaProdutos.filter((p) => {
     const matchSearch =
@@ -64,7 +65,8 @@ const Products = () => {
       p.marca?.toLowerCase().includes(search.toLowerCase());
     const matchCat =
       filtroCategoria === "all" || p.codcategoria === Number(filtroCategoria);
-    return matchSearch && matchCat;
+    const matchAtivo = mostrarInativos || p.ativo;
+    return matchSearch && matchCat && matchAtivo;
   });
 
   async function carregarCategorias() {
@@ -211,6 +213,13 @@ const Products = () => {
             ))}
           </SelectContent>
         </Select>
+        <Button 
+          variant="outline" 
+          onClick={() => setMostrarInativos(!mostrarInativos)}
+          className={`w-full sm:w-auto ${mostrarInativos ? "bg-muted" : ""}`}
+        >
+          {mostrarInativos ? "Ocultar Inativos" : "Mostrar Inativos"}
+        </Button>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
