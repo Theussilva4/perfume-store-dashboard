@@ -255,14 +255,9 @@ const Products = () => {
                 )}
               </div>
 
-              {/* Precificação via Motor */}
-              <div className="bg-muted/30 rounded-md p-2 space-y-1">
-                <p className="text-xs text-muted-foreground text-center">Precificação movida para o Módulo Comercial.</p>
-              </div>
-
               <div className="flex items-end justify-between mt-auto pt-2 border-t border-border">
-                <div>
-                   <p className="text-[10px] text-muted-foreground">Preços no menu Comercial</p>
+                <div className="text-left">
+                  <p className="text-[10px] text-muted-foreground mt-2">Preços no menu Comercial</p>
                 </div>
                 <div className="text-right">
                   <p className="text-sm font-medium text-foreground">{produto.estoque}</p>
