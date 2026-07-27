@@ -226,18 +226,8 @@ const Purchases = () => {
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent 
           className="w-[95vw] sm:max-w-2xl max-h-[90vh] overflow-y-auto"
-          onInteractOutside={(e) => {
-            e.preventDefault();
-            if (window.confirm("Você tem um formulário em andamento. Deseja realmente fechar sem salvar?")) {
-              setDialogOpen(false);
-            }
-          }}
-          onEscapeKeyDown={(e) => {
-            e.preventDefault();
-            if (window.confirm("Você tem um formulário em andamento. Deseja realmente fechar sem salvar?")) {
-              setDialogOpen(false);
-            }
-          }}
+          onInteractOutside={(e) => e.preventDefault()}
+          onEscapeKeyDown={(e) => e.preventDefault()}
         >
           <DialogHeader>
             <DialogTitle>Registrar Compra / Entrada</DialogTitle>

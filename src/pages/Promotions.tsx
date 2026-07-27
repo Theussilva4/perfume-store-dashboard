@@ -204,18 +204,8 @@ const Promotions = () => {
       }}>
         <DialogContent 
           className="w-[95vw] sm:max-w-4xl max-h-[90vh] overflow-y-auto"
-          onInteractOutside={(e) => {
-            e.preventDefault();
-            if (window.confirm("Você tem um formulário em andamento. Deseja realmente fechar sem salvar?")) {
-              setIsModalOpen(false);
-            }
-          }}
-          onEscapeKeyDown={(e) => {
-            e.preventDefault();
-            if (window.confirm("Você tem um formulário em andamento. Deseja realmente fechar sem salvar?")) {
-              setIsModalOpen(false);
-            }
-          }}
+          onInteractOutside={(e) => e.preventDefault()}
+          onEscapeKeyDown={(e) => e.preventDefault()}
         >
           <DialogHeader>
             <DialogTitle>Nova Campanha Promocional</DialogTitle>
