@@ -27,6 +27,9 @@ import NotFound from "@/pages/NotFound";
 import Purchases from "@/pages/Purchases";
 import Prices from "@/pages/Prices";
 import Promotions from "@/pages/Promotions";
+import Returns from "./pages/Returns";
+import SubCategories from "./pages/SubCategories";
+import PaymentPlans from "./pages/PaymentPlans";
 
 const queryClient = new QueryClient();
 
@@ -56,8 +59,10 @@ const App = () => (
             <Route path="/" element={<ProtectedRoute><AppLayout /></ProtectedRoute>}>
               <Route index element={<Dashboard />} />
               <Route path="produtos" element={<Products />} />
-              <Route path="categorias" element={<Categories />} />
-              <Route path="marcas" element={<Brands />} />
+              <Route path="/categorias" element={<Categories />} />
+              <Route path="/marcas" element={<Brands />} />
+              <Route path="/subcategorias" element={<SubCategories />} />
+              <Route path="/planos-pagamento" element={<PaymentPlans />} />
               <Route path="estoque" element={<Stock />} />
               <Route path="estoque/entradas" element={<StockEntry />} />
               <Route path="estoque/saidas" element={<StockExit />} />

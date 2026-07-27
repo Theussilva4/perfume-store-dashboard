@@ -15,6 +15,7 @@ import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
 import { Plus, Search, Eye, ClipboardList, Trash2, Pencil, ScanBarcode, FileText } from "lucide-react";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
@@ -1083,8 +1084,8 @@ const Orders = () => {
               )}
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              <div className="space-y-2 md:col-span-2">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2 md:col-span-1">
                 <Label>Plano de Pagamento</Label>
                 <div className="flex gap-2">
                   <Input
@@ -1111,6 +1112,21 @@ const Orders = () => {
                     placeholder="Nome do Plano"
                     className="flex-1"
                   />
+                </div>
+              </div>
+
+              <div className="space-y-2 md:col-span-1 flex flex-col justify-end pb-2">
+                <div className="flex items-center space-x-2 p-2 border rounded-md bg-muted/30">
+                  <Switch
+                    checked={statusAtualPedido === "FINALIZADO"}
+                    onCheckedChange={(checked) => setStatusAtualPedido(checked ? "FINALIZADO" : "EM_ABERTO")}
+                  />
+                  <Label 
+                    className="cursor-pointer text-sm font-medium select-none flex-1" 
+                    onClick={() => setStatusAtualPedido(statusAtualPedido === "FINALIZADO" ? "EM_ABERTO" : "FINALIZADO")}
+                  >
+                    Já foi pago? (Finalizar Pedido)
+                  </Label>
                 </div>
               </div>
             </div>

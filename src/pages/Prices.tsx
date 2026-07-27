@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { toast } from "sonner";
 import * as comercialService from "@/services/comercialService";
 
@@ -83,11 +84,11 @@ const Prices = () => {
   };
 
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
+    <div className="space-y-6 animate-fade-in-up">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-display font-bold text-foreground">Tabela de Preços</h1>
-          <p className="text-muted-foreground">Gerencie os preços base e acompanhe a rentabilidade</p>
+          <h1 className="text-2xl md:text-3xl font-display font-bold text-foreground">Tabela de Preços</h1>
+          <p className="text-sm text-muted-foreground mt-1">Gerencie os preços base e acompanhe a rentabilidade</p>
         </div>
       </div>
 
@@ -110,7 +111,54 @@ const Prices = () => {
           </div>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 mt-4">
+          {/* Desktop: Tabela */}
+          <div className="hidden md:block mt-4 overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Cód</TableHead>
+                  <TableHead>Produto</TableHead>
+                  <TableHead>Custo</TableHead>
+                  <TableHead>Preço Base</TableHead>
+                  <TableHead>Margem</TableHead>
+                  <TableHead>Markup</TableHead>
+                  <TableHead>Desc. Máx</TableHead>
+                  <TableHead className="w-[50px]"></TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {isLoading ? (
+                  <TableRow>
+                    <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">Carregando...</TableCell>
+                  </TableRow>
+                ) : filtered.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">Nenhum produto encontrado</TableCell>
+                  </TableRow>
+                ) : (
+                  filtered.map((p: any) => (
+                    <TableRow key={p.codproduto}>
+                      <TableCell className="text-xs text-muted-foreground">{p.codproduto}</TableCell>
+                      <TableCell className="font-medium text-sm text-foreground">{p.descricao}</TableCell>
+                      <TableCell>R$ {p.precificacao.custoBase?.toFixed(2) || "0.00"}</TableCell>
+                      <TableCell className="font-bold text-primary">R$ {p.precificacao.precoBase?.toFixed(2) || "0.00"}</TableCell>
+                      <TableCell>{p.precificacao.margem?.toFixed(1) || "0"}%</TableCell>
+                      <TableCell>{p.precificacao.markup?.toFixed(2) || "0"}x</TableCell>
+                      <TableCell>{p.precificacao.descontoMaximo?.toFixed(1) || "0"}%</TableCell>
+                      <TableCell>
+                        <Button variant="ghost" size="sm" onClick={() => handleEdit(p)} className="h-8 w-8 p-0">
+                          <Edit2 className="h-4 w-4 text-muted-foreground" />
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                )}
+              </TableBody>
+            </Table>
+          </div>
+
+          {/* Mobile: Cards */}
+          <div className="md:hidden grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
             {isLoading ? (
               <div className="col-span-full text-center py-8 text-muted-foreground">Carregando...</div>
             ) : filtered.length === 0 ? (

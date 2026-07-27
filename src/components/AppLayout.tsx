@@ -61,6 +61,7 @@ const AppLayout = () => {
         { label: "Marcas", key: "/marcas", icon: Tag },
         { label: "Clientes", key: "/clientes", icon: Users },
         { label: "Fornecedores", key: "/fornecedores", icon: Truck },
+        { label: "Planos de Pagamento", key: "/planos-pagamento", icon: DollarSign },
       ],
     },
     {
