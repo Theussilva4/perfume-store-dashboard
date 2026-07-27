@@ -15,5 +15,14 @@ export async function createEstoque(dados) {
   return res.data;
 }
 
+export async function getSaidas() {
+  const res = await api.get("/estoque/saidas");
+  return res.data;
+}
 
-getEstoque,updateEstoque,createEstoque
+export async function createSaida(dados) {
+  const res = await api.post("/estoque/saidas", dados);
+  return res.data;
+}
+
+getEstoque, updateEstoque, createEstoque, getSaidas, createSaida

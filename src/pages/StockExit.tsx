@@ -1,6 +1,8 @@
-import { useState } from "react";
-import { movimentacoesEstoque, produtos, rotulosFilial } from "@/data/mockData";
-import { useBranch, filiais } from "@/contexts/BranchContext";
+import { useState, useEffect } from "react";
+import { getSaidas, createSaida } from "@/services/estoqueService";
+import { getProdutos } from "@/services/produtosService";
+import { getFilial } from "@/services/filialService";
+import { useBranch } from "@/contexts/BranchContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -16,22 +18,77 @@ const rotulosMotivo: Record<string, string> = {
   perda: "Perda",
   defeito: "Defeito",
   ajuste: "Ajuste Manual",
+  VENDA: "Venda",
+  AJUSTE: "Ajuste Manual",
+  PERDA: "Perda",
+  DEFEITO: "Defeito"
 };
 
 const StockExit = () => {
   const { filialSelecionada, rotuloFilial } = useBranch();
-  const saidas = movimentacoesEstoque.filter((m) => m.tipo === "saida" && (filialSelecionada === "todas" || m.filial === filialSelecionada));
+  
+  const [saidas, setSaidas] = useState<any[]>([]);
+  const [produtos, setProdutos] = useState<any[]>([]);
+  const [filiais, setFiliais] = useState<any[]>([]);
+  const [loading, setLoading] = useState(false);
+  
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [form, setForm] = useState({ produtoId: "", quantidade: 0, motivo: "", observacoes: "", filial: "matriz" });
+  const [form, setForm] = useState({ produtoId: "", quantidade: 0, motivo: "", observacoes: "", filial: "" });
 
-  const handleSalvar = () => {
+  useEffect(() => {
+    carregarDados();
+  }, []);
+
+  async function carregarDados() {
+    setLoading(true);
+    try {
+      const [saidasAPI, produtosAPI, filiaisAPI] = await Promise.all([
+        getSaidas(),
+        getProdutos(),
+        getFilial()
+      ]);
+      setSaidas(Array.isArray(saidasAPI) ? saidasAPI : []);
+      setProdutos(Array.isArray(produtosAPI) ? produtosAPI : []);
+      setFiliais(Array.isArray(filiaisAPI) ? filiaisAPI : []);
+    } catch (error) {
+      console.error(error);
+      toast.error("Erro ao carregar dados de estoque");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  const saidasFiltradas = saidas.filter((m) => {
+    return filialSelecionada === "todas" || String(m.codfilial) === String(filialSelecionada);
+  });
+
+  const getRotuloFilial = (codfilial: number) => {
+    const f = filiais.find(f => f.codfilial === codfilial);
+    return f ? f.filial : `Filial ${codfilial}`;
+  };
+
+  const handleSalvar = async () => {
     if (!form.produtoId || form.quantidade <= 0 || !form.motivo || !form.filial) {
       toast.error("Preencha todos os campos obrigatórios.");
       return;
     }
-    toast.success(`Saída registrada na ${rotulosFilial[form.filial]}! Estoque atualizado.`);
-    setDialogOpen(false);
-    setForm({ produtoId: "", quantidade: 0, motivo: "", observacoes: "", filial: "matriz" });
+    
+    try {
+      await createSaida({
+        codproduto: Number(form.produtoId),
+        codfilial: Number(form.filial),
+        quantidade: form.quantidade,
+        origem: form.motivo
+      });
+      
+      toast.success("Saída registrada! Estoque atualizado.");
+      setDialogOpen(false);
+      setForm({ produtoId: "", quantidade: 0, motivo: "", observacoes: "", filial: "" });
+      carregarDados();
+    } catch (error) {
+      console.error(error);
+      toast.error("Erro ao registrar saída de estoque");
+    }
   };
 
   return (
@@ -54,24 +111,22 @@ const StockExit = () => {
                 <th className="text-center px-4 py-3 font-medium text-muted-foreground">Qtd</th>
                 <th className="text-left px-4 py-3 font-medium text-muted-foreground">Motivo</th>
                 <th className="text-center px-4 py-3 font-medium text-muted-foreground">Unidade</th>
-                <th className="text-left px-4 py-3 font-medium text-muted-foreground">Obs</th>
               </tr>
             </thead>
             <tbody>
-              {saidas.map((e) => (
+              {saidasFiltradas.map((e) => (
                 <tr key={e.id} className="border-b border-border last:border-0 hover:bg-muted/20">
-                  <td className="px-4 py-3 text-muted-foreground">{new Date(e.data).toLocaleDateString("pt-BR")}</td>
-                  <td className="px-4 py-3 font-medium text-foreground">{e.nomeProduto}</td>
+                  <td className="px-4 py-3 text-muted-foreground">{new Date(e.data_mov || e.created_at).toLocaleDateString("pt-BR")}</td>
+                  <td className="px-4 py-3 font-medium text-foreground">{e.produto?.descricao || `Cód: ${e.codproduto}`}</td>
                   <td className="px-4 py-3 text-center text-destructive font-medium">-{e.quantidade}</td>
                   <td className="px-4 py-3">
                     <Badge variant="secondary" className="text-[10px]">
-                      {e.motivo ? rotulosMotivo[e.motivo] || e.motivo : "—"}
+                      {e.origem ? rotulosMotivo[e.origem.toUpperCase()] || e.origem : "—"}
                     </Badge>
                   </td>
                   <td className="px-4 py-3 text-center">
-                    <Badge variant="outline" className="text-[10px]">{rotulosFilial[e.filial]}</Badge>
+                    <Badge variant="outline" className="text-[10px]">{getRotuloFilial(e.codfilial)}</Badge>
                   </td>
-                  <td className="px-4 py-3 text-muted-foreground text-xs">{e.observacoes || "—"}</td>
                 </tr>
               ))}
             </tbody>
@@ -79,7 +134,7 @@ const StockExit = () => {
         </div>
       </div>
 
-      {saidas.length === 0 && (
+      {!loading && saidasFiltradas.length === 0 && (
         <div className="text-center py-12 text-muted-foreground">
           <ArrowUpFromLine className="h-12 w-12 mx-auto mb-3 opacity-30" />
           <p>Nenhuma saída registrada.</p>
@@ -99,10 +154,10 @@ const StockExit = () => {
             <div className="space-y-2">
               <Label>Unidade de origem</Label>
               <Select value={form.filial} onValueChange={(v) => setForm({ ...form, filial: v })}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectTrigger><SelectValue placeholder="Selecione a filial" /></SelectTrigger>
                 <SelectContent>
                   {filiais.map((b) => (
-                    <SelectItem key={b.id} value={b.id}>{b.rotulo}</SelectItem>
+                    <SelectItem key={b.codfilial} value={String(b.codfilial)}>{b.filial}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
@@ -113,7 +168,9 @@ const StockExit = () => {
                 <SelectTrigger><SelectValue placeholder="Selecione um produto" /></SelectTrigger>
                 <SelectContent>
                   {produtos.map((p) => (
-                    <SelectItem key={p.id} value={p.id}>{p.nome} ({p.estoquePorFilial[form.filial as keyof typeof p.estoquePorFilial] ?? 0} un.)</SelectItem>
+                    <SelectItem key={p.codproduto} value={String(p.codproduto)}>
+                      {p.descricao} 
+                    </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
@@ -121,17 +178,16 @@ const StockExit = () => {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label>Quantidade</Label>
-                <Input type="number" value={form.quantidade} onChange={(e) => setForm({ ...form, quantidade: Number(e.target.value) })} />
+                <Input type="number" min={1} value={form.quantidade} onChange={(e) => setForm({ ...form, quantidade: Number(e.target.value) })} />
               </div>
               <div className="space-y-2">
                 <Label>Motivo</Label>
                 <Select value={form.motivo} onValueChange={(v) => setForm({ ...form, motivo: v })}>
                   <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="venda">Venda</SelectItem>
-                    <SelectItem value="perda">Perda</SelectItem>
-                    <SelectItem value="defeito">Defeito</SelectItem>
-                    <SelectItem value="ajuste">Ajuste Manual</SelectItem>
+                    <SelectItem value="PERDA">Perda</SelectItem>
+                    <SelectItem value="DEFEITO">Defeito</SelectItem>
+                    <SelectItem value="AJUSTE">Ajuste Manual</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
