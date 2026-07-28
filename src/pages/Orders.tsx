@@ -6,6 +6,7 @@ import { getVendedor } from '@/services/vendedorService'
 import { getProdutos } from '@/services/produtosService'
 import { getFormasPagamento } from '@/services/formaPagamentoService'
 import { createPedido, getPedidos, updatePedido, alterarStatusPedido, cancelarPedido } from '@/services/pedidosService'
+import { getEstoque } from "@/services/estoqueService";
 import { useBranch, filiais } from "@/contexts/BranchContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
@@ -87,15 +88,20 @@ const Orders = () => {
     setErro(null);
 
     try {
-      const [filiais, clientes, vendedores, produtosRAW, pedidosAPI, formasPgtoAPI, tabelaPrecos] = await Promise.all([
+      const responses = await Promise.all([
         getFilial(),
         getCliente(),
         getVendedor(),
         getProdutos(),
         getPedidos(),
         getFormasPagamento(),
-        comercialService.listarTabela()
+        comercialService.listarTabela(),
+        getEstoque()
       ]);
+
+      const [filiais, clientes, vendedores, produtosRAW, pedidosAPI, formasPgtoAPI, tabelaPrecos, est] = responses;
+
+      setEstoquesAPI(Array.isArray(est) ? est : []);
 
       const produtos = (produtosRAW || []).map((p: any) => {
         const tb = tabelaPrecos.find((t: any) => String(t.codproduto) === String(p.codproduto));
@@ -359,6 +365,29 @@ const Orders = () => {
       // Add a small epsilon to avoid floating point issues (e.g. 6.000000001 > 6)
       if (percDesconto > (maxPermitido + 0.01)) {
         toast.error(`Desconto não permitido! O limite para este item é de ${maxPermitido.toFixed(2)}% (inserido: ${percDesconto.toFixed(2)}%).`);
+        return false;
+      }
+    }
+
+    const allowOutOfStockOrders = localStorage.getItem("allowOutOfStockOrders") !== "false";
+
+    if (!allowOutOfStockOrders) {
+      const estoquesDoProduto = estoquesAPI.filter(e => String(e.codproduto) === String(produto.codproduto));
+      let estoqueDisponivel = 0;
+      
+      if (filialPedido && filialPedido !== "todas") {
+        const estFilial = estoquesDoProduto.find(e => String(e.codfilial) === filialPedido);
+        estoqueDisponivel = estFilial ? estFilial.quantidade : 0;
+      } else {
+        estoqueDisponivel = estoquesDoProduto.reduce((acc, curr) => acc + curr.quantidade, 0);
+      }
+      
+      const existente = itensPedido.find(i => i.produtoId === String(produto.codproduto));
+      const qtdJáNoPedido = existente ? existente.quantidade : 0;
+      const qtdPretendida = qtdJáNoPedido + qtdSelecionada;
+
+      if (estoqueDisponivel < qtdPretendida) {
+        toast.error(`Estoque insuficiente! Disponível: ${estoqueDisponivel}`);
         return false;
       }
     }

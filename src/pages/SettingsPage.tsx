@@ -15,10 +15,12 @@ const SettingsPage = () => {
     instagram: "@tassiachando",
     facebook: "",
     fastClientMode: localStorage.getItem("fastClientMode") !== "false", // default to true
+    allowOutOfStockOrders: localStorage.getItem("allowOutOfStockOrders") !== "false", // default to true
   });
 
   const handleSave = () => {
     localStorage.setItem("fastClientMode", String(form.fastClientMode));
+    localStorage.setItem("allowOutOfStockOrders", String(form.allowOutOfStockOrders));
     toast.success("Configurações salvas!");
   };
 
@@ -62,15 +64,28 @@ const SettingsPage = () => {
           </div>
         </div>
 
-        <div className="flex items-center justify-between border-t border-border pt-6 mt-6">
-          <div>
-            <p className="text-sm font-medium text-foreground">Cadastro Rápido de Clientes (Modo Teste)</p>
-            <p className="text-xs text-muted-foreground">Se ativo, permite cadastrar clientes exigindo apenas Nome e Telefone. Se desativado, exigirá CPF e Endereço completos.</p>
+        <div className="flex flex-col gap-4 border-t border-border pt-6 mt-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium text-foreground">Cadastro Rápido de Clientes (Modo Teste)</p>
+              <p className="text-xs text-muted-foreground">Se ativo, permite cadastrar clientes exigindo apenas Nome e Telefone. Se desativado, exigirá CPF e Endereço completos.</p>
+            </div>
+            <Switch 
+              checked={form.fastClientMode} 
+              onCheckedChange={(checked) => setForm({ ...form, fastClientMode: checked })} 
+            />
           </div>
-          <Switch 
-            checked={form.fastClientMode} 
-            onCheckedChange={(checked) => setForm({ ...form, fastClientMode: checked })} 
-          />
+
+          <div className="flex items-center justify-between pt-2">
+            <div>
+              <p className="text-sm font-medium text-foreground">Permitir Venda Sem Estoque (Modo Teste)</p>
+              <p className="text-xs text-muted-foreground">Se ativo, permite adicionar produtos ao pedido mesmo que o estoque seja zero ou negativo.</p>
+            </div>
+            <Switch 
+              checked={form.allowOutOfStockOrders} 
+              onCheckedChange={(checked) => setForm({ ...form, allowOutOfStockOrders: checked })} 
+            />
+          </div>
         </div>
 
         <Button onClick={handleSave}>Salvar Configurações</Button>
