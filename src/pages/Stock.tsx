@@ -145,7 +145,7 @@ const Stock = () => {
                 <div className="flex justify-between items-start">
                   <div>
                     <div className="font-medium text-foreground">{p.descricao}</div>
-                    <div className="text-xs text-muted-foreground">{p.marca || "-"} • {p.mscategoria?.categoria || "-"}</div>
+                    <div className="text-xs text-muted-foreground">Cód: {p.codproduto} • {p.marca || "-"} • {p.mscategoria?.categoria || "-"}</div>
                   </div>
                   {estaZerado ? (
                     <Badge variant="destructive" className="text-[10px]">Sem Estoque</Badge>
@@ -222,7 +222,7 @@ const Stock = () => {
                   <tr key={p.codproduto} className="border-b border-border last:border-0 hover:bg-muted/20 transition-colors">
                     <td className="px-4 py-3">
                       <div className="font-medium text-foreground">{p.descricao}</div>
-                      <div className="text-xs text-muted-foreground">{p.marca || "-"}</div>
+                      <div className="text-xs text-muted-foreground">Cód: {p.codproduto} • {p.marca || "-"}</div>
                     </td>
                     <td className="px-4 py-3 text-muted-foreground">{p.mscategoria?.categoria || "-"}</td>
                     {filialSelecionada === "todas" ? (
