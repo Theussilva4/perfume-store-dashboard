@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Plus, Search, Edit2, CreditCard } from "lucide-react";
+import { Plus, Search, Edit2, CreditCard, Trash2 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -24,6 +24,7 @@ const PaymentPlans = () => {
   const [taxaAcrescimo, setTaxaAcrescimo] = useState("");
   const [maxParcelas, setMaxParcelas] = useState("1");
   const [valorMinimoParcela, setValorMinimoParcela] = useState("0");
+  const [regrasParcelamento, setRegrasParcelamento] = useState<{valor: number, parcelas: number}[]>([]);
   const [ativo, setAtivo] = useState(true);
 
   const { data: planos = [], isLoading } = useQuery({
@@ -74,6 +75,7 @@ const PaymentPlans = () => {
     setTaxaAcrescimo("");
     setMaxParcelas("1");
     setValorMinimoParcela("0");
+    setRegrasParcelamento([]);
     setAtivo(true);
     setIsModalOpen(true);
   };
@@ -82,9 +84,20 @@ const PaymentPlans = () => {
     setIdEdicao(plano.CODPLPAG);
     setDescricao(plano.DESCRICAO || "");
     setTemAcrescimo(plano.tem_acrescimo || false);
-    setTaxaAcrescimo(plano.taxa_acrescimo?.toString() || "");
-    setMaxParcelas(plano.max_parcelas?.toString() || "1");
-    setValorMinimoParcela(plano.valor_minimo_parcela?.toString() || "0");
+    setTaxaAcrescimo(plano.taxa_acrescimo ? String(plano.taxa_acrescimo) : "");
+    setMaxParcelas(String(plano.max_parcelas || 1));
+    setValorMinimoParcela(String(plano.valor_minimo_parcela || 0));
+    
+    let parsedRegras = [];
+    if (plano.regras_parcelamento) {
+      try {
+        parsedRegras = JSON.parse(plano.regras_parcelamento);
+      } catch (e) {
+        console.error("Erro ao fazer parse de regras_parcelamento");
+      }
+    }
+    setRegrasParcelamento(parsedRegras);
+    
     setAtivo(plano.ATIVO === "S");
     setIsModalOpen(true);
   };
@@ -109,6 +122,7 @@ const PaymentPlans = () => {
       taxa_acrescimo: temAcrescimo ? Number(taxaAcrescimo) : 0,
       max_parcelas: Number(maxParcelas),
       valor_minimo_parcela: Number(valorMinimoParcela) || 0,
+      regras_parcelamento: regrasParcelamento.length > 0 ? regrasParcelamento : null,
     });
   };
 
@@ -148,7 +162,6 @@ const PaymentPlans = () => {
           </div>
         </CardHeader>
         <CardContent>
-          {/* Desktop: Tabela */}
           <div className="hidden md:block mt-4 overflow-x-auto">
             <Table>
               <TableHeader>
@@ -203,7 +216,6 @@ const PaymentPlans = () => {
             </Table>
           </div>
 
-          {/* Mobile: Cards */}
           <div className="md:hidden grid grid-cols-1 gap-4 mt-4">
             {isLoading ? (
               <div className="text-center py-8 text-muted-foreground">Carregando...</div>
@@ -321,6 +333,73 @@ const PaymentPlans = () => {
                 </div>
               </div>
             )}
+            
+            <div className="border-t pt-4 mt-2">
+              <div className="flex items-center justify-between mb-3">
+                <div>
+                  <h4 className="font-semibold text-sm">Regras de Parcelamento (Degraus)</h4>
+                  <p className="text-[11px] text-muted-foreground">Opcional. Ex: "A partir de R$ 50 = 2x, A partir de R$ 100 = 3x"</p>
+                </div>
+                <Button 
+                  type="button" 
+                  variant="outline" 
+                  size="sm"
+                  onClick={() => setRegrasParcelamento([...regrasParcelamento, { valor: 0, parcelas: 1 }])}
+                >
+                  <Plus className="h-4 w-4 mr-1" />
+                  Nova Regra
+                </Button>
+              </div>
+              
+              {regrasParcelamento.length > 0 && (
+                <div className="space-y-3 mb-4 max-h-[200px] overflow-y-auto pr-2">
+                  {regrasParcelamento.map((regra, index) => (
+                    <div key={index} className="flex items-end gap-2 bg-muted/20 p-2 rounded-md border border-border/50">
+                      <div className="flex-1 space-y-1">
+                        <Label className="text-[10px] text-muted-foreground">Valor da Compra a partir de (R$)</Label>
+                        <Input 
+                          type="number" 
+                          min="0"
+                          step="0.01"
+                          value={regra.valor || ""}
+                          onChange={(e) => {
+                            const newRegras = [...regrasParcelamento];
+                            newRegras[index].valor = Number(e.target.value);
+                            setRegrasParcelamento(newRegras);
+                          }}
+                        />
+                      </div>
+                      <div className="flex-1 space-y-1">
+                        <Label className="text-[10px] text-muted-foreground">Libera até X parcelas</Label>
+                        <Input 
+                          type="number" 
+                          min="1"
+                          value={regra.parcelas || ""}
+                          onChange={(e) => {
+                            const newRegras = [...regrasParcelamento];
+                            newRegras[index].parcelas = Number(e.target.value);
+                            setRegrasParcelamento(newRegras);
+                          }}
+                        />
+                      </div>
+                      <Button 
+                        type="button" 
+                        variant="ghost" 
+                        className="text-destructive hover:bg-destructive/10 px-2"
+                        onClick={() => {
+                          const newRegras = [...regrasParcelamento];
+                          newRegras.splice(index, 1);
+                          setRegrasParcelamento(newRegras);
+                        }}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setIsModalOpen(false)}>Cancelar</Button>

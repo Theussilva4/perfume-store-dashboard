@@ -1150,12 +1150,34 @@ const Orders = () => {
               const maxTotal = planoSelecionado?.max_parcelas || 1;
               let maxAllowedByTotal = minParcela > 0 ? Math.floor(totalPedido / minParcela) : 999;
               
-              // Regra customizada solicitada para Cartão de Crédito
-              if (nomePlano.toUpperCase().includes("CARTAO") || nomePlano.toUpperCase().includes("CARTÃO")) {
-                if (totalPedido >= 200) maxAllowedByTotal = 4;
-                else if (totalPedido >= 100) maxAllowedByTotal = 3;
-                else if (totalPedido >= 50) maxAllowedByTotal = 2;
-                else maxAllowedByTotal = 1;
+              // Verifica se o plano tem regras (degraus) customizadas
+              if (planoSelecionado?.regras_parcelamento) {
+                try {
+                  const regras = typeof planoSelecionado.regras_parcelamento === 'string' 
+                    ? JSON.parse(planoSelecionado.regras_parcelamento) 
+                    : planoSelecionado.regras_parcelamento;
+                    
+                  if (Array.isArray(regras) && regras.length > 0) {
+                    // Ordenar do maior valor para o menor
+                    const regrasOrdenadas = [...regras].sort((a, b) => Number(b.valor) - Number(a.valor));
+                    
+                    let achouRegra = false;
+                    for (const regra of regrasOrdenadas) {
+                      if (totalPedido >= Number(regra.valor)) {
+                        maxAllowedByTotal = Number(regra.parcelas);
+                        achouRegra = true;
+                        break;
+                      }
+                    }
+                    
+                    // Se não atingiu o menor valor cadastrado nas regras, o padrão é 1x
+                    if (!achouRegra) {
+                      maxAllowedByTotal = 1;
+                    }
+                  }
+                } catch (e) {
+                  console.error("Erro ao aplicar regras_parcelamento", e);
+                }
               }
 
               const maxRealAllowed = Math.min(maxTotal, Math.max(1, maxAllowedByTotal));
