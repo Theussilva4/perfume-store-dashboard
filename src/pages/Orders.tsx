@@ -1148,7 +1148,16 @@ const Orders = () => {
               
               const minParcela = Number(planoSelecionado?.valor_minimo_parcela) || 0;
               const maxTotal = planoSelecionado?.max_parcelas || 1;
-              const maxAllowedByTotal = minParcela > 0 ? Math.floor(totalPedido / minParcela) : 999;
+              let maxAllowedByTotal = minParcela > 0 ? Math.floor(totalPedido / minParcela) : 999;
+              
+              // Regra customizada solicitada para Cartão de Crédito
+              if (nomePlano.toUpperCase().includes("CARTAO") || nomePlano.toUpperCase().includes("CARTÃO")) {
+                if (totalPedido >= 200) maxAllowedByTotal = 4;
+                else if (totalPedido >= 100) maxAllowedByTotal = 3;
+                else if (totalPedido >= 50) maxAllowedByTotal = 2;
+                else maxAllowedByTotal = 1;
+              }
+
               const maxRealAllowed = Math.min(maxTotal, Math.max(1, maxAllowedByTotal));
               
               const opcoesParcelamento = Array.from({ length: maxRealAllowed }, (_, i) => i + 1);

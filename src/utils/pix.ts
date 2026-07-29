@@ -1,7 +1,7 @@
 // Configurações Globais do PIX
 // ALtere essas informações se quiser mudar a conta que recebe os pagamentos
 export const PIX_CONFIG = {
-  CHAVE: "Tassianesoutomaior@gmail.com",
+  CHAVE: "00020101021126790014BR.GOV.BCB.PIX2557pix-qr.mercadopago.com/instore/ol/v2/rYkkj6NOoackp2hZz06N5204000053039865802BR5912TassiAchando6009SAO PAULO62080504mpis63048ACA",
   NOME: "TASSIANE DA SILVA SOUTO",
   CIDADE: "RECIFE",
 };
