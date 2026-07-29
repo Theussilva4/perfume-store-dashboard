@@ -501,7 +501,17 @@ const Orders = () => {
   };
 
   const subtotalPedido = itensPedido.reduce((s, i) => s + i.preco * i.quantidade, 0);
-  const totalPedido = subtotalPedido - descontoPedido;
+  
+  const planoParaCalculo = listaFormasPagamento.find(
+    (fp) => String(fp.CODPLPAG || fp.codplpag || fp.codforma || fp.id || fp.codplano) === String(codigoPlano)
+  );
+
+  let valorAcrescimo = 0;
+  if (planoParaCalculo?.tem_acrescimo && planoParaCalculo?.taxa_acrescimo) {
+    valorAcrescimo = (subtotalPedido * Number(planoParaCalculo.taxa_acrescimo)) / 100;
+  }
+
+  const totalPedido = subtotalPedido - descontoPedido + valorAcrescimo;
 
   const handleCriarPedido = async () => {
     if (!codigoCliente) {
@@ -1133,9 +1143,17 @@ const Orders = () => {
                     </div>
                   </div>
 
-                  <div className="border-t border-border pt-2 flex justify-between font-bold text-lg">
-                    <span>Total Final</span>
-                    <span className="text-primary">R$ {(totalPedido || 0).toLocaleString("pt-BR")}</span>
+                  <div className="border-t border-border pt-2 flex flex-col gap-1">
+                    {valorAcrescimo > 0 && (
+                      <div className="flex justify-between text-sm text-amber-600 font-medium">
+                        <span>Acréscimo ({planoParaCalculo?.taxa_acrescimo}%)</span>
+                        <span>+ R$ {valorAcrescimo.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</span>
+                      </div>
+                    )}
+                    <div className="flex justify-between font-bold text-lg">
+                      <span>Total Final</span>
+                      <span className="text-primary">R$ {(totalPedido || 0).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</span>
+                    </div>
                   </div>
                 </div>
               )}
