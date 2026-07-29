@@ -52,6 +52,7 @@ const Orders = () => {
   const [codigoPlano, setCodigoPlano] = useState("");
   const [nomePlano, setNomePlano] = useState("");
   const [parcelas, setParcelas] = useState("1");
+  const [observacoes, setObservacoes] = useState("");
   const [dialogPlanoOpen, setDialogPlanoOpen] = useState(false);
   const [buscaPlano, setBuscaPlano] = useState("");
   const { filialSelecionada, rotuloFilial } = useBranch();
@@ -166,6 +167,7 @@ const Orders = () => {
           formaPagamento: codForma,
           nomeFormaPagamento: planoPgtoReq ? (planoPgtoReq.DESCRICAO || planoPgtoReq.descricao || planoPgtoReq.nome) : (p.formaPagamento || 'Não Informado'),
           parcelas: p.parcelas || 1,
+          observacoes: p.observacoes || "",
           status: p.status || p.STATUS || "EM_DIGITACAO",
           nomeCliente: clienteReq ? clienteReq.nome : (p.nomeCliente || p.cliente?.nome || 'Cliente não encontrado'),
           telefoneCliente: clienteReq ? clienteReq.telefone : (p.telefoneCliente || p.cliente?.telefone || ''),
@@ -520,6 +522,7 @@ const Orders = () => {
         codfilial: filialPedido,
         formaPagamento: codigoPlano,
         parcelas: Number(parcelas) || 1,
+        observacoes,
         status: statusAtualPedido,
         desconto: descontoPedido,
         itens: itensPedido.map(i => ({
@@ -553,6 +556,7 @@ const Orders = () => {
       setCodigoPlano("");
       setNomePlano("");
       setParcelas("1");
+      setObservacoes("");
       setFilialPedido("");
 
     } catch (error) {
@@ -614,6 +618,7 @@ const Orders = () => {
     setCodigoPlano(String(pedido.formaPagamento || ''));
     setNomePlano(pedido.nomeFormaPagamento || '');
     setDescontoPedido(pedido.desconto || 0);
+    setObservacoes(pedido.observacoes || "");
 
     // Convertendo itens de banco para nosso layout state
     const formatItens = (pedido.itens || []).map((i: any) => {
@@ -660,6 +665,7 @@ const Orders = () => {
           setCodigoPlano("");
           setNomePlano("");
           setParcelas("1");
+          setObservacoes("");
           setStatusAtualPedido("EM_DIGITACAO");
           setFilialPedido("");
           setDialogOpen(true);
@@ -1223,6 +1229,16 @@ const Orders = () => {
                 </div>
               );
             })()}
+            
+            <div className="space-y-2 mt-4">
+              <Label>Observações do Pedido</Label>
+              <Textarea
+                placeholder="Digite aqui alguma observação sobre a venda ou entrega..."
+                value={observacoes}
+                onChange={(e) => setObservacoes(e.target.value)}
+                className="min-h-[80px]"
+              />
+            </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setDialogOpen(false)}>Cancelar</Button>
