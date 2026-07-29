@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { QRCodeSVG } from "qrcode.react";
 import { generatePixPayload } from "@/utils/pix";
 import { pedidos as pedidosIniciais, produtos, rotulosStatus, coresStatus, rotulosFormaPagamento, rotulosFilial, Pedido, ItemPedido } from "@/data/mockData";
@@ -55,6 +55,7 @@ const Orders = () => {
   const [nomePlano, setNomePlano] = useState("");
   const [parcelas, setParcelas] = useState("1");
   const [observacoes, setObservacoes] = useState("");
+  const [mostrarPix, setMostrarPix] = useState(false);
   const [dialogPlanoOpen, setDialogPlanoOpen] = useState(false);
   const [buscaPlano, setBuscaPlano] = useState("");
   const { filialSelecionada, rotuloFilial } = useBranch();
@@ -79,6 +80,13 @@ const Orders = () => {
   const [descontoPedido, setDescontoPedido] = useState(0);
   const [qtdSelecionada, setQtdSelecionada] = useState(1);
   const [loading, setLoading] = useState(false);
+  const [totalCalculadoPedido, setTotalCalculadoPedido] = useState(0);
+
+  // Reseta o botão de PIX ao mudar de plano ou fechar o modal
+  useEffect(() => {
+    setMostrarPix(false);
+  }, [nomePlano, dialogOpen]);
+
   const [erro, setErro] = useState<string | null>(null);
   const refCodigo = useRef<HTMLInputElement>(null);
   const refQtd = useRef<HTMLInputElement>(null);
@@ -1231,7 +1239,9 @@ const Orders = () => {
             })()}
 
             {(() => {
-              if (!nomePlano.toLowerCase().includes("pix") || totalPedido <= 0) return null;
+              if (!nomePlano.toLowerCase().includes("pix") || totalPedido <= 0) {
+                return null;
+              }
               
               const payload = generatePixPayload(totalPedido);
               
@@ -1242,26 +1252,37 @@ const Orders = () => {
                     <h3 className="font-bold text-lg text-primary">Pagamento via PIX</h3>
                   </div>
                   
-                  <div className="bg-white p-2 rounded-xl shadow-sm mb-3">
-                    <QRCodeSVG value={payload} size={160} level="M" />
-                  </div>
-                  
-                  <p className="text-base font-bold text-foreground">Valor: R$ {totalPedido.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</p>
-                  <p className="text-xs text-muted-foreground mt-1 text-center max-w-[250px]">
-                    Peça para o cliente escanear o QR Code acima pelo aplicativo do banco.
-                  </p>
-                  
-                  <Button 
-                    variant="secondary" 
-                    size="sm" 
-                    className="mt-3"
-                    onClick={() => {
-                      navigator.clipboard.writeText(payload);
-                      toast.success("Código PIX Copia e Cola copiado!");
-                    }}
-                  >
-                    Copiar PIX Copia e Cola
-                  </Button>
+                  {!mostrarPix ? (
+                    <Button 
+                      variant="default" 
+                      onClick={() => setMostrarPix(true)}
+                    >
+                      Gerar QR Code PIX
+                    </Button>
+                  ) : (
+                    <>
+                      <div className="bg-white p-2 rounded-xl shadow-sm mb-3 animate-in zoom-in-95 duration-200">
+                        <QRCodeSVG value={payload} size={160} level="M" />
+                      </div>
+                      
+                      <p className="text-base font-bold text-foreground">Valor: R$ {totalPedido.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</p>
+                      <p className="text-xs text-muted-foreground mt-1 text-center max-w-[250px]">
+                        Peça para o cliente escanear o QR Code acima pelo aplicativo do banco.
+                      </p>
+                      
+                      <Button 
+                        variant="secondary" 
+                        size="sm" 
+                        className="mt-3"
+                        onClick={() => {
+                          navigator.clipboard.writeText(payload);
+                          toast.success("Código PIX Copia e Cola copiado!");
+                        }}
+                      >
+                        Copiar PIX Copia e Cola
+                      </Button>
+                    </>
+                  )}
                 </div>
               );
             })()}
@@ -1391,10 +1412,12 @@ const Orders = () => {
                   setTimeout(() => refQtd.current?.focus(), 100);
                 }}
               >
-                <div className="font-medium">{p.descricao}</div>
-                <div className="text-xs text-muted-foreground flex justify-between mt-1">
+                <div className="font-medium text-base">{p.descricao}</div>
+                <div className="text-sm text-muted-foreground flex justify-between mt-1 items-center">
                   <span>Código: {p.codproduto}</span>
-                  <span className="font-medium text-foreground">R$ {Number(p.preco_normal || 0).toLocaleString("pt-BR")}</span>
+                  <span className="font-bold text-primary text-base">
+                    R$ {Number(p.preco_normal || 0).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
+                  </span>
                 </div>
               </div>
             ))}
