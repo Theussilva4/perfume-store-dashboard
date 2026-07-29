@@ -376,7 +376,7 @@ const Purchases = () => {
                 </div>
                 <div className="md:col-span-3">
                   <Label>Custo Unit.</Label>
-                  <Input type="number" value={custoSelecionado} onChange={e => setCustoSelecionado(Number(e.target.value))} min={0} />
+                  <Input type="number" step="0.01" value={custoSelecionado} onChange={e => setCustoSelecionado(Number(e.target.value))} min={0} />
                 </div>
                 <div className="md:col-span-2">
                   <Button type="button" onClick={adicionarItem} disabled={!produtoSelecionadoId} className="w-full">

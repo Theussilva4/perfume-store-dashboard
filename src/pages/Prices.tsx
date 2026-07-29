@@ -218,6 +218,7 @@ const Prices = () => {
                 <label className="text-sm font-medium">Preço de Custo (R$)</label>
                 <Input
                   type="number"
+                  step="0.01"
                   value={costPrice}
                   onChange={(e) => setCostPrice(e.target.value)}
                 />
@@ -226,6 +227,7 @@ const Prices = () => {
                 <label className="text-sm font-medium">Preço de Venda Base (R$)</label>
                 <Input
                   type="number"
+                  step="0.01"
                   value={sellPrice}
                   onChange={(e) => setSellPrice(e.target.value)}
                 />
@@ -237,6 +239,7 @@ const Prices = () => {
                 <label className="text-sm font-medium">Desconto Máximo (%)</label>
                 <Input
                   type="number"
+                  step="0.01"
                   value={maxDiscount}
                   onChange={(e) => setMaxDiscount(e.target.value)}
                   min="0"

@@ -339,7 +339,7 @@ const Promotions = () => {
                       <SelectItem value="PRECO_FIXO">R$ =</SelectItem>
                     </SelectContent>
                   </Select>
-                  <Input type="number" placeholder="Valor" value={valorGeral} onChange={(e) => setValorGeral(e.target.value)} className="flex-1" disabled={isViewing} />
+                  <Input type="number" step="0.01" placeholder="Valor" value={valorGeral} onChange={(e) => setValorGeral(e.target.value)} className="flex-1" disabled={isViewing} />
                 </div>
               </div>
               <div className="space-y-2 lg:col-span-2">
@@ -428,6 +428,7 @@ const Promotions = () => {
                               className="w-20 h-8 text-xs" 
                               placeholder="Geral"
                               type="number"
+                              step="0.01"
                               disabled={isViewing}
                               value={item.valor_opcional}
                               onChange={(e) => {
@@ -507,6 +508,7 @@ const Promotions = () => {
                                     className="w-20 h-8 text-xs" 
                                     placeholder="Geral"
                                     type="number"
+                                    step="0.01"
                                     disabled={isViewing}
                                     value={item.valor_opcional}
                                     onChange={(e) => {

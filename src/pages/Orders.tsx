@@ -862,17 +862,25 @@ const Orders = () => {
         <DialogContent 
           aria-describedby={undefined} 
           className="w-[95vw] md:max-w-4xl lg:max-w-5xl max-h-[90vh] overflow-y-auto"
-          onInteractOutside={(e) => {
+          onPointerDownOutside={(e) => {
             e.preventDefault();
             if (dialogClienteOpen || dialogVendedorOpen || dialogPlanoOpen || dialogProdutoOpen || scannerOpen) return;
-            if (window.confirm("Você tem um pedido em andamento. Deseja realmente fechar sem salvar?")) {
+            if (itensPedido.length > 0) {
+              if (window.confirm("Você tem um pedido em andamento com produtos. Deseja realmente fechar sem salvar?")) {
+                setDialogOpen(false);
+              }
+            } else {
               setDialogOpen(false);
             }
           }}
           onEscapeKeyDown={(e) => {
             e.preventDefault();
             if (dialogClienteOpen || dialogVendedorOpen || dialogPlanoOpen || dialogProdutoOpen || scannerOpen) return;
-            if (window.confirm("Você tem um pedido em andamento. Deseja realmente fechar sem salvar?")) {
+            if (itensPedido.length > 0) {
+              if (window.confirm("Você tem um pedido em andamento com produtos. Deseja realmente fechar sem salvar?")) {
+                setDialogOpen(false);
+              }
+            } else {
               setDialogOpen(false);
             }
           }}
