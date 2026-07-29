@@ -28,6 +28,7 @@ import Purchases from "@/pages/Purchases";
 import Prices from "@/pages/Prices";
 import Promotions from "@/pages/Promotions";
 import PaymentPlans from "./pages/PaymentPlans";
+import PriceCheck from "@/pages/PriceCheck";
 
 const queryClient = new QueryClient();
 
@@ -65,6 +66,7 @@ const App = () => (
               <Route path="estoque/saidas" element={<StockExit />} />
               <Route path="pedidos" element={<Orders />} />
               <Route path="pedidos/:id" element={<OrderDetail />} />
+              <Route path="consulta-preco" element={<PriceCheck />} />
               <Route path="clientes" element={<Clients />} />
               <Route path="fornecedores" element={<Suppliers />} />
               <Route path="compras" element={<Purchases />} />

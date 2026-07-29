@@ -5,7 +5,7 @@ import logo from "@/assets/logo.png";
 import {
   LayoutDashboard, Package, FolderOpen, Tag, Warehouse, ArrowDownToLine, ArrowUpFromLine,
   ClipboardList, Users, BarChart3, Settings, Bell, LogOut, Menu, X, Building2, Truck,
-  DollarSign, Percent
+  DollarSign, Percent, Search
 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
@@ -51,6 +51,7 @@ const AppLayout = () => {
       items: [
         { label: "Dashboard", key: "/", icon: LayoutDashboard },
         { label: "Pedidos", key: "/pedidos", icon: ClipboardList, badge: pendingOrdersCount > 0 ? pendingOrdersCount : undefined },
+        { label: "Consultar Preço", key: "/consulta-preco", icon: Search },
       ],
     },
     {

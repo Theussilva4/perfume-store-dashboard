@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { ShoppingCart, Plus, Search, Eye, ClipboardList, Trash2 } from "lucide-react";
+import { ShoppingCart, Plus, Search, Eye, ClipboardList, Trash2, Camera } from "lucide-react";
 import { getCompras, createCompra, getCompraById, cancelarCompra } from "@/services/compraService";
 import { getFornecedores } from "@/services/fornecedorService";
 import { getProdutos } from "@/services/produtosService";
@@ -13,6 +13,7 @@ import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useBranch } from "@/contexts/BranchContext";
+import { BarcodeScannerModal } from "@/components/BarcodeScannerModal";
 
 const Purchases = () => {
   const [listaCompras, setListaCompras] = useState<any[]>([]);
@@ -46,6 +47,7 @@ const Purchases = () => {
   const [qtdSelecionada, setQtdSelecionada] = useState(1);
   const [custoSelecionado, setCustoSelecionado] = useState(0);
   const [dialogProdutoOpen, setDialogProdutoOpen] = useState(false);
+  const [scannerOpen, setScannerOpen] = useState(false);
   
   const [itensCompra, setItensCompra] = useState<any[]>([]);
 
@@ -120,6 +122,11 @@ const Purchases = () => {
 
   const removerItem = (id: string) => {
     setItensCompra(prev => prev.filter(i => i.codproduto !== id));
+  };
+
+  const handleScanProduto = (decodedText: string) => {
+    setProdutoBusca(decodedText);
+    toast.success("Código lido: " + decodedText);
   };
 
   const handleCriarCompra = async () => {
@@ -445,14 +452,22 @@ const Purchases = () => {
       <Dialog open={dialogProdutoOpen} onOpenChange={setDialogProdutoOpen}>
         <DialogContent>
           <DialogHeader><DialogTitle>Selecionar Produto</DialogTitle></DialogHeader>
-          <Input 
-            placeholder="Buscar..." 
-            value={produtoBusca} 
-            onChange={e => setProdutoBusca(e.target.value)} 
-          />
+          <div className="flex gap-2">
+            <Input 
+              placeholder="Buscar por nome ou código..." 
+              value={produtoBusca} 
+              onChange={e => setProdutoBusca(e.target.value)} 
+              className="flex-1"
+            />
+            <Button onClick={() => setScannerOpen(true)} variant="outline" className="px-3">
+              <Camera className="h-4 w-4" />
+            </Button>
+          </div>
           <div className="max-h-60 overflow-y-auto space-y-2 mt-2">
             {listaProdutos
-              .filter(p => p.descricao?.toLowerCase().includes(produtoBusca.toLowerCase()) || String(p.codproduto).includes(produtoBusca))
+              .filter(p => p.descricao?.toLowerCase().includes(produtoBusca.toLowerCase()) || 
+                           String(p.codproduto).includes(produtoBusca) || 
+                           (p.codigo_barras && String(p.codigo_barras).toLowerCase().includes(produtoBusca.toLowerCase())))
               .map(p => {
                 // Calcular estoque total do produto
                 const estoqueTotal = listaEstoques
@@ -560,6 +575,12 @@ const Purchases = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+      {/* MODAL SCANNER */}
+      <BarcodeScannerModal 
+        open={scannerOpen} 
+        onOpenChange={setScannerOpen} 
+        onScan={handleScanProduto} 
+      />
     </div>
   );
 };

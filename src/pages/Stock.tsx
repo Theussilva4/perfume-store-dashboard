@@ -139,7 +139,8 @@ const Stock = () => {
             const estoque = p.estoqueAtual;
             const minimo = p.estoque_minimo || 0;
             const estaBaixo = estoque <= minimo && estoque > 0;
-            const estaZerado = estoque <= 0;
+            const estaZerado = estoque === 0;
+            const estaNegativo = estoque < 0;
             return (
               <div key={p.codproduto} className="bg-background rounded-lg border border-border p-4 shadow-sm flex flex-col gap-3">
                 <div className="flex justify-between items-start">
@@ -147,7 +148,9 @@ const Stock = () => {
                     <div className="font-medium text-foreground">{p.descricao}</div>
                     <div className="text-xs text-muted-foreground">Cód: {p.codproduto} • {p.marca || "-"} • {p.mscategoria?.categoria || "-"}</div>
                   </div>
-                  {estaZerado ? (
+                  {estaNegativo ? (
+                    <Badge className="bg-red-600 hover:bg-red-700 text-white font-bold text-[10px]">Negativo ({estoque})</Badge>
+                  ) : estaZerado ? (
                     <Badge variant="destructive" className="text-[10px]">Sem Estoque</Badge>
                   ) : estaBaixo ? (
                     <Badge className="bg-amber-100 text-amber-700 text-[10px]">Baixo</Badge>
@@ -217,7 +220,8 @@ const Stock = () => {
                 const estoque = p.estoqueAtual;
                 const minimo = p.estoque_minimo || 0;
                 const estaBaixo = estoque <= minimo && estoque > 0;
-                const estaZerado = estoque <= 0;
+                const estaZerado = estoque === 0;
+                const estaNegativo = estoque < 0;
                 return (
                   <tr key={p.codproduto} className="border-b border-border last:border-0 hover:bg-muted/20 transition-colors">
                     <td className="px-4 py-3">
@@ -229,14 +233,16 @@ const Stock = () => {
                       <>
                         <td className="px-4 py-3 text-center font-medium">{p.estoqueMatriz}</td>
                         <td className="px-4 py-3 text-center font-medium">{p.estoqueFilial1}</td>
-                        <td className="px-4 py-3 text-center font-semibold text-primary">{estoque}</td>
+                        <td className={`px-4 py-3 text-center font-semibold ${estaNegativo ? 'text-red-600' : 'text-primary'}`}>{estoque}</td>
                       </>
                     ) : (
-                      <td className="px-4 py-3 text-center font-medium">{estoque}</td>
+                      <td className={`px-4 py-3 text-center font-medium ${estaNegativo ? 'text-red-600' : ''}`}>{estoque}</td>
                     )}
                     <td className="px-4 py-3 text-center text-muted-foreground">{minimo}</td>
                     <td className="px-4 py-3 text-center">
-                      {estaZerado ? (
+                      {estaNegativo ? (
+                        <Badge className="bg-red-600 hover:bg-red-700 text-white font-bold text-[10px]">Negativo</Badge>
+                      ) : estaZerado ? (
                         <Badge variant="destructive" className="text-[10px]">Sem Estoque</Badge>
                       ) : estaBaixo ? (
                         <Badge className="bg-amber-100 text-amber-700 text-[10px]">Baixo</Badge>
