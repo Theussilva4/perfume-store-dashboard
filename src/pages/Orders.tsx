@@ -1,4 +1,6 @@
 import { useState, useRef } from "react";
+import { QRCodeSVG } from "qrcode.react";
+import { generatePixPayload } from "@/utils/pix";
 import { pedidos as pedidosIniciais, produtos, rotulosStatus, coresStatus, rotulosFormaPagamento, rotulosFilial, Pedido, ItemPedido } from "@/data/mockData";
 import { getFilial } from '@/services/filialService'
 import { getCliente } from '@/services/clienteService'
@@ -1224,6 +1226,42 @@ const Orders = () => {
                       </div>
                     </div>
                   )}
+                </div>
+              );
+            })()}
+
+            {(() => {
+              if (!nomePlano.toLowerCase().includes("pix") || totalPedido <= 0) return null;
+              
+              const payload = generatePixPayload(totalPedido);
+              
+              return (
+                <div className="flex flex-col items-center justify-center p-4 border-2 border-dashed border-primary/50 bg-primary/5 rounded-lg mt-4 animate-in fade-in zoom-in-95 duration-300">
+                  <div className="flex items-center gap-2 mb-3">
+                    <ScanBarcode className="w-6 h-6 text-primary" />
+                    <h3 className="font-bold text-lg text-primary">Pagamento via PIX</h3>
+                  </div>
+                  
+                  <div className="bg-white p-2 rounded-xl shadow-sm mb-3">
+                    <QRCodeSVG value={payload} size={160} level="M" />
+                  </div>
+                  
+                  <p className="text-base font-bold text-foreground">Valor: R$ {totalPedido.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</p>
+                  <p className="text-xs text-muted-foreground mt-1 text-center max-w-[250px]">
+                    Peça para o cliente escanear o QR Code acima pelo aplicativo do banco.
+                  </p>
+                  
+                  <Button 
+                    variant="secondary" 
+                    size="sm" 
+                    className="mt-3"
+                    onClick={() => {
+                      navigator.clipboard.writeText(payload);
+                      toast.success("Código PIX Copia e Cola copiado!");
+                    }}
+                  >
+                    Copiar PIX Copia e Cola
+                  </Button>
                 </div>
               );
             })()}
