@@ -4,6 +4,7 @@ import { getCompras, createCompra, getCompraById, cancelarCompra } from "@/servi
 import { getFornecedores } from "@/services/fornecedorService";
 import { getProdutos } from "@/services/produtosService";
 import { getFilial } from "@/services/filialService";
+import { getEstoque } from "@/services/estoqueService";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -18,6 +19,7 @@ const Purchases = () => {
   const [listaFornecedores, setListaFornecedores] = useState<any[]>([]);
   const [listaProdutos, setListaProdutos] = useState<any[]>([]);
   const [listaFiliais, setListaFiliais] = useState<any[]>([]);
+  const [listaEstoques, setListaEstoques] = useState<any[]>([]);
   
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(false);
@@ -54,16 +56,18 @@ const Purchases = () => {
   async function carregarDados() {
     setLoading(true);
     try {
-      const [comprasAPI, fornecedoresAPI, produtosAPI, filiaisAPI] = await Promise.all([
+      const [comprasAPI, fornecedoresAPI, produtosAPI, filiaisAPI, estoquesAPI] = await Promise.all([
         getCompras(),
         getFornecedores(),
         getProdutos(),
-        getFilial()
+        getFilial(),
+        getEstoque()
       ]);
       setListaCompras(Array.isArray(comprasAPI) ? comprasAPI : []);
       setListaFornecedores(Array.isArray(fornecedoresAPI) ? fornecedoresAPI : []);
       setListaProdutos(Array.isArray(produtosAPI) ? produtosAPI : []);
       setListaFiliais(Array.isArray(filiaisAPI) ? filiaisAPI : []);
+      setListaEstoques(Array.isArray(estoquesAPI) ? estoquesAPI : []);
     } catch (error) {
       console.error(error);
       toast.error("Erro ao carregar dados");
@@ -211,7 +215,42 @@ const Purchases = () => {
       </div>
 
       <div className="bg-card rounded-lg border border-border overflow-hidden">
-        <div className="overflow-x-auto">
+        {/* VISUALIZAÇÃO MOBILE (CARDS) */}
+        <div className="grid grid-cols-1 gap-4 md:hidden p-4 bg-transparent">
+          {comprasFiltradas.map((compra, i) => (
+            <div key={compra.uuid || `compra-m-${i}`} className="bg-background border border-border rounded-lg p-4 space-y-3 shadow-sm">
+              <div className="flex justify-between items-start">
+                <div>
+                  <h4 className="font-semibold text-foreground text-sm">Código #{compra.codigo_compra}</h4>
+                  <p className="text-base font-medium text-foreground mt-1">{compra.msfornecedor?.nome || 'N/A'}</p>
+                  <span className="flex items-center gap-1 text-xs text-muted-foreground mt-1">📅 {new Date(compra.created_at || compra.data_compra).toLocaleDateString("pt-BR")}</span>
+                </div>
+                <div className="text-right">
+                  <div className="font-bold text-primary">R$ {Number(compra.valor_total || 0).toLocaleString("pt-BR")}</div>
+                </div>
+              </div>
+              
+              <div className="flex items-center justify-between pt-3 border-t border-border">
+                <Badge variant="outline" className={
+                  compra.status === 'FINALIZADA' || compra.status === 'CONCLUIDA' ? 'text-green-600 border-green-600 bg-green-50' : 
+                  compra.status === 'CANCELADA' ? 'text-red-600 border-red-600 bg-red-50' : ''
+                }>
+                  {compra.status}
+                </Badge>
+                
+                <button
+                  onClick={() => abrirDetalhes(compra)}
+                  className="p-2 rounded-md border border-border bg-background text-muted-foreground hover:bg-muted hover:text-foreground transition-colors flex items-center justify-center"
+                >
+                  <Eye className="h-4 w-4" />
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* VISUALIZAÇÃO DESKTOP (TABELA) */}
+        <div className="hidden md:block overflow-x-auto">
           <table className="w-full text-sm whitespace-nowrap">
             <thead>
               <tr className="border-b border-border bg-muted/30">
@@ -414,20 +453,32 @@ const Purchases = () => {
           <div className="max-h-60 overflow-y-auto space-y-2 mt-2">
             {listaProdutos
               .filter(p => p.descricao?.toLowerCase().includes(produtoBusca.toLowerCase()) || String(p.codproduto).includes(produtoBusca))
-              .map(p => (
-                <div 
-                  key={p.codproduto} 
-                  className="p-2 border rounded cursor-pointer hover:bg-muted"
-                  onClick={() => {
-                    setProdutoSelecionadoId(String(p.codproduto));
-                    setCustoSelecionado(Number(p.custo_unitario) || 0);
-                    setDialogProdutoOpen(false);
-                  }}
-                >
-                  <div className="font-medium">{p.descricao}</div>
-                  <div className="text-xs text-muted-foreground">Código: {p.codproduto} | Custo: R$ {p.custo_unitario}</div>
-                </div>
-            ))}
+              .map(p => {
+                // Calcular estoque total do produto
+                const estoqueTotal = listaEstoques
+                  .filter(e => String(e.codproduto) === String(p.codproduto))
+                  .reduce((acc, curr) => acc + curr.quantidade, 0);
+
+                return (
+                  <div 
+                    key={p.codproduto} 
+                    className="p-3 border rounded cursor-pointer hover:bg-muted"
+                    onClick={() => {
+                      setProdutoSelecionadoId(String(p.codproduto));
+                      setCustoSelecionado(Number(p.custo_unitario) || 0);
+                      setDialogProdutoOpen(false);
+                    }}
+                  >
+                    <div className="font-medium">{p.descricao}</div>
+                    <div className="flex justify-between items-center mt-1">
+                      <div className="text-xs text-muted-foreground">Cód: {p.codproduto} | Custo: R$ {Number(p.custo || p.preco_normal || 0).toLocaleString("pt-BR")}</div>
+                      <Badge variant="outline" className={estoqueTotal < 0 ? 'text-red-600 border-red-600 bg-red-50 font-bold' : 'text-muted-foreground'}>
+                        Estoque: {estoqueTotal}
+                      </Badge>
+                    </div>
+                  </div>
+                );
+            })}
           </div>
         </DialogContent>
       </Dialog>
