@@ -102,9 +102,10 @@ const Orders = () => {
       const [filiais, clientes, vendedores, produtosRAW, pedidosAPI, formasPgtoAPI, tabelaPrecos, est] = responses;
 
       setEstoquesAPI(Array.isArray(est) ? est : []);
+      const tabelaPrecosSafe = Array.isArray(tabelaPrecos) ? tabelaPrecos : [];
 
       const produtos = (produtosRAW || []).map((p: any) => {
-        const tb = tabelaPrecos.find((t: any) => String(t.codproduto) === String(p.codproduto));
+        const tb = tabelaPrecosSafe.find((t: any) => String(t.codproduto) === String(p.codproduto));
         return {
           ...p,
           preco_calculado: tb?.precificacao?.precoFinal || p.preco_promocao || p.preco_normal || 0,
@@ -172,9 +173,11 @@ const Orders = () => {
       });
 
       setListaPedidos(pedidosCompletos);
-    } catch (error) {
+    } catch (error: any) {
       console.error(error);
-      setErro("Erro ao carregar dados");
+      const msg = error?.response?.data?.erro || error.message || String(error);
+      setErro("Erro ao carregar dados: " + msg);
+      toast.error("Falha: " + msg);
     } finally {
       setLoading(false);
     }
