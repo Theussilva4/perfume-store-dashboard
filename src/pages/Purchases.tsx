@@ -511,18 +511,35 @@ const Purchases = () => {
                 <p className="text-sm font-semibold">Data: <span className="font-normal text-muted-foreground">{new Date(compraSelecionada.data_compra || compraSelecionada.created_at).toLocaleString('pt-BR')}</span></p>
               </div>
               <div>
-                <h4 className="font-medium border-b pb-1 mb-2">Itens</h4>
-                <ul className="space-y-2 max-h-[250px] overflow-y-auto">
-                  {(compraSelecionada.mscompra_item || []).map((item: any, idx: number) => (
-                    <li key={idx} className="flex justify-between items-center text-sm py-1 border-b last:border-0 border-border/50">
-                      <div className="flex flex-col">
-                        <span className="font-medium">{item.quantidade}x {item.msproduto?.descricao || `Produto ID: ${item.codproduto}`}</span>
-                        <span className="text-xs text-muted-foreground">R$ {Number(item.custo_unitario).toLocaleString("pt-BR", { minimumFractionDigits: 2 })} cada</span>
-                      </div>
-                      <span className="font-medium text-muted-foreground">R$ {(item.quantidade * item.custo_unitario).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</span>
-                    </li>
-                  ))}
-                </ul>
+                <h4 className="font-medium border-b pb-1 mb-2">Itens da Compra</h4>
+                <div className="overflow-x-auto max-h-[250px] overflow-y-auto">
+                  <table className="w-full text-sm">
+                    <thead className="sticky top-0 bg-background">
+                      <tr className="border-b text-left text-muted-foreground text-xs">
+                        <th className="pb-2 font-medium pr-2">Cód</th>
+                        <th className="pb-2 font-medium">Produto</th>
+                        <th className="pb-2 font-medium text-right px-2">Qtd</th>
+                        <th className="pb-2 font-medium text-right px-2">Custo Un.</th>
+                        <th className="pb-2 font-medium text-right pl-2">Total</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-border/50">
+                      {(compraSelecionada.mscompra_item || []).map((item: any, idx: number) => (
+                        <tr key={idx} className="hover:bg-muted/30">
+                          <td className="py-2 text-muted-foreground pr-2">{item.codproduto}</td>
+                          <td className="py-2 font-medium">{item.msproduto?.descricao || "Desconhecido"}</td>
+                          <td className="py-2 text-right px-2">{item.quantidade}</td>
+                          <td className="py-2 text-right text-muted-foreground whitespace-nowrap px-2">
+                            R$ {Number(item.custo_unitario).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
+                          </td>
+                          <td className="py-2 text-right font-medium whitespace-nowrap pl-2">
+                            R$ {(item.quantidade * item.custo_unitario).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
               </div>
               <div className="flex justify-between items-center border-t pt-3">
                 <span className="font-semibold text-lg">Total</span>
