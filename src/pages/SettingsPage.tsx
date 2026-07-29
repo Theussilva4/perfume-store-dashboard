@@ -16,11 +16,13 @@ const SettingsPage = () => {
     facebook: "",
     fastClientMode: localStorage.getItem("fastClientMode") !== "false", // default to true
     allowOutOfStockOrders: localStorage.getItem("allowOutOfStockOrders") !== "false", // default to true
+    askProductSupplier: localStorage.getItem("askProductSupplier") !== "false", // default to true
   });
 
   const handleSave = () => {
     localStorage.setItem("fastClientMode", String(form.fastClientMode));
     localStorage.setItem("allowOutOfStockOrders", String(form.allowOutOfStockOrders));
+    localStorage.setItem("askProductSupplier", String(form.askProductSupplier));
     toast.success("Configurações salvas!");
   };
 
@@ -84,6 +86,17 @@ const SettingsPage = () => {
             <Switch 
               checked={form.allowOutOfStockOrders} 
               onCheckedChange={(checked) => setForm({ ...form, allowOutOfStockOrders: checked })} 
+            />
+          </div>
+
+          <div className="flex items-center justify-between pt-2">
+            <div>
+              <p className="text-sm font-medium text-foreground">Solicitar Fornecedor no Cadastro de Produto</p>
+              <p className="text-xs text-muted-foreground">Se ativo, exibe o campo "Fornecedor" de forma opcional ao cadastrar ou editar um produto.</p>
+            </div>
+            <Switch 
+              checked={form.askProductSupplier} 
+              onCheckedChange={(checked) => setForm({ ...form, askProductSupplier: checked })} 
             />
           </div>
         </div>

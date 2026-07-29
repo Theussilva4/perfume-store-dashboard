@@ -4,6 +4,7 @@ export interface Produto {
   resumo: string;
   marca: string;
   codcategoria: number;
+  codfornecedor?: number;
   precoCusto: number;
   precoVenda: number;
   estoque: number;

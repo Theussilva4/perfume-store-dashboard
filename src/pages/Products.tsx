@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 
 import { getProdutos, updateProduto, createProduto, alterarStatusProduto } from "@/services/produtosService";
 import { getCategorias, updateCategoria, createCategoria } from "@/services/categoriaService";
+import { getFornecedores } from "@/services/fornecedorService";
 import { Produto, categoria } from "@/types";
 
 import { Button } from "@/components/ui/button";
@@ -17,7 +18,7 @@ import { toast } from "sonner";
 import { BarcodeScannerModal } from "@/components/BarcodeScannerModal";
 
 const produtoVazio: Omit<Produto, "codproduto"> = {
-  descricao: "", codcategoria: 0, resumo: "", marca: "",
+  descricao: "", codcategoria: 0, codfornecedor: undefined, resumo: "", marca: "",
   precoCusto: 0, precoVenda: 0, estoque: 0,
   estoquePorFilial: { matriz: 0, filial1: 0 },
   estoqueMinimo: 5,
@@ -35,6 +36,7 @@ function mapearProduto(p: any): Produto {
     resumo: p.resumo || "",
     marca: p.marca || "",
     codcategoria: Number(p.codcategoria),
+    codfornecedor: p.codfornecedor ? Number(p.codfornecedor) : undefined,
     precoCusto: Number(p.custo || p.preco_normal || 0),
     precoVenda: Number(p.preco_promocao || p.preco_normal || 0),
     estoque: Number(p.msestoque?.[0]?.quantidade || 0),
@@ -56,8 +58,11 @@ const Products = () => {
   const [editandoProduto, setEditandoProduto] = useState<Produto | null>(null);
   const [form, setForm] = useState<Omit<Produto, "codproduto">>(produtoVazio);
   const [categorias, setCategorias] = useState<categoria[]>([]);
+  const [fornecedores, setFornecedores] = useState<any[]>([]);
   const [scannerOpen, setScannerOpen] = useState(false);
   const [mostrarInativos, setMostrarInativos] = useState(false);
+
+  const askProductSupplier = localStorage.getItem("askProductSupplier") !== "false";
 
   const filtrados = listaProdutos.filter((p) => {
     const matchSearch =
@@ -79,9 +84,21 @@ const Products = () => {
     }
   }
 
+  async function carregarFornecedores() {
+    try {
+      const data = await getFornecedores();
+      setFornecedores(Array.isArray(data) ? data : []);
+    } catch (error) {
+      console.error(error);
+      setFornecedores([]);
+    }
+  }
+
   useEffect(() => {
     async function init() {
-      await Promise.all([carregarProdutos(), carregarCategorias()]);
+      const promises = [carregarProdutos(), carregarCategorias()];
+      if (askProductSupplier) promises.push(carregarFornecedores());
+      await Promise.all(promises);
     }
     init();
   }, []);
@@ -122,6 +139,7 @@ const Products = () => {
         codcategoria: form.codcategoria,
         resumo: form.resumo,
         estoque_minimo: form.estoqueMinimo,
+        codfornecedor: form.codfornecedor,
         ativo: form.ativo ? "S" : "N",
         codigo_barras: form.codigoBarras || null,
         volume_ml: form.volume || null,
@@ -393,6 +411,25 @@ const Products = () => {
                       </SelectContent>
                     </Select>
                   </div>
+                  {askProductSupplier && (
+                    <div className="space-y-2">
+                      <Label>Fornecedor (Opcional)</Label>
+                      <Select
+                        value={form.codfornecedor ? String(form.codfornecedor) : "0"}
+                        onValueChange={(v) => setForm({ ...form, codfornecedor: v === "0" ? undefined : Number(v) })}
+                      >
+                        <SelectTrigger><SelectValue placeholder="Nenhum" /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="0">Nenhum</SelectItem>
+                          {fornecedores.map((f) => (
+                            <SelectItem key={f.codfornecedor || f.uuid} value={String(f.codfornecedor)}>
+                              {f.nome}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  )}
                   <div className="space-y-2">
                     <Label>Código de Barras</Label>
                     <div className="flex gap-2">
