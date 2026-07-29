@@ -514,9 +514,12 @@ const Purchases = () => {
                 <h4 className="font-medium border-b pb-1 mb-2">Itens</h4>
                 <ul className="space-y-2 max-h-[250px] overflow-y-auto">
                   {(compraSelecionada.mscompra_item || []).map((item: any, idx: number) => (
-                    <li key={idx} className="flex justify-between text-sm">
-                      <span>{item.quantidade}x {item.msproduto?.descricao || `Produto ID: ${item.codproduto}`}</span>
-                      <span className="font-medium text-muted-foreground">R$ {(item.quantidade * item.custo_unitario).toLocaleString("pt-BR")}</span>
+                    <li key={idx} className="flex justify-between items-center text-sm py-1 border-b last:border-0 border-border/50">
+                      <div className="flex flex-col">
+                        <span className="font-medium">{item.quantidade}x {item.msproduto?.descricao || `Produto ID: ${item.codproduto}`}</span>
+                        <span className="text-xs text-muted-foreground">R$ {Number(item.custo_unitario).toLocaleString("pt-BR", { minimumFractionDigits: 2 })} cada</span>
+                      </div>
+                      <span className="font-medium text-muted-foreground">R$ {(item.quantidade * item.custo_unitario).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</span>
                     </li>
                   ))}
                 </ul>
