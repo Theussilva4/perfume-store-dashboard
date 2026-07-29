@@ -45,6 +45,7 @@ const Orders = () => {
   const [buscaProdutoInput, setBuscaProdutoInput] = useState("");
   const [dialogProdutoOpen, setDialogProdutoOpen] = useState(false);
   const [scannerOpen, setScannerOpen] = useState(false);
+  const [estoquesAPI, setEstoquesAPI] = useState<any[]>([]);
 
   const [idPedidoEdicao, setIdPedidoEdicao] = useState<string | null>(null);
   const [statusAtualPedido, setStatusAtualPedido] = useState("EM_ABERTO");
