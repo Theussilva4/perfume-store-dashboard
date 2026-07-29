@@ -63,7 +63,8 @@ const Stock = () => {
     const estoque = p.estoqueAtual;
     const minimo = p.estoque_minimo || 0;
     if (filter === "low") return matchSearch && estoque <= minimo && estoque > 0;
-    if (filter === "out") return matchSearch && estoque <= 0;
+    if (filter === "out") return matchSearch && estoque === 0;
+    if (filter === "negative") return matchSearch && estoque < 0;
     return matchSearch;
   });
 
@@ -116,6 +117,7 @@ const Stock = () => {
             <SelectItem value="all">Todos</SelectItem>
             <SelectItem value="low">Estoque Baixo</SelectItem>
             <SelectItem value="out">Sem Estoque</SelectItem>
+            <SelectItem value="negative">Estoque Negativo</SelectItem>
           </SelectContent>
         </Select>
         <button
