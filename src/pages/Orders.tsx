@@ -22,7 +22,7 @@ import { Switch } from "@/components/ui/switch";
 import { Plus, Search, Eye, ClipboardList, Trash2, Pencil, ScanBarcode, FileText } from "lucide-react";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
-import { useEffect } from "react";
+
 import { BarcodeScannerModal } from "@/components/BarcodeScannerModal";
 import * as comercialService from "@/services/comercialService";
 import { gerarEspelhoPedido } from "@/utils/pdfGenerator";
