@@ -1258,39 +1258,7 @@ const Orders = () => {
                         </SelectContent>
                       </Select>
                     </div>
-                  ) : (
-                    <div className="space-y-2 md:col-span-1 flex flex-col justify-end pb-2">
-                      <div className="flex items-center space-x-2 p-2 border rounded-md bg-muted/30">
-                        <Switch
-                          checked={statusAtualPedido === "FINALIZADO"}
-                          onCheckedChange={(checked) => setStatusAtualPedido(checked ? "FINALIZADO" : "EM_ABERTO")}
-                        />
-                        <Label 
-                          className="cursor-pointer text-sm font-medium select-none flex-1" 
-                          onClick={() => setStatusAtualPedido(statusAtualPedido === "FINALIZADO" ? "EM_ABERTO" : "FINALIZADO")}
-                        >
-                          Já foi pago? (Finalizar Pedido)
-                        </Label>
-                      </div>
-                    </div>
-                  )}
-                  
-                  {maxRealAllowed > 1 && (
-                    <div className="space-y-2 md:col-span-1 md:col-start-2 flex flex-col justify-end pb-2">
-                      <div className="flex items-center space-x-2 p-2 border rounded-md bg-muted/30">
-                        <Switch
-                          checked={statusAtualPedido === "FINALIZADO"}
-                          onCheckedChange={(checked) => setStatusAtualPedido(checked ? "FINALIZADO" : "EM_ABERTO")}
-                        />
-                        <Label 
-                          className="cursor-pointer text-sm font-medium select-none flex-1" 
-                          onClick={() => setStatusAtualPedido(statusAtualPedido === "FINALIZADO" ? "EM_ABERTO" : "FINALIZADO")}
-                        >
-                          Já foi pago? (Finalizar Pedido)
-                        </Label>
-                      </div>
-                    </div>
-                  )}
+                  ) : null}
                 </div>
               );
             })()}
@@ -1352,6 +1320,19 @@ const Orders = () => {
                 onChange={(e) => setObservacoes(e.target.value)}
                 className="min-h-[80px]"
               />
+            </div>
+            
+            <div className="mt-4 flex items-center space-x-2 p-3 border rounded-md bg-muted/30">
+              <Switch
+                checked={statusAtualPedido === "FINALIZADO"}
+                onCheckedChange={(checked) => setStatusAtualPedido(checked ? "FINALIZADO" : "EM_ABERTO")}
+              />
+              <Label 
+                className="cursor-pointer text-sm font-medium select-none flex-1" 
+                onClick={() => setStatusAtualPedido(statusAtualPedido === "FINALIZADO" ? "EM_ABERTO" : "FINALIZADO")}
+              >
+                Já foi pago? (Finalizar Pedido)
+              </Label>
             </div>
           </div>
           <DialogFooter>
