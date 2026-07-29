@@ -17,12 +17,14 @@ const SettingsPage = () => {
     fastClientMode: localStorage.getItem("fastClientMode") !== "false", // default to true
     allowOutOfStockOrders: localStorage.getItem("allowOutOfStockOrders") !== "false", // default to true
     askProductSupplier: localStorage.getItem("askProductSupplier") !== "false", // default to true
+    allowBuyFromAnySupplier: localStorage.getItem("allowBuyFromAnySupplier") !== "false", // default to true
   });
 
   const handleSave = () => {
     localStorage.setItem("fastClientMode", String(form.fastClientMode));
     localStorage.setItem("allowOutOfStockOrders", String(form.allowOutOfStockOrders));
     localStorage.setItem("askProductSupplier", String(form.askProductSupplier));
+    localStorage.setItem("allowBuyFromAnySupplier", String(form.allowBuyFromAnySupplier));
     toast.success("Configurações salvas!");
   };
 
@@ -97,6 +99,17 @@ const SettingsPage = () => {
             <Switch 
               checked={form.askProductSupplier} 
               onCheckedChange={(checked) => setForm({ ...form, askProductSupplier: checked })} 
+            />
+          </div>
+
+          <div className="flex items-center justify-between pt-2">
+            <div>
+              <p className="text-sm font-medium text-foreground">Permitir Compra de Qualquer Fornecedor</p>
+              <p className="text-xs text-muted-foreground">Se ativo, ao registrar uma compra, você pode selecionar qualquer produto, mesmo que não seja daquele fornecedor.</p>
+            </div>
+            <Switch 
+              checked={form.allowBuyFromAnySupplier} 
+              onCheckedChange={(checked) => setForm({ ...form, allowBuyFromAnySupplier: checked })} 
             />
           </div>
         </div>

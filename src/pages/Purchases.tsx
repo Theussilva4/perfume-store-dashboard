@@ -463,12 +463,18 @@ const Purchases = () => {
               <Camera className="h-4 w-4" />
             </Button>
           </div>
-          <div className="max-h-60 overflow-y-auto space-y-2 mt-2">
-            {listaProdutos
-              .filter(p => p.descricao?.toLowerCase().includes(produtoBusca.toLowerCase()) || 
-                           String(p.codproduto).includes(produtoBusca) || 
-                           (p.codigo_barras && String(p.codigo_barras).toLowerCase().includes(produtoBusca.toLowerCase())))
-              .map(p => {
+            <div className="max-h-[60vh] overflow-y-auto space-y-2">
+              {listaProdutos
+                .filter(p => {
+                  const allowBuyFromAnySupplier = localStorage.getItem("allowBuyFromAnySupplier") !== "false";
+                  if (fornecedorCod && !allowBuyFromAnySupplier) {
+                    if (p.codfornecedor !== Number(fornecedorCod)) return false;
+                  }
+                  return p.descricao?.toLowerCase().includes(produtoBusca.toLowerCase()) || 
+                         String(p.codproduto).includes(produtoBusca) || 
+                         (p.codigo_barras && String(p.codigo_barras).toLowerCase().includes(produtoBusca.toLowerCase()))
+                })
+                .map((p) => {
                 // Calcular estoque total do produto
                 const estoqueTotal = listaEstoques
                   .filter(e => String(e.codproduto) === String(p.codproduto))
