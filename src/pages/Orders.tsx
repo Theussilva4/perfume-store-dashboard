@@ -51,6 +51,7 @@ const Orders = () => {
   const [statusAtualPedido, setStatusAtualPedido] = useState("EM_ABERTO");
   const [codigoPlano, setCodigoPlano] = useState("");
   const [nomePlano, setNomePlano] = useState("");
+  const [parcelas, setParcelas] = useState("1");
   const [dialogPlanoOpen, setDialogPlanoOpen] = useState(false);
   const [buscaPlano, setBuscaPlano] = useState("");
   const { filialSelecionada, rotuloFilial } = useBranch();
@@ -162,8 +163,10 @@ const Orders = () => {
           data: p.data_pedido || p.data || new Date().toISOString(),
           filial: p.codfilial || p.filial,
           nomeFilial: filialReq ? filialReq.filial : (rotulosFilial[p.filial] || p.filial),
-          formaPagamento: String(codForma),
+          formaPagamento: codForma,
           nomeFormaPagamento: planoPgtoReq ? (planoPgtoReq.DESCRICAO || planoPgtoReq.descricao || planoPgtoReq.nome) : (p.formaPagamento || 'Não Informado'),
+          parcelas: p.parcelas || 1,
+          status: p.status || p.STATUS || "EM_DIGITACAO",
           nomeCliente: clienteReq ? clienteReq.nome : (p.nomeCliente || p.cliente?.nome || 'Cliente não encontrado'),
           telefoneCliente: clienteReq ? clienteReq.telefone : (p.telefoneCliente || p.cliente?.telefone || ''),
           motivo_cancelamento: p.motivo_cancelamento,
@@ -273,6 +276,7 @@ const Orders = () => {
     if (plano) {
       setNomePlano(plano.DESCRICAO || plano.descricao || plano.nome);
       setCodigoPlano(String(plano.CODPLPAG || plano.codplpag || plano.codforma || plano.id || plano.codplano));
+      setParcelas("1");
     } else {
       setNomePlano("");
       toast.error("Plano de pagamento não encontrado");
@@ -515,6 +519,7 @@ const Orders = () => {
         codvendedor: codigoVendedor,
         codfilial: filialPedido,
         formaPagamento: codigoPlano,
+        parcelas: Number(parcelas) || 1,
         status: statusAtualPedido,
         desconto: descontoPedido,
         itens: itensPedido.map(i => ({
@@ -547,6 +552,7 @@ const Orders = () => {
       setDescontoPedido(0);
       setCodigoPlano("");
       setNomePlano("");
+      setParcelas("1");
       setFilialPedido("");
 
     } catch (error) {
@@ -603,7 +609,8 @@ const Orders = () => {
     if (vendReq) setNomeVendedor(vendReq.nome);
 
     setFilialPedido(String(pedido.codfilial || pedido.filial || ''));
-    setStatusAtualPedido(String(pedido.status || 'EM_ABERTO').toUpperCase());
+    setParcelas(String(pedido.parcelas || 1));
+    setStatusAtualPedido(pedido.status || "EM_DIGITACAO");
     setCodigoPlano(String(pedido.formaPagamento || ''));
     setNomePlano(pedido.nomeFormaPagamento || '');
     setDescontoPedido(pedido.desconto || 0);
@@ -652,8 +659,9 @@ const Orders = () => {
           setDescontoPedido(0);
           setCodigoPlano("");
           setNomePlano("");
+          setParcelas("1");
+          setStatusAtualPedido("EM_DIGITACAO");
           setFilialPedido("");
-          setStatusAtualPedido("EM_ABERTO");
           setDialogOpen(true);
         }}><Plus className="h-4 w-4 mr-2" /> Novo Pedido</Button>
       </div>
@@ -830,14 +838,14 @@ const Orders = () => {
           className="w-[95vw] md:max-w-4xl lg:max-w-5xl max-h-[90vh] overflow-y-auto"
           onInteractOutside={(e) => {
             e.preventDefault();
-            if (dialogClienteOpen || dialogVendedorOpen || dialogPlanoOpen || scannerOpen) return;
+            if (dialogClienteOpen || dialogVendedorOpen || dialogPlanoOpen || dialogProdutoOpen || scannerOpen) return;
             if (window.confirm("Você tem um pedido em andamento. Deseja realmente fechar sem salvar?")) {
               setDialogOpen(false);
             }
           }}
           onEscapeKeyDown={(e) => {
             e.preventDefault();
-            if (dialogClienteOpen || dialogVendedorOpen || dialogPlanoOpen || scannerOpen) return;
+            if (dialogClienteOpen || dialogVendedorOpen || dialogPlanoOpen || dialogProdutoOpen || scannerOpen) return;
             if (window.confirm("Você tem um pedido em andamento. Deseja realmente fechar sem salvar?")) {
               setDialogOpen(false);
             }
@@ -1115,54 +1123,106 @@ const Orders = () => {
                   </div>
                 </div>
               )}
+                </div>
+              )}
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2 md:col-span-1">
-                <Label>Plano de Pagamento</Label>
-                <div className="flex gap-2">
-                  <Input
-                    value={codigoPlano}
-                    onChange={(e) => setCodigoPlano(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter") {
-                        buscarPlanoPorCodigo(e.currentTarget.value);
-                      }
-                    }}
-                    placeholder="Código"
-                    className="w-28"
-                  />
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => setDialogPlanoOpen(true)}
-                  >
-                    ...
-                  </Button>
-                  <Input
-                    value={nomePlano}
-                    readOnly
-                    placeholder="Nome do Plano"
-                    className="flex-1"
-                  />
-                </div>
-              </div>
+            {(() => {
+              const planoSelecionado = listaFormasPagamento.find(
+                (fp) => String(fp.CODPLPAG || fp.codplpag || fp.codforma || fp.id || fp.codplano) === String(codigoPlano)
+              );
+              
+              const minParcela = Number(planoSelecionado?.valor_minimo_parcela) || 0;
+              const maxTotal = planoSelecionado?.max_parcelas || 1;
+              const maxAllowedByTotal = minParcela > 0 ? Math.floor(totalPedido / minParcela) : 999;
+              const maxRealAllowed = Math.min(maxTotal, Math.max(1, maxAllowedByTotal));
+              
+              const opcoesParcelamento = Array.from({ length: maxRealAllowed }, (_, i) => i + 1);
 
-              <div className="space-y-2 md:col-span-1 flex flex-col justify-end pb-2">
-                <div className="flex items-center space-x-2 p-2 border rounded-md bg-muted/30">
-                  <Switch
-                    checked={statusAtualPedido === "FINALIZADO"}
-                    onCheckedChange={(checked) => setStatusAtualPedido(checked ? "FINALIZADO" : "EM_ABERTO")}
-                  />
-                  <Label 
-                    className="cursor-pointer text-sm font-medium select-none flex-1" 
-                    onClick={() => setStatusAtualPedido(statusAtualPedido === "FINALIZADO" ? "EM_ABERTO" : "FINALIZADO")}
-                  >
-                    Já foi pago? (Finalizar Pedido)
-                  </Label>
+              return (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2 md:col-span-1">
+                    <Label>Plano de Pagamento</Label>
+                    <div className="flex gap-2">
+                      <Input
+                        value={codigoPlano}
+                        onChange={(e) => setCodigoPlano(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") {
+                            buscarPlanoPorCodigo(e.currentTarget.value);
+                          }
+                        }}
+                        placeholder="Código"
+                        className="w-28"
+                      />
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => setDialogPlanoOpen(true)}
+                      >
+                        ...
+                      </Button>
+                      <Input
+                        value={nomePlano}
+                        readOnly
+                        placeholder="Nome do Plano"
+                        className="flex-1"
+                      />
+                    </div>
+                  </div>
+
+                  {maxRealAllowed > 1 ? (
+                    <div className="space-y-2 md:col-span-1">
+                      <Label>Quantidade de Parcelas</Label>
+                      <Select value={parcelas} onValueChange={setParcelas}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Selecione..." />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {opcoesParcelamento.map(n => (
+                            <SelectItem key={n} value={String(n)}>
+                              {n}x de R$ {(totalPedido / n).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  ) : (
+                    <div className="space-y-2 md:col-span-1 flex flex-col justify-end pb-2">
+                      <div className="flex items-center space-x-2 p-2 border rounded-md bg-muted/30">
+                        <Switch
+                          checked={statusAtualPedido === "FINALIZADO"}
+                          onCheckedChange={(checked) => setStatusAtualPedido(checked ? "FINALIZADO" : "EM_ABERTO")}
+                        />
+                        <Label 
+                          className="cursor-pointer text-sm font-medium select-none flex-1" 
+                          onClick={() => setStatusAtualPedido(statusAtualPedido === "FINALIZADO" ? "EM_ABERTO" : "FINALIZADO")}
+                        >
+                          Já foi pago? (Finalizar Pedido)
+                        </Label>
+                      </div>
+                    </div>
+                  )}
+                  
+                  {maxRealAllowed > 1 && (
+                    <div className="space-y-2 md:col-span-1 md:col-start-2 flex flex-col justify-end pb-2">
+                      <div className="flex items-center space-x-2 p-2 border rounded-md bg-muted/30">
+                        <Switch
+                          checked={statusAtualPedido === "FINALIZADO"}
+                          onCheckedChange={(checked) => setStatusAtualPedido(checked ? "FINALIZADO" : "EM_ABERTO")}
+                        />
+                        <Label 
+                          className="cursor-pointer text-sm font-medium select-none flex-1" 
+                          onClick={() => setStatusAtualPedido(statusAtualPedido === "FINALIZADO" ? "EM_ABERTO" : "FINALIZADO")}
+                        >
+                          Já foi pago? (Finalizar Pedido)
+                        </Label>
+                      </div>
+                    </div>
+                  )}
                 </div>
-              </div>
-            </div>
+              );
+            })()}
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setDialogOpen(false)}>Cancelar</Button>
@@ -1314,6 +1374,7 @@ const Orders = () => {
                   onClick={() => {
                     setCodigoPlano(String(codPlano));
                     setNomePlano(desc);
+                    setParcelas("1");
                     setDialogPlanoOpen(false);
                   }}
                 >

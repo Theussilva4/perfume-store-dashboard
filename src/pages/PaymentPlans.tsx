@@ -23,6 +23,7 @@ const PaymentPlans = () => {
   const [temAcrescimo, setTemAcrescimo] = useState(false);
   const [taxaAcrescimo, setTaxaAcrescimo] = useState("");
   const [maxParcelas, setMaxParcelas] = useState("1");
+  const [valorMinimoParcela, setValorMinimoParcela] = useState("0");
   const [ativo, setAtivo] = useState(true);
 
   const { data: planos = [], isLoading } = useQuery({
@@ -72,6 +73,7 @@ const PaymentPlans = () => {
     setTemAcrescimo(false);
     setTaxaAcrescimo("");
     setMaxParcelas("1");
+    setValorMinimoParcela("0");
     setAtivo(true);
     setIsModalOpen(true);
   };
@@ -82,6 +84,7 @@ const PaymentPlans = () => {
     setTemAcrescimo(plano.tem_acrescimo || false);
     setTaxaAcrescimo(plano.taxa_acrescimo?.toString() || "");
     setMaxParcelas(plano.max_parcelas?.toString() || "1");
+    setValorMinimoParcela(plano.valor_minimo_parcela?.toString() || "0");
     setAtivo(plano.ATIVO === "S");
     setIsModalOpen(true);
   };
@@ -105,6 +108,7 @@ const PaymentPlans = () => {
       tem_acrescimo: temAcrescimo,
       taxa_acrescimo: temAcrescimo ? Number(taxaAcrescimo) : 0,
       max_parcelas: Number(maxParcelas),
+      valor_minimo_parcela: Number(valorMinimoParcela) || 0,
     });
   };
 
@@ -219,15 +223,20 @@ const PaymentPlans = () => {
                   </div>
                   
                   <div className="grid grid-cols-2 gap-2 mt-2">
-                    <div className="bg-muted/30 p-3 rounded flex flex-col justify-center items-center">
+                    <div className="bg-muted/30 p-3 rounded flex flex-col justify-center items-center text-center">
                       <p className="text-[10px] text-muted-foreground uppercase">Acréscimo</p>
                       <p className="font-medium text-sm">
                         {p.tem_acrescimo ? `+${Number(p.taxa_acrescimo || 0).toFixed(2)}%` : "Não"}
                       </p>
                     </div>
-                    <div className="bg-primary/10 p-3 rounded flex flex-col justify-center items-center">
+                    <div className="bg-primary/10 p-3 rounded flex flex-col justify-center items-center text-center">
                       <p className="text-[10px] text-primary uppercase font-semibold">Parcelas</p>
                       <p className="font-bold text-sm text-primary">Até {p.max_parcelas || 1}x</p>
+                      {Number(p.valor_minimo_parcela) > 0 && (
+                        <p className="text-[10px] text-primary/70 font-semibold leading-tight mt-0.5">
+                          Mín. R$ {Number(p.valor_minimo_parcela).toFixed(2)}
+                        </p>
+                      )}
                     </div>
                   </div>
 
@@ -263,14 +272,26 @@ const PaymentPlans = () => {
               />
             </div>
             
-            <div className="space-y-2">
-              <Label>Máximo de Parcelas</Label>
-              <Input 
-                type="number"
-                min="1"
-                value={maxParcelas}
-                onChange={(e) => setMaxParcelas(e.target.value)}
-              />
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Máximo de Parcelas</Label>
+                <Input 
+                  type="number"
+                  min="1"
+                  value={maxParcelas}
+                  onChange={(e) => setMaxParcelas(e.target.value)}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Valor Mínimo (R$)</Label>
+                <Input 
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value={valorMinimoParcela}
+                  onChange={(e) => setValorMinimoParcela(e.target.value)}
+                />
+              </div>
             </div>
 
             <div className="flex items-center justify-between p-3 border rounded-md bg-muted/20">
