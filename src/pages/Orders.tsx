@@ -464,7 +464,8 @@ const Orders = () => {
     }
 
     if (produto) {
-      if (!produto.tem_preco_tabela) {
+      const allowWithoutPrice = localStorage.getItem("allowProductsWithoutPrice") === "true";
+      if (!produto.tem_preco_tabela && !allowWithoutPrice) {
         toast.error("Produto sem preço cadastrado na Tabela Comercial.");
         return;
       }
@@ -479,7 +480,8 @@ const Orders = () => {
     setBuscaProdutoInput(text);
     const produtoEncontrado = listarProdutos.find(p => String(p.codigo_barras) === text || String(p.codigoBarras) === text || String(p.codproduto) === text);
     if(produtoEncontrado) {
-       if (!produtoEncontrado.tem_preco_tabela) {
+       const allowWithoutPrice = localStorage.getItem("allowProductsWithoutPrice") === "true";
+       if (!produtoEncontrado.tem_preco_tabela && !allowWithoutPrice) {
          toast.error("Produto sem preço cadastrado na Tabela Comercial.");
          return;
        }

@@ -18,6 +18,7 @@ const SettingsPage = () => {
     allowOutOfStockOrders: localStorage.getItem("allowOutOfStockOrders") !== "false", // default to true
     askProductSupplier: localStorage.getItem("askProductSupplier") !== "false", // default to true
     allowBuyFromAnySupplier: localStorage.getItem("allowBuyFromAnySupplier") !== "false", // default to true
+    allowProductsWithoutPrice: localStorage.getItem("allowProductsWithoutPrice") === "true", // default to false
   });
 
   const handleSave = () => {
@@ -25,6 +26,7 @@ const SettingsPage = () => {
     localStorage.setItem("allowOutOfStockOrders", String(form.allowOutOfStockOrders));
     localStorage.setItem("askProductSupplier", String(form.askProductSupplier));
     localStorage.setItem("allowBuyFromAnySupplier", String(form.allowBuyFromAnySupplier));
+    localStorage.setItem("allowProductsWithoutPrice", String(form.allowProductsWithoutPrice));
     toast.success("Configurações salvas!");
   };
 
@@ -110,6 +112,17 @@ const SettingsPage = () => {
             <Switch 
               checked={form.allowBuyFromAnySupplier} 
               onCheckedChange={(checked) => setForm({ ...form, allowBuyFromAnySupplier: checked })} 
+            />
+          </div>
+
+          <div className="flex items-center justify-between pt-2">
+            <div>
+              <p className="text-sm font-medium text-foreground">Permitir Venda Sem Preço Cadastrado</p>
+              <p className="text-xs text-muted-foreground">Se ativo, permite adicionar produtos ao pedido mesmo que eles não tenham preço na tabela comercial.</p>
+            </div>
+            <Switch 
+              checked={form.allowProductsWithoutPrice} 
+              onCheckedChange={(checked) => setForm({ ...form, allowProductsWithoutPrice: checked })} 
             />
           </div>
         </div>
