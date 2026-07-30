@@ -8,12 +8,12 @@ import logo from "@/assets/logo.png";
 
 const SettingsPage = () => {
   const [form, setForm] = useState({
-    storeName: "TassiAchando",
-    phone: "(11) 99999-0000",
-    pixKey: "tassiachando@email.com",
-    address: "Rua Exemplo, 123 — São Paulo, SP",
-    instagram: "@tassiachando",
-    facebook: "",
+    storeName: localStorage.getItem("storeName") || "TassiAchando",
+    phone: localStorage.getItem("phone") || "(11) 99999-0000",
+    pixKey: localStorage.getItem("pixKey") || "tassiachando@email.com",
+    address: localStorage.getItem("address") || "Rua Exemplo, 123 — São Paulo, SP",
+    instagram: localStorage.getItem("instagram") || "@tassiachando",
+    facebook: localStorage.getItem("facebook") || "",
     fastClientMode: localStorage.getItem("fastClientMode") !== "false", // default to true
     allowOutOfStockOrders: localStorage.getItem("allowOutOfStockOrders") !== "false", // default to true
     askProductSupplier: localStorage.getItem("askProductSupplier") !== "false", // default to true
@@ -22,6 +22,12 @@ const SettingsPage = () => {
   });
 
   const handleSave = () => {
+    localStorage.setItem("storeName", form.storeName);
+    localStorage.setItem("phone", form.phone);
+    localStorage.setItem("pixKey", form.pixKey);
+    localStorage.setItem("address", form.address);
+    localStorage.setItem("instagram", form.instagram);
+    localStorage.setItem("facebook", form.facebook);
     localStorage.setItem("fastClientMode", String(form.fastClientMode));
     localStorage.setItem("allowOutOfStockOrders", String(form.allowOutOfStockOrders));
     localStorage.setItem("askProductSupplier", String(form.askProductSupplier));

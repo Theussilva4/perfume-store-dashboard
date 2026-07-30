@@ -1,7 +1,6 @@
 // Configurações Globais do PIX
 // ALtere essas informações se quiser mudar a conta que recebe os pagamentos
 export const PIX_CONFIG = {
-  CHAVE: "00020101021126790014BR.GOV.BCB.PIX2557pix-qr.mercadopago.com/instore/ol/v2/rYkkj6NOoackp2hZz06N5204000053039865802BR5912TassiAchando6009SAO PAULO62080504mpis63048ACA",
   NOME: "TASSIANE DA SILVA SOUTO",
   CIDADE: "RECIFE",
 };
@@ -30,7 +29,22 @@ export function generatePixPayload(amount: number, txid = "***"): string {
   // Limpa caracteres especiais e limita tamanho segundo regras do BACEN
   const name = PIX_CONFIG.NOME.substring(0, 25).toUpperCase().replace(/[^\w\s]/gi, '');
   const city = PIX_CONFIG.CIDADE.substring(0, 15).toUpperCase().replace(/[^\w\s]/gi, '');
-  const key = PIX_CONFIG.CHAVE;
+  
+  let key = localStorage.getItem("pixKey") || "tassiachando@email.com";
+  // Basic sanitization for phone numbers and CPF/CNPJ
+  if (/^[\d\.\-\(\)\s\+]+$/.test(key) && !key.includes("@")) {
+    key = key.replace(/[^\d+]/g, '');
+    if (key.length === 11 && !key.startsWith("+")) {
+      key = "+55" + key; // Assume BR phone number if it has 11 digits and is just numbers
+    }
+  }
+
+  // If the user pasted a full PIX payload instead of a key, we warn them (though we can't show toast here easily without importing it, we just fallback or return it directly without amount).
+  if (key.startsWith("000201")) {
+    // If it's a full payload, it's very hard to correctly inject the amount without a full EMV parser.
+    // For now, if they paste a Mercado Pago payload, we just return it as is, which means they scan but type the value manually.
+    return key;
+  }
   
   const payloadKey = `0014BR.GOV.BCB.PIX01${formatSize(key)}${key}`;
   const guiInfo = `26${formatSize(payloadKey)}${payloadKey}`;
