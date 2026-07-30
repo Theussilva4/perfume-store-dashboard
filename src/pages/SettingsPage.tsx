@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import api from "@/utils/api";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -8,33 +9,88 @@ import logo from "@/assets/logo.png";
 
 const SettingsPage = () => {
   const [form, setForm] = useState({
-    storeName: localStorage.getItem("storeName") || "TassiAchando",
-    phone: localStorage.getItem("phone") || "(11) 99999-0000",
-    pixKey: localStorage.getItem("pixKey") || "tassiachando@email.com",
-    address: localStorage.getItem("address") || "Rua Exemplo, 123 — São Paulo, SP",
-    instagram: localStorage.getItem("instagram") || "@tassiachando",
-    facebook: localStorage.getItem("facebook") || "",
-    fastClientMode: localStorage.getItem("fastClientMode") !== "false", // default to true
-    allowOutOfStockOrders: localStorage.getItem("allowOutOfStockOrders") !== "false", // default to true
-    askProductSupplier: localStorage.getItem("askProductSupplier") !== "false", // default to true
-    allowBuyFromAnySupplier: localStorage.getItem("allowBuyFromAnySupplier") !== "false", // default to true
-    allowProductsWithoutPrice: localStorage.getItem("allowProductsWithoutPrice") === "true", // default to false
+    storeName: "TassiAchando",
+    phone: "(11) 99999-0000",
+    pixKey: "tassiachando@email.com",
+    address: "Rua Exemplo, 123 — São Paulo, SP",
+    instagram: "@tassiachando",
+    facebook: "",
+    fastClientMode: true,
+    allowOutOfStockOrders: true,
+    askProductSupplier: true,
+    allowBuyFromAnySupplier: true,
+    allowProductsWithoutPrice: false,
   });
 
-  const handleSave = () => {
-    localStorage.setItem("storeName", form.storeName);
-    localStorage.setItem("phone", form.phone);
-    localStorage.setItem("pixKey", form.pixKey);
-    localStorage.setItem("address", form.address);
-    localStorage.setItem("instagram", form.instagram);
-    localStorage.setItem("facebook", form.facebook);
-    localStorage.setItem("fastClientMode", String(form.fastClientMode));
-    localStorage.setItem("allowOutOfStockOrders", String(form.allowOutOfStockOrders));
-    localStorage.setItem("askProductSupplier", String(form.askProductSupplier));
-    localStorage.setItem("allowBuyFromAnySupplier", String(form.allowBuyFromAnySupplier));
-    localStorage.setItem("allowProductsWithoutPrice", String(form.allowProductsWithoutPrice));
-    toast.success("Configurações salvas!");
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchConfig = async () => {
+      try {
+        const { data } = await api.get("/configuracoes");
+        if (data) {
+          setForm({
+            storeName: data.nome_loja || "",
+            phone: data.telefone_loja || "",
+            pixKey: data.chave_pix || "",
+            address: data.endereco_loja || "",
+            instagram: data.instagram_loja || "",
+            facebook: data.facebook_loja || "",
+            fastClientMode: data.cadastro_rapido_cliente !== false,
+            allowOutOfStockOrders: data.venda_sem_estoque !== false,
+            askProductSupplier: data.exigir_fornecedor !== false,
+            allowBuyFromAnySupplier: data.venda_qualquer_fornecedor !== false,
+            allowProductsWithoutPrice: data.venda_sem_preco === true,
+          });
+        }
+      } catch (error) {
+        console.error("Erro ao carregar configurações", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchConfig();
+  }, []);
+
+  const handleSave = async () => {
+    try {
+      await api.put("/configuracoes", {
+        nome_loja: form.storeName,
+        telefone_loja: form.phone,
+        chave_pix: form.pixKey,
+        endereco_loja: form.address,
+        instagram_loja: form.instagram,
+        facebook_loja: form.facebook,
+        cadastro_rapido_cliente: form.fastClientMode,
+        venda_sem_estoque: form.allowOutOfStockOrders,
+        exigir_fornecedor: form.askProductSupplier,
+        venda_qualquer_fornecedor: form.allowBuyFromAnySupplier,
+        venda_sem_preco: form.allowProductsWithoutPrice,
+      });
+      
+      // Keep syncing with localStorage to not break other parts that might rely on it for now
+      localStorage.setItem("storeName", form.storeName);
+      localStorage.setItem("phone", form.phone);
+      localStorage.setItem("pixKey", form.pixKey);
+      localStorage.setItem("address", form.address);
+      localStorage.setItem("instagram", form.instagram);
+      localStorage.setItem("facebook", form.facebook);
+      localStorage.setItem("fastClientMode", String(form.fastClientMode));
+      localStorage.setItem("allowOutOfStockOrders", String(form.allowOutOfStockOrders));
+      localStorage.setItem("askProductSupplier", String(form.askProductSupplier));
+      localStorage.setItem("allowBuyFromAnySupplier", String(form.allowBuyFromAnySupplier));
+      localStorage.setItem("allowProductsWithoutPrice", String(form.allowProductsWithoutPrice));
+      
+      toast.success("Configurações salvas no banco de dados!");
+    } catch (error) {
+      console.error("Erro ao salvar configurações", error);
+      toast.error("Erro ao salvar configurações no banco");
+    }
   };
+
+  if (isLoading) {
+    return <div className="p-6">Carregando configurações...</div>;
+  }
 
   return (
     <div className="space-y-6 animate-fade-in-up max-w-2xl">
