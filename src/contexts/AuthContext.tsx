@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, ReactNode, useEffect } from "react";
-import api from "@/utils/api";
+import api from "@/services/api";
 
 interface Usuario {
   nome: string;
