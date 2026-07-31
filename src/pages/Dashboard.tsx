@@ -100,7 +100,7 @@ const Dashboard = () => {
           <KpiCard 
             label="Venda do Dia" 
             value={`R$ ${Number(metrics?.vendaDia || 0).toLocaleString("pt-BR")}`} 
-            change="Hoje" 
+            change={dataFinal === hoje.toISOString().split('T')[0] ? "Hoje" : dataFinal.split('-').reverse().join('/')} 
             positive 
             delay="animate-delay-2" 
           />
