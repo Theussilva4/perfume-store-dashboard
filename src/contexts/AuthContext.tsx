@@ -1,4 +1,5 @@
 import { createContext, useContext, useState, ReactNode, useEffect } from "react";
+import api from "@/utils/api";
 
 interface Usuario {
   nome: string;
@@ -42,7 +43,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     return null;
   });
 
-  const entrar = (token: string, userData: any) => {
+  const entrar = async (token: string, userData: any) => {
     localStorage.setItem("token", token);
 
     const user: Usuario = {
@@ -56,6 +57,27 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     localStorage.setItem("auth_user", JSON.stringify(user));
     // Marcamos no relógio que hrs a sessão expira daqui pra frente (Data Atual + 1 Dia)
     localStorage.setItem("auth_expiry", String(Date.now() + TEMPO_EXPIRACAO_SESSAO));
+
+    // Carregar configurações da empresa e salvar no localStorage
+    try {
+      const { data } = await api.get("/configuracoes");
+      if (data) {
+        if (data.nome_loja) localStorage.setItem("storeName", data.nome_loja);
+        if (data.telefone_loja) localStorage.setItem("phone", data.telefone_loja);
+        if (data.chave_pix) localStorage.setItem("pixKey", data.chave_pix);
+        if (data.endereco_loja) localStorage.setItem("address", data.endereco_loja);
+        if (data.instagram_loja) localStorage.setItem("instagram", data.instagram_loja);
+        if (data.facebook_loja) localStorage.setItem("facebook", data.facebook_loja);
+        
+        localStorage.setItem("fastClientMode", String(data.cadastro_rapido_cliente !== false));
+        localStorage.setItem("allowOutOfStockOrders", String(data.venda_sem_estoque !== false));
+        localStorage.setItem("askProductSupplier", String(data.exigir_fornecedor !== false));
+        localStorage.setItem("allowBuyFromAnySupplier", String(data.venda_qualquer_fornecedor !== false));
+        localStorage.setItem("allowProductsWithoutPrice", String(data.venda_sem_preco === true));
+      }
+    } catch (error) {
+      console.error("Erro ao carregar configurações no login:", error);
+    }
   };
 
   const sair = () => {
