@@ -43,22 +43,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     return null;
   });
 
-  const entrar = async (token: string, userData: any) => {
-    localStorage.setItem("token", token);
-
-    const user: Usuario = {
-      nome: userData.nome,
-      login: userData.email,
-      email: userData.email,
-      cargo: userData.tipo === "ADMIN" ? "admin" : "vendedor",
-    };
-
-    setUsuario(user);
-    localStorage.setItem("auth_user", JSON.stringify(user));
-    // Marcamos no relógio que hrs a sessão expira daqui pra frente (Data Atual + 1 Dia)
-    localStorage.setItem("auth_expiry", String(Date.now() + TEMPO_EXPIRACAO_SESSAO));
-
-    // Carregar configurações da empresa e salvar no localStorage
+  const carregarConfiguracoes = async () => {
     try {
       const { data } = await api.get("/configuracoes");
       if (data) {
@@ -76,8 +61,34 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         localStorage.setItem("allowProductsWithoutPrice", String(data.venda_sem_preco === true));
       }
     } catch (error) {
-      console.error("Erro ao carregar configurações no login:", error);
+      console.error("Erro ao carregar configurações globais:", error);
     }
+  };
+
+  useEffect(() => {
+    // Se o usuário já estiver logado quando a página carregar, a gente atualiza as configurações
+    if (usuario) {
+      carregarConfiguracoes();
+    }
+  }, []);
+
+  const entrar = async (token: string, userData: any) => {
+    localStorage.setItem("token", token);
+
+    const user: Usuario = {
+      nome: userData.nome,
+      login: userData.email,
+      email: userData.email,
+      cargo: userData.tipo === "ADMIN" ? "admin" : "vendedor",
+    };
+
+    setUsuario(user);
+    localStorage.setItem("auth_user", JSON.stringify(user));
+    // Marcamos no relógio que hrs a sessão expira daqui pra frente (Data Atual + 1 Dia)
+    localStorage.setItem("auth_expiry", String(Date.now() + TEMPO_EXPIRACAO_SESSAO));
+
+    // Carregar configurações da empresa e salvar no localStorage
+    await carregarConfiguracoes();
   };
 
   const sair = () => {
