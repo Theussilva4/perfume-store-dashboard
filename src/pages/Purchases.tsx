@@ -454,7 +454,7 @@ const Purchases = () => {
           <DialogHeader><DialogTitle>Selecionar Produto</DialogTitle></DialogHeader>
           <div className="flex gap-2">
             <Input 
-              placeholder="Buscar por nome ou código..." 
+              placeholder="Buscar por nome, código ou código de barras..." 
               value={produtoBusca} 
               onChange={e => setProdutoBusca(e.target.value)} 
               className="flex-1"
