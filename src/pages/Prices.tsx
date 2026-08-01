@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { DollarSign, Search, Edit2, TrendingUp, TrendingDown, AlertTriangle } from "lucide-react";
+import { DollarSign, Search, Edit2, TrendingUp, TrendingDown, AlertTriangle, Camera } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -9,15 +9,23 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogD
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { toast } from "sonner";
 import * as comercialService from "@/services/comercialService";
+import { BarcodeScannerModal } from "@/components/BarcodeScannerModal";
 
 const Prices = () => {
   const queryClient = useQueryClient();
   const [search, setSearch] = useState("");
   const [selectedProduct, setSelectedProduct] = useState<any>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [scannerOpen, setScannerOpen] = useState(false);
   
   const [costPrice, setCostPrice] = useState("");
   const [sellPrice, setSellPrice] = useState("");
+  const [maxDiscount, setMaxDiscount] = useState("");
+
+  const handleScanProduto = (decodedText: string) => {
+    setSearch(decodedText);
+    toast.success("Código lido: " + decodedText);
+  };
   const [maxDiscount, setMaxDiscount] = useState("");
 
   const { data: configuracao } = useQuery({
@@ -99,14 +107,19 @@ const Prices = () => {
               <CardTitle>Produtos e Precificação</CardTitle>
               <CardDescription>Consulte e altere o preço base dos seus produtos</CardDescription>
             </div>
-            <div className="relative w-full sm:w-72">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Buscar produto, código ou código de barras..."
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                className="pl-9"
-              />
+            <div className="flex gap-2 w-full sm:w-96">
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Buscar produto, código ou código de barras..."
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  className="pl-9"
+                />
+              </div>
+              <Button onClick={() => setScannerOpen(true)} variant="outline" className="px-3" title="Ler Código de Barras">
+                <Camera className="h-4 w-4" />
+              </Button>
             </div>
           </div>
         </CardHeader>
@@ -287,6 +300,11 @@ const Prices = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+      <BarcodeScannerModal 
+        open={scannerOpen} 
+        onOpenChange={setScannerOpen} 
+        onScan={handleScanProduto} 
+      />
     </div>
   );
 };
