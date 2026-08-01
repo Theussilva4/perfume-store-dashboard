@@ -156,8 +156,8 @@ const Products = () => {
       await carregarProdutos();
       setDialogOpen(false);
       setEditandoProduto(null);
-    } catch (error) {
-      toast.error("Erro ao salvar produto");
+    } catch (error: any) {
+      toast.error(error.response?.data?.erro || "Erro ao salvar produto");
     }
   };
 
