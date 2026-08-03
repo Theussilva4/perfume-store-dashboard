@@ -216,12 +216,16 @@ const Products = () => {
     setForm({ ...form, codcategoria, margem: margemCat, precoVenda: Number(novoPrecoVenda.toFixed(2)) });
   };
 
+  const quantidadeExibida = mostrarInativos ? listaProdutos.length : listaProdutos.filter(p => p.ativo).length;
+
   return (
     <div className="space-y-6 animate-fade-in-up">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h2 className="font-display text-2xl md:text-3xl font-semibold text-primary">Produtos</h2>
-          <p className="text-sm text-muted-foreground mt-1">{listaProdutos.length} produtos cadastrados</p>
+          <p className="text-sm text-muted-foreground mt-1">
+            {quantidadeExibida} produtos {mostrarInativos ? "cadastrados" : "ativos"}
+          </p>
         </div>
         <Button onClick={abrirNovo}>
           <Plus className="h-4 w-4 mr-2" /> Novo Produto
