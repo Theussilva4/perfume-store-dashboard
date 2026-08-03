@@ -82,9 +82,9 @@ const Dashboard = () => {
           
           <Popover>
             <PopoverTrigger asChild>
-              <Button variant="outline" className="flex items-center gap-2">
+              <Button variant="outline" className="flex items-center gap-2 px-3 sm:px-4 w-10 sm:w-auto justify-center">
                 <Filter className="h-4 w-4" />
-                Filtro de Data
+                <span className="hidden sm:inline">Filtro de Data</span>
               </Button>
             </PopoverTrigger>
             <PopoverContent align="end" className="w-auto p-4 flex flex-col gap-3">
