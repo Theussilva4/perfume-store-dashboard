@@ -26,7 +26,6 @@ const Prices = () => {
     setSearch(decodedText);
     toast.success("Código lido: " + decodedText);
   };
-  const [maxDiscount, setMaxDiscount] = useState("");
 
   const { data: configuracao } = useQuery({
     queryKey: ["configuracao-comercial"],
