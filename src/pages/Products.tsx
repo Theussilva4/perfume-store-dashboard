@@ -145,6 +145,9 @@ const Products = () => {
   const markup = form.precoCusto > 0 ? form.precoVenda / form.precoCusto : 0;
   const lucroUnitario = form.precoVenda - form.precoCusto;
 
+  // Validação em tempo real do Código de Barras (EAN)
+  const eanDuplicado = form.codigoBarras ? listaProdutos.find(p => p.codigoBarras === form.codigoBarras && p.codproduto !== editandoProduto?.codproduto) : null;
+
   const handleSalvar = async () => {
     try {
       const formData = new FormData();
@@ -531,6 +534,11 @@ const Products = () => {
                         <ScanBarcode className="h-4 w-4" />
                       </Button>
                     </div>
+                    {eanDuplicado && (
+                      <p className="text-sm font-medium text-destructive mt-1">
+                        ⚠️ Já cadastrado no produto "{eanDuplicado.descricao}"
+                      </p>
+                    )}
                   </div>
                   <div className="space-y-2">
                     <Label>Volume (ml)</Label>
@@ -561,7 +569,7 @@ const Products = () => {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setDialogOpen(false)}>Cancelar</Button>
-            <Button onClick={handleSalvar}>{editandoProduto ? "Salvar" : "Criar"}</Button>
+            <Button onClick={handleSalvar} disabled={!!eanDuplicado}>{editandoProduto ? "Salvar" : "Criar"}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
