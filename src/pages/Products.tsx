@@ -59,6 +59,7 @@ const Products = () => {
   const [search, setSearch] = useState("");
   const [filtroCategoria, setFiltroCategoria] = useState("all");
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [imagemZoom, setImagemZoom] = useState<string | null>(null);
   const [editandoProduto, setEditandoProduto] = useState<Produto | null>(null);
   const [form, setForm] = useState<Omit<Produto, "codproduto">>(produtoVazio);
   const [categorias, setCategorias] = useState<categoria[]>([]);
@@ -273,9 +274,10 @@ const Products = () => {
                 <div className="w-12 h-12 rounded-md bg-muted/50 overflow-hidden flex items-center justify-center border border-border">
                   {produto.imagemUrl ? (
                     <img 
-                      src={produto.imagemUrl.replace('/upload/', '/upload/w_100,h_100,c_fill/')} 
+                      src={produto.imagemUrl.replace('/upload/', '/upload/w_200,h_200,c_fit/')} 
                       alt={produto.descricao}
-                      className="w-full h-full object-cover"
+                      className="w-full h-full object-contain cursor-pointer hover:scale-110 transition-transform"
+                      onClick={() => setImagemZoom(produto.imagemUrl as string)}
                     />
                   ) : (
                     <Package className="h-6 w-6 text-muted-foreground/50" />
@@ -357,9 +359,10 @@ const Products = () => {
                       <div className="w-10 h-10 rounded bg-muted/50 overflow-hidden flex-shrink-0 flex items-center justify-center border border-border">
                         {produto.imagemUrl ? (
                           <img 
-                            src={produto.imagemUrl.replace('/upload/', '/upload/w_80,h_80,c_fill/')} 
+                            src={produto.imagemUrl.replace('/upload/', '/upload/w_200,h_200,c_fit/')} 
                             alt={produto.descricao}
-                            className="w-full h-full object-cover"
+                            className="w-full h-full object-contain cursor-pointer hover:scale-110 transition-transform"
+                            onClick={() => setImagemZoom(produto.imagemUrl as string)}
                           />
                         ) : (
                           <Package className="h-5 w-5 text-muted-foreground/50" />
@@ -577,6 +580,28 @@ const Products = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Dialog para visualização ampliada da imagem */}
+      <Dialog open={!!imagemZoom} onOpenChange={(open) => !open && setImagemZoom(null)}>
+        <DialogContent className="max-w-3xl w-full p-1 bg-transparent border-none shadow-none flex justify-center items-center">
+          <div className="relative w-full max-h-[85vh] flex justify-center">
+            {imagemZoom && (
+              <img 
+                src={imagemZoom} 
+                alt="Imagem ampliada" 
+                className="max-w-full max-h-[85vh] object-contain rounded-md"
+              />
+            )}
+            <button 
+              onClick={() => setImagemZoom(null)}
+              className="absolute top-2 right-2 bg-black/50 text-white p-2 rounded-full hover:bg-black/80 transition-colors"
+            >
+              <X className="h-5 w-5" />
+            </button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
       <BarcodeScannerModal 
         open={scannerOpen} 
         onOpenChange={setScannerOpen} 
