@@ -18,6 +18,8 @@ export interface Produto {
   volume?: number;
   margem?: number;
   precoPromocional?: number;
+  imagemUrl?: string;
+  imagemPublicId?: string;
 }
 
 export interface categoria {

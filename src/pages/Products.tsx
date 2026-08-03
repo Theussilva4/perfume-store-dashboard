@@ -13,7 +13,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogD
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Plus, Search, Pencil, Trash2, Package, TrendingUp, Percent, ScanBarcode } from "lucide-react";
+import { Plus, Search, Pencil, Trash2, Package, TrendingUp, Percent, ScanBarcode, ImagePlus, X } from "lucide-react";
 import { toast } from "sonner";
 import { BarcodeScannerModal } from "@/components/BarcodeScannerModal";
 
@@ -27,6 +27,8 @@ const produtoVazio: Omit<Produto, "codproduto"> = {
   volume: undefined,
   margem: undefined,
   precoPromocional: undefined,
+  imagemUrl: undefined,
+  imagemPublicId: undefined,
 };
 
 function mapearProduto(p: any): Produto {
@@ -47,6 +49,8 @@ function mapearProduto(p: any): Produto {
     volume: p.volume_ml ? Number(p.volume_ml) : undefined,
     margem: undefined,
     precoPromocional: p.preco_promocao ? Number(p.preco_promocao) : undefined,
+    imagemUrl: p.imagem_url || undefined,
+    imagemPublicId: p.imagem_public_id || undefined,
   };
 }
 
@@ -61,6 +65,10 @@ const Products = () => {
   const [fornecedores, setFornecedores] = useState<any[]>([]);
   const [scannerOpen, setScannerOpen] = useState(false);
   const [mostrarInativos, setMostrarInativos] = useState(false);
+
+  const [imagemFile, setImagemFile] = useState<File | null>(null);
+  const [imagemPreview, setImagemPreview] = useState<string | null>(null);
+  const [removerImagem, setRemoverImagem] = useState(false);
 
   const askProductSupplier = localStorage.getItem("askProductSupplier") !== "false";
 
@@ -117,12 +125,18 @@ const Products = () => {
   const abrirNovo = () => {
     setEditandoProduto(null);
     setForm(produtoVazio);
+    setImagemFile(null);
+    setImagemPreview(null);
+    setRemoverImagem(false);
     setDialogOpen(true);
   };
 
   const abrirEdicao = (p: Produto) => {
     setEditandoProduto(p);
     setForm({ ...p });
+    setImagemFile(null);
+    setImagemPreview(p.imagemUrl || null);
+    setRemoverImagem(false);
     setDialogOpen(true);
   };
 
@@ -133,23 +147,29 @@ const Products = () => {
 
   const handleSalvar = async () => {
     try {
-      const corpoRequisicao = {
-        descricao: form.descricao,
-        marca: form.marca,
-        codcategoria: form.codcategoria,
-        resumo: form.resumo,
-        estoque_minimo: form.estoqueMinimo,
-        codfornecedor: form.codfornecedor,
-        ativo: form.ativo ? "S" : "N",
-        codigo_barras: form.codigoBarras || null,
-        volume_ml: form.volume || null,
-      };
+      const formData = new FormData();
+      formData.append("descricao", form.descricao);
+      if (form.marca) formData.append("marca", form.marca);
+      formData.append("codcategoria", String(form.codcategoria));
+      if (form.resumo) formData.append("resumo", form.resumo);
+      if (form.estoqueMinimo !== undefined) formData.append("estoque_minimo", String(form.estoqueMinimo));
+      if (form.codfornecedor) formData.append("codfornecedor", String(form.codfornecedor));
+      formData.append("ativo", form.ativo ? "S" : "N");
+      if (form.codigoBarras) formData.append("codigo_barras", form.codigoBarras);
+      if (form.volume) formData.append("volume_ml", String(form.volume));
+      
+      if (imagemFile) {
+        formData.append("imagem", imagemFile);
+      }
+      if (removerImagem) {
+        formData.append("remover_imagem", "true");
+      }
 
       if (editandoProduto) {
-        await updateProduto(editandoProduto.codproduto, corpoRequisicao);
+        await updateProduto(editandoProduto.codproduto, formData);
         toast.success("Produto atualizado!");
       } else {
-        await createProduto(corpoRequisicao);
+        await createProduto(formData);
         toast.success("Produto criado!");
       }
 
@@ -243,8 +263,16 @@ const Products = () => {
               className={`bg-card rounded-lg border border-border p-5 flex flex-col gap-3 transition-opacity ${!produto.ativo ? "opacity-50" : ""}`}
             >
               <div className="flex items-start justify-between">
-                <div className="w-10 h-10 rounded-md bg-primary/10 flex items-center justify-center">
-                  <Package className="h-5 w-5 text-primary" />
+                <div className="w-12 h-12 rounded-md bg-muted/50 overflow-hidden flex items-center justify-center border border-border">
+                  {produto.imagemUrl ? (
+                    <img 
+                      src={produto.imagemUrl.replace('/upload/', '/upload/w_100,h_100,c_fill/')} 
+                      alt={produto.descricao}
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <Package className="h-6 w-6 text-muted-foreground/50" />
+                  )}
                 </div>
                 <div className="flex gap-1">
                   <button onClick={() => abrirEdicao(produto)} className="p-1.5 rounded-md hover:bg-muted text-muted-foreground hover:text-foreground transition-colors">
@@ -318,8 +346,23 @@ const Products = () => {
                 <tr key={produto.codproduto} className={`hover:bg-muted/30 transition-colors ${!produto.ativo ? 'opacity-60' : ''}`}>
                   <td className="px-4 py-3 text-muted-foreground">{produto.codproduto}</td>
                   <td className="px-4 py-3">
-                    <div className="font-medium text-foreground">{produto.descricao}</div>
-                    {produto.volume && <div className="text-xs text-muted-foreground">{produto.volume}ml</div>}
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded bg-muted/50 overflow-hidden flex-shrink-0 flex items-center justify-center border border-border">
+                        {produto.imagemUrl ? (
+                          <img 
+                            src={produto.imagemUrl.replace('/upload/', '/upload/w_80,h_80,c_fill/')} 
+                            alt={produto.descricao}
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <Package className="h-5 w-5 text-muted-foreground/50" />
+                        )}
+                      </div>
+                      <div>
+                        <div className="font-medium text-foreground">{produto.descricao}</div>
+                        {produto.volume && <div className="text-xs text-muted-foreground">{produto.volume}ml</div>}
+                      </div>
+                    </div>
                   </td>
                   <td className="px-4 py-3 text-muted-foreground">{produto.marca || "-"}</td>
                   <td className="px-4 py-3 text-muted-foreground">{categoriaEncontrada?.categoria || "Sem Categoria"}</td>
@@ -387,6 +430,56 @@ const Products = () => {
               
               <TabsContent value="geral" className="space-y-4 mt-4">
                 <div className="grid grid-cols-2 gap-4">
+                  {/* Foto do Produto */}
+                  <div className="col-span-2 flex items-center gap-4 p-4 border rounded-lg bg-muted/20">
+                    <div className="w-20 h-20 rounded-md bg-muted flex items-center justify-center overflow-hidden border border-border relative group">
+                      {imagemPreview ? (
+                        <>
+                          <img src={imagemPreview} alt="Preview" className="w-full h-full object-cover" />
+                          <button 
+                            type="button" 
+                            className="absolute inset-0 bg-black/50 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                            onClick={() => {
+                              setImagemFile(null);
+                              setImagemPreview(null);
+                              setRemoverImagem(true);
+                            }}
+                          >
+                            <X className="h-6 w-6" />
+                          </button>
+                        </>
+                      ) : (
+                        <Package className="h-8 w-8 text-muted-foreground/50" />
+                      )}
+                    </div>
+                    <div className="flex flex-col gap-1">
+                      <Label className="cursor-pointer">
+                        <div className="flex items-center gap-2 px-3 py-1.5 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors text-sm font-medium">
+                          <ImagePlus className="h-4 w-4" />
+                          {imagemPreview ? "Trocar Foto" : "Adicionar Foto"}
+                        </div>
+                        <input 
+                          type="file" 
+                          accept="image/jpeg,image/png,image/webp" 
+                          className="hidden" 
+                          onChange={(e) => {
+                            if (e.target.files && e.target.files[0]) {
+                              const file = e.target.files[0];
+                              if (file.size > 5 * 1024 * 1024) {
+                                toast.error("A imagem deve ter no máximo 5MB");
+                                return;
+                              }
+                              setImagemFile(file);
+                              setImagemPreview(URL.createObjectURL(file));
+                              setRemoverImagem(false);
+                            }
+                          }}
+                        />
+                      </Label>
+                      <span className="text-xs text-muted-foreground">Recomendado: 1:1 (Quadrada). Máx: 5MB.</span>
+                    </div>
+                  </div>
+
                   <div className="col-span-2 space-y-2">
                     <Label>Nome</Label>
                     <Input value={form.descricao} onChange={(e) => setForm({ ...form, descricao: e.target.value })} />
