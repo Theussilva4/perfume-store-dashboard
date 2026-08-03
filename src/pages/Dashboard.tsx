@@ -5,8 +5,10 @@ import TopProducts from "@/components/TopProducts";
 import StockAlert from "@/components/StockAlert";
 import { getDashboardMetrics } from "@/services/dashboardService";
 import { useBranch } from "@/contexts/BranchContext";
-import { PackageOpen, Calendar } from "lucide-react";
+import { PackageOpen, Calendar, Filter } from "lucide-react";
 import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 
 const Dashboard = () => {
   const { rotuloFilial } = useBranch();
@@ -78,22 +80,33 @@ const Dashboard = () => {
             <p className="text-sm text-muted-foreground mt-1">{rotuloFilial}</p>
           </div>
           
-          <div className="flex items-center gap-2 bg-card p-2 rounded-lg border border-border">
-            <Calendar className="h-4 w-4 text-muted-foreground" />
-            <Input 
-              type="date" 
-              value={dataInicial} 
-              onChange={(e) => setDataInicial(e.target.value)}
-              className="h-8 w-36 text-sm"
-            />
-            <span className="text-muted-foreground">até</span>
-            <Input 
-              type="date" 
-              value={dataFinal} 
-              onChange={(e) => setDataFinal(e.target.value)}
-              className="h-8 w-36 text-sm"
-            />
-          </div>
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button variant="outline" className="flex items-center gap-2">
+                <Filter className="h-4 w-4" />
+                Filtro de Data
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent align="end" className="w-auto p-4 flex flex-col gap-3">
+              <div className="text-sm font-medium mb-1">Período do Dashboard</div>
+              <div className="flex items-center gap-2">
+                <Calendar className="h-4 w-4 text-muted-foreground shrink-0" />
+                <Input 
+                  type="date" 
+                  value={dataInicial} 
+                  onChange={(e) => setDataInicial(e.target.value)}
+                  className="h-8 w-36 text-sm"
+                />
+                <span className="text-muted-foreground text-sm">até</span>
+                <Input 
+                  type="date" 
+                  value={dataFinal} 
+                  onChange={(e) => setDataFinal(e.target.value)}
+                  className="h-8 w-36 text-sm"
+                />
+              </div>
+            </PopoverContent>
+          </Popover>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
