@@ -110,13 +110,26 @@ const PriceCheck = () => {
               <div key={p.codproduto} className="bg-card rounded-xl border border-border p-6 shadow-sm hover:shadow-md transition-shadow relative overflow-hidden">
                 <div className="absolute top-0 left-0 w-1.5 h-full bg-primary"></div>
                 
-                <div className="flex justify-between items-start mb-4">
-                  <div>
-                    <h3 className="font-semibold text-xl text-foreground mb-1">{p.descricao}</h3>
-                    <div className="flex flex-wrap gap-2 text-xs text-muted-foreground">
-                      <span className="bg-muted px-2 py-1 rounded">Cód: {p.codproduto}</span>
-                      {p.codigo_barras && <span className="bg-muted px-2 py-1 rounded">EAN: {p.codigo_barras}</span>}
-                      {p.marca && <span className="bg-muted px-2 py-1 rounded">{p.marca}</span>}
+                <div className="flex justify-between items-start mb-4 gap-4">
+                  <div className="flex gap-4 w-full">
+                    <div className="w-20 h-20 rounded-md bg-white overflow-hidden flex-shrink-0 flex items-center justify-center border border-border shadow-sm">
+                      {p.imagem_url ? (
+                        <img 
+                          src={p.imagem_url.replace('/upload/', '/upload/w_200,h_200,c_fit/')} 
+                          alt={p.descricao}
+                          className="w-full h-full object-contain"
+                        />
+                      ) : (
+                        <Package className="h-8 w-8 text-muted-foreground/50" />
+                      )}
+                    </div>
+                    <div className="flex-1">
+                      <h3 className="font-semibold text-xl text-foreground mb-2 leading-tight">{p.descricao}</h3>
+                      <div className="flex flex-wrap gap-2 text-xs text-muted-foreground">
+                        <span className="bg-muted px-2 py-1 rounded font-medium">Cód: {p.codproduto}</span>
+                        {p.codigo_barras && <span className="bg-muted px-2 py-1 rounded font-medium">EAN: {p.codigo_barras}</span>}
+                        {p.marca && <span className="bg-muted px-2 py-1 rounded font-medium">{p.marca}</span>}
+                      </div>
                     </div>
                   </div>
                 </div>
