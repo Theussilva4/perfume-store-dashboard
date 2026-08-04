@@ -40,7 +40,7 @@ function mapearProduto(p: any): Produto {
     codcategoria: Number(p.codcategoria),
     codfornecedor: p.codfornecedor ? Number(p.codfornecedor) : undefined,
     precoCusto: Number(p.custo || p.preco_normal || 0),
-    precoVenda: Number(p.preco_promocao || p.preco_normal || 0),
+    precoVenda: Number(p.preco_normal || 0),
     estoque: Number(p.msestoque?.[0]?.quantidade || 0),
     estoqueMinimo: Number(p.estoque_minimo || 5),
     estoquePorFilial: { matriz: 1, filial1: 5 },
@@ -64,7 +64,7 @@ const Products = () => {
   const [form, setForm] = useState<Omit<Produto, "codproduto">>(produtoVazio);
   const [categorias, setCategorias] = useState<categoria[]>([]);
   const [fornecedores, setFornecedores] = useState<any[]>([]);
-  const [scannerOpen, setScannerOpen] = useState(false);
+  const [scannerTarget, setScannerTarget] = useState<"form" | "search" | null>(null);
   const [mostrarInativos, setMostrarInativos] = useState(false);
 
   const [imagemFile, setImagemFile] = useState<File | null>(null);
@@ -76,7 +76,9 @@ const Products = () => {
   const filtrados = listaProdutos.filter((p) => {
     const matchSearch =
       p.descricao?.toLowerCase().includes(search.toLowerCase()) ||
-      p.marca?.toLowerCase().includes(search.toLowerCase());
+      p.marca?.toLowerCase().includes(search.toLowerCase()) ||
+      String(p.codigoBarras)?.includes(search) ||
+      String(p.codproduto)?.includes(search);
     const matchCat =
       filtroCategoria === "all" || p.codcategoria === Number(filtroCategoria);
     const matchAtivo = mostrarInativos || p.ativo;
@@ -236,7 +238,16 @@ const Products = () => {
       <div className="flex flex-col sm:flex-row gap-3">
         <div className="relative flex-1 max-w-md">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input placeholder="Buscar por descrição ou marca..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-10" />
+          <Input placeholder="Buscar (nome, marca, EAN)..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-10 pr-10" />
+          <Button
+            variant="ghost"
+            size="icon"
+            className="absolute right-1 top-1/2 -translate-y-1/2 h-8 w-8 text-muted-foreground hover:text-primary"
+            onClick={() => setScannerTarget("search")}
+            title="Ler Código de Barras"
+          >
+            <ScanBarcode className="h-5 w-5" />
+          </Button>
         </div>
         <Select value={filtroCategoria} onValueChange={setFiltroCategoria}>
           <SelectTrigger className="w-full sm:w-48"><SelectValue placeholder="Categoria" /></SelectTrigger>
@@ -537,7 +548,7 @@ const Products = () => {
                     <Label>Código de Barras</Label>
                     <div className="flex gap-2">
                       <Input value={form.codigoBarras || ""} onChange={(e) => setForm({ ...form, codigoBarras: e.target.value })} placeholder="EAN" />
-                      <Button type="button" variant="outline" className="px-3" onClick={() => setScannerOpen(true)} title="Ler Código de Barras">
+                      <Button type="button" variant="outline" className="px-3" onClick={() => setScannerTarget("form")} title="Ler Código de Barras">
                         <ScanBarcode className="h-4 w-4" />
                       </Button>
                     </div>
@@ -603,10 +614,15 @@ const Products = () => {
       </Dialog>
 
       <BarcodeScannerModal 
-        open={scannerOpen} 
-        onOpenChange={setScannerOpen} 
+        open={scannerTarget !== null} 
+        onOpenChange={(open) => !open && setScannerTarget(null)} 
         onScan={(text) => {
-          setForm({ ...form, codigoBarras: text });
+          if (scannerTarget === "form") {
+            setForm({ ...form, codigoBarras: text });
+          } else if (scannerTarget === "search") {
+            setSearch(text);
+          }
+          setScannerTarget(null);
           toast.success("Código lido com sucesso!");
         }} 
       />

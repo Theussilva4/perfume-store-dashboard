@@ -70,6 +70,7 @@ const AppLayout = () => {
       items: [
         { label: "Tabela de Preços", key: "/precos", icon: DollarSign },
         { label: "Promoções", key: "/promocoes", icon: Percent },
+        { label: "Kits Comerciais", key: "/kits", icon: Package },
       ],
     },
     {

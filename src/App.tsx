@@ -27,6 +27,7 @@ import NotFound from "@/pages/NotFound";
 import Purchases from "@/pages/Purchases";
 import Prices from "@/pages/Prices";
 import Promotions from "@/pages/Promotions";
+import Kits from "@/pages/Kits";
 import PaymentPlans from "./pages/PaymentPlans";
 import PriceCheck from "@/pages/PriceCheck";
 
@@ -72,6 +73,7 @@ const App = () => (
               <Route path="compras" element={<Purchases />} />
               <Route path="precos" element={<Prices />} />
               <Route path="promocoes" element={<Promotions />} />
+              <Route path="kits" element={<Kits />} />
               <Route path="relatorios" element={<Reports />} />
               <Route path="usuarios/novo" element={<Register />} />
               <Route path="alertas" element={<Alerts />} />

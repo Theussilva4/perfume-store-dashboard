@@ -25,4 +25,7 @@ export async function createSaida(dados) {
   return res.data;
 }
 
-getEstoque, updateEstoque, createEstoque, getSaidas, createSaida
+export async function cancelarSaida(id) {
+  const res = await api.post(`/estoque/saidas/${id}/cancelar`);
+  return res.data;
+}

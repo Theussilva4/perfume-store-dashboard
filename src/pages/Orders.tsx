@@ -8,6 +8,7 @@ import { getVendedor } from '@/services/vendedorService'
 import { getProdutos } from '@/services/produtosService'
 import { getFormasPagamento } from '@/services/formaPagamentoService'
 import { createPedido, getPedidos, updatePedido, alterarStatusPedido, cancelarPedido } from '@/services/pedidosService'
+import { getKits } from '@/services/kitsService'
 import { getEstoque } from "@/services/estoqueService";
 import { useBranch, filiais } from "@/contexts/BranchContext";
 import { useAuth } from "@/contexts/AuthContext";
@@ -19,7 +20,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
-import { Plus, Search, Eye, ClipboardList, Trash2, Pencil, ScanBarcode, FileText } from "lucide-react";
+import { Plus, Search, Eye, ClipboardList, Trash2, Pencil, ScanBarcode, FileText, RefreshCw, PackageOpen } from "lucide-react";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 
@@ -82,6 +83,10 @@ const Orders = () => {
   const [loading, setLoading] = useState(false);
   const [totalCalculadoPedido, setTotalCalculadoPedido] = useState(0);
 
+  const [kitsAtivos, setKitsAtivos] = useState<any[]>([]);
+  const [kitsDetectados, setKitsDetectados] = useState<{ id: number, nome: string, economia: number, qtd: number, aplicado: boolean }[]>([]);
+  const [descontoKits, setDescontoKits] = useState(0);
+
   // Reseta o botão de PIX ao mudar de plano ou fechar o modal
   useEffect(() => {
     setMostrarPix(false);
@@ -96,6 +101,90 @@ const Orders = () => {
     carregarDados();
   }, []);
 
+  // Recalcular os itens do carrinho ao mudar o plano de pagamento
+  useEffect(() => {
+    if (itensPedido.length > 0 && listarProdutos.length > 0) {
+      const isCartao = (String(codigoPlano) === "2" || nomePlano.toLowerCase().includes('cartão') || nomePlano.toLowerCase().includes('cartao'));
+      
+      setItensPedido(prev => prev.map(item => {
+        const prod = listarProdutos.find(p => String(p.codproduto) === item.produtoId);
+        if (prod) {
+          const precoCartao = Number(prod.preco_cartao || 0);
+          const precoNormal = Number(prod.preco_calculado || 0);
+          
+          // Se for cartão E houver preço de cartão definido, usa o preço de cartão. Senão, usa o à vista (calculado).
+          const precoIdeal = (isCartao && precoCartao > 0) ? precoCartao : precoNormal;
+          
+          if (item.preco !== precoIdeal) {
+            return { ...item, preco: precoIdeal };
+          }
+        }
+        return item;
+      }));
+    }
+  }, [nomePlano, codigoPlano, listarProdutos]);
+
+  // Motor de Auto-detecção de Kits
+  useEffect(() => {
+    if (kitsAtivos.length === 0 || itensPedido.length === 0) {
+      setKitsDetectados([]);
+      return;
+    }
+
+    const mapCart = new Map<string, number>();
+    itensPedido.forEach(i => {
+      mapCart.set(String(i.produtoId), (mapCart.get(String(i.produtoId)) || 0) + i.quantidade);
+    });
+
+    const detected: any[] = [];
+    const sortedKits = [...kitsAtivos].sort((a, b) => b.economia - a.economia);
+
+    sortedKits.forEach(kit => {
+      if (!kit.itens || kit.itens.length === 0) return;
+      let maxAplicacoes = 99999;
+
+      for (const item of kit.itens) {
+        const prodId = String(item.produto_id);
+        const qtdCarrinho = mapCart.get(prodId) || 0;
+        const qtdKit = item.quantidade;
+        if (qtdKit > 0) {
+          const aplicacoesPossiveis = Math.floor(qtdCarrinho / qtdKit);
+          if (aplicacoesPossiveis < maxAplicacoes) {
+            maxAplicacoes = aplicacoesPossiveis;
+          }
+        }
+      }
+
+      if (maxAplicacoes > 0 && maxAplicacoes !== 99999) {
+        for (const item of kit.itens) {
+          const prodId = String(item.produto_id);
+          const current = mapCart.get(prodId) || 0;
+          mapCart.set(prodId, current - (item.quantidade * maxAplicacoes));
+        }
+        
+        detected.push({
+          id: kit.id,
+          nome: kit.nome,
+          economia: kit.economia * maxAplicacoes,
+          qtd: maxAplicacoes
+        });
+      }
+    });
+
+    setKitsDetectados(prev => {
+      const prevMap = new Map(prev.map(p => [p.id, p.aplicado]));
+      return detected.map(d => ({
+        ...d,
+        aplicado: prevMap.get(d.id) === true
+      }));
+    });
+  }, [itensPedido, kitsAtivos]);
+
+  useEffect(() => {
+    const desconto = kitsDetectados.filter(k => k.aplicado).reduce((sum, k) => sum + k.economia, 0);
+    setDescontoKits(desconto);
+  }, [kitsDetectados]);
+
   async function carregarDados() {
     setLoading(true);
     setErro(null);
@@ -109,19 +198,21 @@ const Orders = () => {
         getPedidos(),
         getFormasPagamento(),
         comercialService.listarTabela(),
-        getEstoque()
+        getEstoque(),
+        getKits()
       ]);
 
-      const [filiais, clientes, vendedores, produtosRAW, pedidosAPI, formasPgtoAPI, tabelaPrecos, est] = responses;
+      const [filiais, clientes, vendedores, produtosRAW, pedidosAPI, formasPgtoAPI, tabelaPrecos, est, kitsData] = responses;
 
       setEstoquesAPI(Array.isArray(est) ? est : []);
+      setKitsAtivos(Array.isArray(kitsData) ? kitsData.filter((k: any) => k.ativo === "S") : []);
       const tabelaPrecosSafe = Array.isArray(tabelaPrecos) ? tabelaPrecos : [];
 
       const produtos = (produtosRAW || []).map((p: any) => {
         const tb = tabelaPrecosSafe.find((t: any) => String(t.codproduto) === String(p.codproduto));
         return {
           ...p,
-          preco_calculado: tb?.precificacao?.precoFinal || p.preco_promocao || p.preco_normal || 0,
+          preco_calculado: tb?.precificacao?.precoFinal || p.preco_normal || 0,
           tem_preco_tabela: !!(tb?.precificacao?.precoFinal),
           desconto_maximo: tb?.precificacao?.descontoMaximo || 0
         };
@@ -196,6 +287,32 @@ const Orders = () => {
       toast.error("Falha: " + msg);
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function recarregarProdutos() {
+    try {
+      toast.info("Atualizando produtos...", { duration: 1500 });
+      const [produtosRAW, tabelaPrecos, est] = await Promise.all([
+        getProdutos(),
+        comercialService.listarTabela(),
+        getEstoque()
+      ]);
+      setEstoquesAPI(Array.isArray(est) ? est : []);
+      const tabelaPrecosSafe = Array.isArray(tabelaPrecos) ? tabelaPrecos : [];
+      const produtosList = (produtosRAW || []).map((p: any) => {
+        const tb = tabelaPrecosSafe.find((t: any) => String(t.codproduto) === String(p.codproduto));
+        return {
+          ...p,
+          preco_calculado: tb?.precificacao?.precoFinal || p.preco_normal || 0,
+          tem_preco_tabela: !!(tb?.precificacao?.precoFinal),
+          desconto_maximo: tb?.precificacao?.descontoMaximo || 0
+        };
+      });
+      setListarProdutos(produtosList);
+      toast.success("Produtos atualizados com sucesso!");
+    } catch (e) {
+      toast.error("Erro ao recarregar produtos.");
     }
   }
 
@@ -469,8 +586,13 @@ const Orders = () => {
         toast.error("Produto sem preço cadastrado na Tabela Comercial.");
         return;
       }
+      const isCartao = (String(codigoPlano) === "2" || nomePlano.toLowerCase().includes('cartão') || nomePlano.toLowerCase().includes('cartao'));
+      const precoCartao = Number(produto.preco_cartao || 0);
+      const precoNormal = Number(produto.preco_calculado || 0);
+      const precoFinal = (isCartao && precoCartao > 0) ? precoCartao : precoNormal;
+
       setProdutoSelecionado(String(produto.codproduto));
-      setPrecoProduto(Number(produto.preco_calculado) || 0);
+      setPrecoProduto(precoFinal);
     } else {
       toast.error("Produto não encontrado");
     }
@@ -485,8 +607,13 @@ const Orders = () => {
          toast.error("Produto sem preço cadastrado na Tabela Comercial.");
          return;
        }
+       const isCartao = (String(codigoPlano) === "2" || nomePlano.toLowerCase().includes('cartão') || nomePlano.toLowerCase().includes('cartao'));
+       const precoCartao = Number(produtoEncontrado.preco_cartao || 0);
+       const precoNormal = Number(produtoEncontrado.preco_calculado || 0);
+       const precoFinal = (isCartao && precoCartao > 0) ? precoCartao : precoNormal;
+
        setProdutoSelecionado(String(produtoEncontrado.codproduto));
-       setPrecoProduto(Number(produtoEncontrado.preco_calculado) || 0);
+       setPrecoProduto(precoFinal);
        toast.success("Produto encontrado!");
     } else {
        toast.error("Produto não encontrado pelo código lido.");
@@ -513,7 +640,11 @@ const Orders = () => {
     valorAcrescimo = (subtotalPedido * Number(planoParaCalculo.taxa_acrescimo)) / 100;
   }
 
-  const totalPedido = subtotalPedido - descontoPedido + valorAcrescimo;
+  const totalPedido = subtotalPedido - descontoPedido - descontoKits + valorAcrescimo;
+
+  const toggleKitAplicado = (kitId: number) => {
+    setKitsDetectados(prev => prev.map(k => k.id === kitId ? { ...k, aplicado: !k.aplicado } : k));
+  };
 
   const handleCriarPedido = async () => {
     if (!codigoCliente) {
@@ -538,6 +669,44 @@ const Orders = () => {
     }
 
     try {
+      // Separar itens avulsos dos itens que compõem os kits aplicados
+      let itensAvulsos = [...itensPedido];
+      const kitsParaEnviar = kitsDetectados.filter(k => k.aplicado).map(k => ({
+        kitId: k.id,
+        quantidade: k.qtd
+      }));
+
+      // Remover os itens que pertencem aos kits aplicados
+      kitsAtivos.forEach(kitData => {
+        const kitAplicado = kitsParaEnviar.find(k => k.kitId === kitData.id);
+        if (kitAplicado) {
+          // Para cada item deste kit, abater da lista de avulsos
+          kitData.itens.forEach((kitItem: any) => {
+            const qtdParaRemover = kitItem.quantidade * kitAplicado.quantidade;
+            let qtdRemovida = 0;
+            
+            for (let i = 0; i < itensAvulsos.length; i++) {
+              if (qtdRemovida >= qtdParaRemover) break;
+              if (String(itensAvulsos[i].produtoId) === String(kitItem.produto_id)) {
+                const qtdDisponivel = itensAvulsos[i].quantidade;
+                const faltaRemover = qtdParaRemover - qtdRemovida;
+                
+                if (qtdDisponivel <= faltaRemover) {
+                  qtdRemovida += qtdDisponivel;
+                  itensAvulsos[i] = { ...itensAvulsos[i], quantidade: 0 };
+                } else {
+                  qtdRemovida += faltaRemover;
+                  itensAvulsos[i] = { ...itensAvulsos[i], quantidade: qtdDisponivel - faltaRemover };
+                }
+              }
+            }
+          });
+        }
+      });
+      
+      // Limpar itens avulsos que ficaram com quantidade 0
+      itensAvulsos = itensAvulsos.filter(i => i.quantidade > 0);
+
       const payload = {
         codcliente: codigoCliente,
         codvendedor: codigoVendedor,
@@ -546,12 +715,13 @@ const Orders = () => {
         parcelas: Number(parcelas) || 1,
         observacoes,
         status: statusAtualPedido,
-        desconto: descontoPedido,
-        itens: itensPedido.map(i => ({
+        desconto: descontoPedido, // O backend vai calcular o desconto dos kits automaticamente
+        produtos: itensAvulsos.map(i => ({
           codproduto: i.produtoId,
           quantidade: i.quantidade,
           preco_unitario: i.preco
-        }))
+        })),
+        kits: kitsParaEnviar
       };
 
       if (idPedidoEdicao) {
@@ -1023,6 +1193,15 @@ const Orders = () => {
                     >
                       <ScanBarcode className="h-4 w-4 text-primary" />
                     </Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="px-2"
+                      onClick={recarregarProdutos}
+                      title="Atualizar lista de produtos"
+                    >
+                      <RefreshCw className="h-4 w-4 text-green-600" />
+                    </Button>
                   </div>
                 </div>
 
@@ -1134,24 +1313,53 @@ const Orders = () => {
                       </div>
                     </div>
                   ))}
+                  {kitsDetectados.length > 0 && (
+                    <div className="border border-purple-200 bg-purple-50 rounded-md p-3 mb-4 mt-2 space-y-2">
+                      <h4 className="text-xs font-bold text-purple-800 uppercase flex items-center gap-1"><PackageOpen className="h-4 w-4" /> Kits Detectados</h4>
+                      {kitsDetectados.map(kit => (
+                        <div key={kit.id} className="flex justify-between items-center bg-white p-2 rounded shadow-sm border border-purple-100">
+                          <div>
+                            <p className="text-sm font-semibold text-slate-800">🎉 {kit.nome} {kit.qtd > 1 && `(x${kit.qtd})`}</p>
+                            <p className="text-xs text-green-600 font-medium">Economia: R$ {kit.economia.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</p>
+                          </div>
+                          <Button 
+                            size="sm" 
+                            variant={kit.aplicado ? "outline" : "default"} 
+                            className={kit.aplicado ? "text-purple-600 border-purple-200 hover:bg-purple-50" : "bg-purple-600 hover:bg-purple-700"}
+                            onClick={() => toggleKitAplicado(kit.id)}
+                          >
+                            {kit.aplicado ? "Remover" : "Aplicar"}
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
                   <div className="border-t border-border pt-2 flex justify-between font-medium">
                     <span>Subtotal</span>
                     <span className="text-muted-foreground">R$ {(subtotalPedido || 0).toLocaleString("pt-BR")}</span>
                   </div>
                   
                   <div className="flex justify-between font-medium items-center">
-                    <span className="text-sm">Desconto</span>
+                    <span className="text-sm">Desconto Extra</span>
                     <div className="flex items-center">
                       <span className="mr-2 text-sm text-muted-foreground">R$</span>
                       <Input
                         type="number"
-                        className="w-20 h-8 text-right bg-transparent"
+                        className="w-20 h-8 text-right bg-transparent border-slate-200"
                         value={descontoPedido}
                         onChange={(e) => setDescontoPedido(Number(e.target.value))}
                         min={0}
                       />
                     </div>
                   </div>
+
+                  {descontoKits > 0 && (
+                    <div className="flex justify-between font-medium items-center text-purple-600">
+                      <span className="text-sm flex items-center gap-1"><PackageOpen className="h-3 w-3" /> Desconto de Kits</span>
+                      <span className="text-sm font-bold">- R$ {descontoKits.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</span>
+                    </div>
+                  )}
 
                   <div className="border-t border-border pt-2 flex flex-col gap-1">
                     {valorAcrescimo > 0 && (

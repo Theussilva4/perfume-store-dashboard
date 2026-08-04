@@ -134,15 +134,25 @@ const PriceCheck = () => {
                   </div>
                 </div>
 
-                <div className="flex items-end justify-between mt-6 pt-4 border-t border-border">
-                  <div>
-                    <span className="text-sm text-muted-foreground block mb-1">Preço Venda</span>
-                    <span className="font-display font-bold text-3xl md:text-4xl text-primary">
-                      R$ {preco.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
-                    </span>
+                <div className="flex flex-col sm:flex-row items-start sm:items-end justify-between mt-6 pt-4 border-t border-border gap-4">
+                  <div className="flex flex-col sm:flex-row gap-6 w-full sm:w-auto">
+                    <div>
+                      <span className="text-sm text-muted-foreground block mb-1">💵 À Vista (Pix/Dinheiro)</span>
+                      <span className="font-display font-bold text-3xl md:text-4xl text-primary">
+                        R$ {preco.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
+                      </span>
+                    </div>
+                    {p.preco_cartao > 0 && (
+                      <div>
+                        <span className="text-sm text-muted-foreground block mb-1">💳 Cartão de Crédito</span>
+                        <span className="font-display font-bold text-3xl md:text-4xl text-blue-600">
+                          R$ {Number(p.preco_cartao).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
+                        </span>
+                      </div>
+                    )}
                   </div>
                   
-                  <div className="text-right flex flex-col items-end">
+                  <div className="text-left sm:text-right flex flex-col items-start sm:items-end w-full sm:w-auto">
                     <span className="text-xs text-muted-foreground block mb-1">Disponibilidade</span>
                     {estoque > 0 ? (
                       <div className="flex items-center gap-1.5 text-green-600 bg-green-50 px-3 py-1.5 rounded-lg border border-green-200">

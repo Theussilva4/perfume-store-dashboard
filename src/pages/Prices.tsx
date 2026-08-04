@@ -20,6 +20,7 @@ const Prices = () => {
   
   const [costPrice, setCostPrice] = useState("");
   const [sellPrice, setSellPrice] = useState("");
+  const [cardPrice, setCardPrice] = useState("");
   const [maxDiscount, setMaxDiscount] = useState("");
 
   const handleScanProduto = (decodedText: string) => {
@@ -61,6 +62,7 @@ const Prices = () => {
     setSelectedProduct(p);
     setCostPrice(p.precificacao.custoBase.toString() || "0");
     setSellPrice(p.precificacao.precoBase.toString() || "0");
+    setCardPrice(p.precificacao.precoCartao?.toString() || "0");
     setMaxDiscount(p.precificacao.descontoMaximo?.toString() || "0");
     setIsModalOpen(true);
   };
@@ -69,6 +71,7 @@ const Prices = () => {
     mutationPreco.mutate({
       preco_custo: parseFloat(costPrice),
       preco_venda: parseFloat(sellPrice),
+      preco_cartao: parseFloat(cardPrice || "0"),
       desconto_maximo: parseFloat(maxDiscount || "0")
     });
   };
@@ -131,9 +134,9 @@ const Prices = () => {
                   <TableHead>Cód</TableHead>
                   <TableHead>Produto</TableHead>
                   <TableHead>Custo</TableHead>
-                  <TableHead>Preço Base</TableHead>
+                  <TableHead>Preço à Vista</TableHead>
+                  <TableHead>Preço Cartão</TableHead>
                   <TableHead>Margem</TableHead>
-                  <TableHead>Markup</TableHead>
                   <TableHead>Desc. Máx</TableHead>
                   <TableHead className="w-[50px]"></TableHead>
                 </TableRow>
@@ -154,8 +157,8 @@ const Prices = () => {
                       <TableCell className="font-medium text-sm text-foreground">{p.descricao}</TableCell>
                       <TableCell>R$ {p.precificacao.custoBase?.toFixed(2) || "0.00"}</TableCell>
                       <TableCell className="font-bold text-primary">R$ {p.precificacao.precoBase?.toFixed(2) || "0.00"}</TableCell>
+                      <TableCell className="font-bold text-blue-600">R$ {p.precificacao.precoCartao?.toFixed(2) || "0.00"}</TableCell>
                       <TableCell>{p.precificacao.margem?.toFixed(1) || "0"}%</TableCell>
-                      <TableCell>{p.precificacao.markup?.toFixed(2) || "0"}x</TableCell>
                       <TableCell>{p.precificacao.descontoMaximo?.toFixed(1) || "0"}%</TableCell>
                       <TableCell>
                         <Button variant="ghost" size="sm" onClick={() => handleEdit(p)} className="h-8 w-8 p-0">
@@ -194,8 +197,15 @@ const Prices = () => {
                       <p className="font-medium text-sm">R$ {p.precificacao.custoBase?.toFixed(2) || "0.00"}</p>
                     </div>
                     <div className="bg-primary/10 p-2 rounded">
-                      <p className="text-[10px] text-primary uppercase font-semibold">Preço Base</p>
+                      <p className="text-[10px] text-primary uppercase font-semibold">À Vista</p>
                       <p className="font-bold text-sm text-primary">R$ {p.precificacao.precoBase?.toFixed(2) || "0.00"}</p>
+                    </div>
+                  </div>
+                  
+                  <div className="grid grid-cols-2 gap-2 mt-1">
+                    <div className="bg-blue-50 p-2 rounded">
+                      <p className="text-[10px] text-blue-700 uppercase font-semibold">Cartão</p>
+                      <p className="font-bold text-sm text-blue-700">R$ {p.precificacao.precoCartao?.toFixed(2) || "0.00"}</p>
                     </div>
                   </div>
 
@@ -236,7 +246,7 @@ const Prices = () => {
                 />
               </div>
               <div className="space-y-2">
-                <label className="text-sm font-medium">Preço de Venda Base (R$)</label>
+                <label className="text-sm font-medium text-primary">Preço à Vista (R$)</label>
                 <Input
                   type="number"
                   step="0.01"
@@ -246,6 +256,15 @@ const Prices = () => {
                 <p className="text-xs text-muted-foreground mt-1">
                   Sugestão ({margemAlvo}% alvo): <strong>R$ {sugestaoVenda.toFixed(2)}</strong>
                 </p>
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-blue-600">Preço Cartão (R$)</label>
+                <Input
+                  type="number"
+                  step="0.01"
+                  value={cardPrice}
+                  onChange={(e) => setCardPrice(e.target.value)}
+                />
               </div>
               <div className="space-y-2">
                 <label className="text-sm font-medium">Desconto Máximo (%)</label>

@@ -107,8 +107,8 @@ const PaymentPlans = () => {
       toast.error("A descrição é obrigatória");
       return;
     }
-    if (temAcrescimo && (!taxaAcrescimo || Number(taxaAcrescimo) <= 0)) {
-      toast.error("Informe a taxa de acréscimo");
+    if (temAcrescimo && Number(taxaAcrescimo) < 0) {
+      toast.error("A taxa de acréscimo não pode ser negativa");
       return;
     }
     if (!maxParcelas || Number(maxParcelas) < 1) {

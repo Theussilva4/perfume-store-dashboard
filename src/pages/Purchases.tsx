@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { ShoppingCart, Plus, Search, Eye, ClipboardList, Trash2, Camera } from "lucide-react";
+import { ShoppingCart, Plus, Search, Eye, ClipboardList, Trash2, Camera, RefreshCw } from "lucide-react";
 import { getCompras, createCompra, getCompraById, cancelarCompra } from "@/services/compraService";
 import { getFornecedores } from "@/services/fornecedorService";
 import { getProdutos } from "@/services/produtosService";
@@ -75,6 +75,23 @@ const Purchases = () => {
       toast.error("Erro ao carregar dados");
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function recarregarProdutos() {
+    try {
+      toast.info("Atualizando produtos...", { duration: 1500 });
+      const [produtosRaw, estRaw] = await Promise.all([getProdutos(), getEstoque()]);
+      const safeEstoque = Array.isArray(estRaw) ? estRaw : [];
+      const prodsList = Array.isArray(produtosRaw) ? produtosRaw.map((p: any) => ({
+        ...p,
+        precoVenda: p.preco_normal || p.custo,
+        estoque: safeEstoque.filter((e: any) => String(e.codproduto) === String(p.codproduto)).reduce((acc: number, item: any) => acc + Number(item.quantidade), 0)
+      })) : [];
+      setListaProdutos(prodsList);
+      toast.success("Produtos atualizados!");
+    } catch (e) {
+      toast.error("Erro ao recarregar produtos");
     }
   }
 
@@ -362,6 +379,9 @@ const Purchases = () => {
                   <div className="flex flex-col sm:flex-row gap-2">
                     <Button type="button" variant="outline" onClick={() => setDialogProdutoOpen(true)}>
                       ...
+                    </Button>
+                    <Button type="button" variant="outline" onClick={recarregarProdutos} title="Atualizar produtos" className="px-2">
+                      <RefreshCw className="h-4 w-4 text-green-600" />
                     </Button>
                     <Input 
                       value={listaProdutos.find(p => String(p.codproduto) === produtoSelecionadoId)?.descricao || ""} 
