@@ -41,6 +41,7 @@ const StockExit = () => {
   const [motivoCancelamento, setMotivoCancelamento] = useState("");
   const [saidaSelecionadaId, setSaidaSelecionadaId] = useState<number | null>(null);
   const [scannerOpen, setScannerOpen] = useState(false);
+  const [isCanceling, setIsCanceling] = useState(false);
   const [form, setForm] = useState({ produtoId: "", quantidade: 0, motivo: "", observacoes: "", filial: "" });
 
   const produtoSelecionado = produtos.find((p) => String(p.codproduto) === form.produtoId);
@@ -120,11 +121,11 @@ const StockExit = () => {
   };
 
   const handleConfirmarCancelamento = async () => {
-    if (!motivoCancelamento || motivoCancelamento.trim().length < 15) {
+    if (!saidaSelecionadaId) return;
+    if (motivoCancelamento.trim().length < 15) {
       toast.error("O motivo do cancelamento deve ter pelo menos 15 caracteres.");
       return;
     }
-    if (!saidaSelecionadaId) return;
 
     setIsCanceling(true);
     try {
