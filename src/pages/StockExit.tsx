@@ -431,3 +431,4 @@ const StockExit = () => {
 };
 
 export default StockExit;
+

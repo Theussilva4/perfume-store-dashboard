@@ -378,3 +378,4 @@ const StockEntry = () => {
 };
 
 export default StockEntry;
+

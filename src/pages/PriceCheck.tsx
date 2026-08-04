@@ -32,7 +32,7 @@ const PriceCheck = () => {
     setLoading(true);
     try {
       const [prod, est] = await Promise.all([getProdutos(), getEstoque()]);
-      setProdutosAPI(Array.isArray(prod) ? prod : []);
+      setProdutosAPI(Array.isArray(prod) ? prod.filter(p => p.status !== "I") : []);
       setEstoquesAPI(Array.isArray(est) ? est : []);
     } catch (error) {
       console.error(error);
@@ -188,3 +188,4 @@ const PriceCheck = () => {
 };
 
 export default PriceCheck;
+

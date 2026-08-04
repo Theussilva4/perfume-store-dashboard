@@ -5,7 +5,7 @@ import logo from "@/assets/logo.png";
 import {
   LayoutDashboard, Package, FolderOpen, Tag, Warehouse, ArrowDownToLine, ArrowUpFromLine,
   ClipboardList, Users, BarChart3, Settings, Bell, LogOut, Menu, X, Building2, Truck,
-  DollarSign, Percent, Search
+  DollarSign, Percent, Search, FileText
 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
@@ -85,6 +85,7 @@ const AppLayout = () => {
       label: "Análises",
       items: [
         { label: "Relatórios", key: "/relatorios", icon: BarChart3 },
+        { label: "Analítico de Estoque", key: "/analises/estoque", icon: FileText },
       ],
     },
     {

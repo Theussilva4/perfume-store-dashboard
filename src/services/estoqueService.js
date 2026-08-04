@@ -29,3 +29,13 @@ export async function cancelarSaida(id) {
   const res = await api.post(`/estoque/saidas/${id}/cancelar`);
   return res.data;
 }
+
+export async function getExtratoEstoque(produtoId, dataInicial, dataFinal) {
+  let params = new URLSearchParams();
+  if (dataInicial) params.append("dataInicial", dataInicial);
+  if (dataFinal) params.append("dataFinal", dataFinal);
+  
+  const query = params.toString() ? `?${params.toString()}` : "";
+  const res = await api.get(`/estoque/produto/${produtoId}/extrato${query}`);
+  return res.data;
+}

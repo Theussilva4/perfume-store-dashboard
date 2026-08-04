@@ -45,7 +45,7 @@ export default function Kits() {
     try {
       const [kitsData, prodsData] = await Promise.all([getKits(), getProdutos()]);
       setKits(kitsData);
-      setProdutos(Array.isArray(prodsData) ? prodsData.map(p => ({
+      setProdutos(Array.isArray(prodsData) ? prodsData.filter(p => p.status !== "I").map(p => ({
         ...p,
         precoVenda: p.preco_normal || 0
       })) : []);
@@ -446,3 +446,4 @@ export default function Kits() {
     </div>
   );
 }
+

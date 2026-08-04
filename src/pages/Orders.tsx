@@ -79,6 +79,7 @@ const Orders = () => {
   const [produtoSelecionado, setProdutoSelecionado] = useState("");
   const [filialPedido, setFilialPedido] = useState("");
   const [descontoPedido, setDescontoPedido] = useState(0);
+  const [valorFrete, setValorFrete] = useState(0);
   const [qtdSelecionada, setQtdSelecionada] = useState(1);
   const [loading, setLoading] = useState(false);
   const [totalCalculadoPedido, setTotalCalculadoPedido] = useState(0);
@@ -640,7 +641,7 @@ const Orders = () => {
     valorAcrescimo = (subtotalPedido * Number(planoParaCalculo.taxa_acrescimo)) / 100;
   }
 
-  const totalPedido = subtotalPedido - descontoPedido - descontoKits + valorAcrescimo;
+  const totalPedido = subtotalPedido - descontoPedido - descontoKits + valorAcrescimo + valorFrete;
 
   const toggleKitAplicado = (kitId: number) => {
     setKitsDetectados(prev => prev.map(k => k.id === kitId ? { ...k, aplicado: !k.aplicado } : k));
@@ -715,7 +716,8 @@ const Orders = () => {
         parcelas: Number(parcelas) || 1,
         observacoes,
         status: statusAtualPedido,
-        desconto: descontoPedido, // O backend vai calcular o desconto dos kits automaticamente
+        desconto: descontoPedido,
+        valor_frete: valorFrete,
         produtos: itensAvulsos.map(i => ({
           codproduto: i.produtoId,
           quantidade: i.quantidade,
@@ -745,6 +747,7 @@ const Orders = () => {
       setNomeVendedor("");
       setItensPedido([]);
       setDescontoPedido(0);
+      setValorFrete(0);
       setCodigoPlano("");
       setNomePlano("");
       setParcelas("1");
@@ -810,6 +813,7 @@ const Orders = () => {
     setCodigoPlano(String(pedido.formaPagamento || ''));
     setNomePlano(pedido.nomeFormaPagamento || '');
     setDescontoPedido(pedido.desconto || 0);
+    setValorFrete(pedido.valor_frete || 0);
     setObservacoes(pedido.observacoes || "");
 
     // Convertendo itens de banco para nosso layout state
@@ -854,6 +858,7 @@ const Orders = () => {
 
           setItensPedido([]);
           setDescontoPedido(0);
+          setValorFrete(0);
           setCodigoPlano("");
           setNomePlano("");
           setParcelas("1");
@@ -1349,6 +1354,20 @@ const Orders = () => {
                         className="w-20 h-8 text-right bg-transparent border-slate-200"
                         value={descontoPedido}
                         onChange={(e) => setDescontoPedido(Number(e.target.value))}
+                        min={0}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="flex justify-between font-medium items-center">
+                    <span className="text-sm">Frete (Entrega)</span>
+                    <div className="flex items-center">
+                      <span className="mr-2 text-sm text-muted-foreground">R$</span>
+                      <Input
+                        type="number"
+                        className="w-20 h-8 text-right bg-transparent border-slate-200"
+                        value={valorFrete}
+                        onChange={(e) => setValorFrete(Number(e.target.value))}
                         min={0}
                       />
                     </div>

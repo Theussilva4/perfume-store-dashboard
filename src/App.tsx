@@ -30,7 +30,7 @@ import Promotions from "@/pages/Promotions";
 import Kits from "@/pages/Kits";
 import PaymentPlans from "./pages/PaymentPlans";
 import PriceCheck from "@/pages/PriceCheck";
-
+import StockAnalytics from "@/pages/StockAnalytics";
 const queryClient = new QueryClient();
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
@@ -75,6 +75,7 @@ const App = () => (
               <Route path="promocoes" element={<Promotions />} />
               <Route path="kits" element={<Kits />} />
               <Route path="relatorios" element={<Reports />} />
+              <Route path="analises/estoque" element={<StockAnalytics />} />
               <Route path="usuarios/novo" element={<Register />} />
               <Route path="alertas" element={<Alerts />} />
               <Route path="configuracoes" element={<SettingsPage />} />

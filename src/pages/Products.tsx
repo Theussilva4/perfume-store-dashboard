@@ -61,6 +61,7 @@ const Products = () => {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [imagemZoom, setImagemZoom] = useState<string | null>(null);
   const [editandoProduto, setEditandoProduto] = useState<Produto | null>(null);
+  const [saving, setSaving] = useState(false);
   const [form, setForm] = useState<Omit<Produto, "codproduto">>(produtoVazio);
   const [categorias, setCategorias] = useState<categoria[]>([]);
   const [fornecedores, setFornecedores] = useState<any[]>([]);
@@ -152,6 +153,7 @@ const Products = () => {
   const eanDuplicado = form.codigoBarras ? listaProdutos.find(p => p.codigoBarras === form.codigoBarras && p.codproduto !== editandoProduto?.codproduto) : null;
 
   const handleSalvar = async () => {
+    setSaving(true);
     try {
       const formData = new FormData();
       formData.append("descricao", form.descricao);
@@ -184,6 +186,8 @@ const Products = () => {
       setEditandoProduto(null);
     } catch (error: any) {
       toast.error(error.response?.data?.erro || "Erro ao salvar produto");
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -587,7 +591,9 @@ const Products = () => {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setDialogOpen(false)}>Cancelar</Button>
-            <Button onClick={handleSalvar} disabled={!!eanDuplicado}>{editandoProduto ? "Salvar" : "Criar"}</Button>
+            <Button onClick={handleSalvar} disabled={!!eanDuplicado || saving}>
+              {saving ? "Salvando..." : (editandoProduto ? "Salvar" : "Criar")}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
