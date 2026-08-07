@@ -1782,9 +1782,37 @@ const Orders = () => {
                   </ul>
                 )}
               </div>
-              <div className="flex justify-between items-center border-t pt-3">
-                <span className="font-semibold text-lg">Total</span>
-                <span className="font-bold text-lg text-primary">R$ {Number(pedidoParaDetalhes.total || 0).toLocaleString("pt-BR")}</span>
+              
+              <div className="space-y-1 border-t pt-3">
+                  {/* Calcula o subtotal a partir dos itens */}
+                  {(() => {
+                    const subtotal = pedidoParaDetalhes.itens?.reduce((acc: number, item: any) => acc + (Number(item.preco_unitario || item.preco || 0) * (item.quantidade || 1)), 0) || 0;
+                    return (
+                      <div className="flex justify-between items-center text-sm">
+                        <span className="text-muted-foreground">Subtotal dos Itens</span>
+                        <span>R$ {subtotal.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</span>
+                      </div>
+                    );
+                  })()}
+                  
+                  {Number(pedidoParaDetalhes.valor_frete) > 0 && (
+                    <div className="flex justify-between items-center text-sm">
+                      <span className="text-muted-foreground">Frete (Entrega)</span>
+                      <span>R$ {Number(pedidoParaDetalhes.valor_frete).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</span>
+                    </div>
+                  )}
+
+                  {Number(pedidoParaDetalhes.desconto) > 0 && (
+                    <div className="flex justify-between items-center text-sm text-green-600">
+                      <span className="text-muted-foreground">Desconto</span>
+                      <span>- R$ {Number(pedidoParaDetalhes.desconto).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</span>
+                    </div>
+                  )}
+              </div>
+
+              <div className="flex justify-between items-center border-t pt-2 mt-2">
+                <span className="font-semibold text-lg">Total Final</span>
+                <span className="font-bold text-lg text-primary">R$ {Number(pedidoParaDetalhes.total || 0).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</span>
               </div>
 
               <div className="flex gap-2 justify-end pt-4 border-t border-border mt-4">
