@@ -1773,9 +1773,9 @@ const Orders = () => {
                       const qtd = item.quantidade || 1;
                       const preco = Number(item.preco || 0);
                       return (
-                        <li key={idx} className="flex justify-between text-sm">
-                          <span>{qtd}x {nome}</span>
-                          <span className="font-medium text-muted-foreground">R$ {(qtd * preco).toLocaleString("pt-BR")}</span>
+                        <li key={idx} className="flex justify-between items-start gap-2 text-sm border-b border-border/40 pb-1 last:border-0">
+                          <span className="line-clamp-2">{qtd}x {nome}</span>
+                          <span className="font-medium text-muted-foreground whitespace-nowrap">R$ {(qtd * preco).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</span>
                         </li>
                       )
                     })}
