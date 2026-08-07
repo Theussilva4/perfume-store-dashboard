@@ -48,12 +48,14 @@ export interface Cliente {
   cep?: string;
   observacoes?: string;
   data_cadastro?: string;
+  data_nascimento?: string;
   ativo?: "S" | "N";
 }
 export interface Vendedor {
   codvendedor: number;
   nome: string;
   cpf: string;
+  data_nascimento?: string;
   data_cadastro: string;
   ativo: string
 }

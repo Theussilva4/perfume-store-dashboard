@@ -48,7 +48,7 @@ export function generatePixPayload(amount: number, txid = "***"): string {
   
   const payloadKey = `0014BR.GOV.BCB.PIX01${formatSize(key)}${key}`;
   const guiInfo = `26${formatSize(payloadKey)}${payloadKey}`;
-  const amountStr = amount.toFixed(2);
+  const amountStr = Number(amount).toFixed(2);
   const amountInfo = `54${formatSize(amountStr)}${amountStr}`;
   
   const txidStr = `05${formatSize(txid)}${txid}`;

@@ -362,7 +362,7 @@ const Promotions = () => {
                     <SelectTrigger className="flex-1"><SelectValue placeholder="Selecione um produto..." /></SelectTrigger>
                     <SelectContent>
                       {produtos.map((p: any) => (
-                        <SelectItem key={p.codproduto} value={p.codproduto.toString()}>{p.descricao} - (Base: R$ {p.precificacao?.precoBase?.toFixed(2)})</SelectItem>
+                        <SelectItem key={p.codproduto} value={p.codproduto.toString()}>{p.descricao} - (Base: R$ {Number(p.precificacao?.precoBase || 0).toFixed(2)})</SelectItem>
                       ))}
                     </SelectContent>
                   </Select>

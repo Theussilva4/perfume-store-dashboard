@@ -4,7 +4,7 @@ import { generatePixPayload } from "@/utils/pix";
 import { pedidos as pedidosIniciais, produtos, rotulosStatus, coresStatus, rotulosFormaPagamento, rotulosFilial, Pedido, ItemPedido } from "@/data/mockData";
 import { getFilial } from '@/services/filialService'
 import { getCliente } from '@/services/clienteService'
-import { getVendedor } from '@/services/vendedorService'
+import { getVendedores } from '@/services/vendedorService'
 import { getProdutos } from '@/services/produtosService'
 import { getFormasPagamento } from '@/services/formaPagamentoService'
 import { createPedido, getPedidos, updatePedido, alterarStatusPedido, cancelarPedido } from '@/services/pedidosService'
@@ -105,7 +105,8 @@ const Orders = () => {
   // Recalcular os itens do carrinho ao mudar o plano de pagamento
   useEffect(() => {
     if (itensPedido.length > 0 && listarProdutos.length > 0) {
-      const isCartao = (String(codigoPlano) === "2" || nomePlano.toLowerCase().includes('cartão') || nomePlano.toLowerCase().includes('cartao'));
+      const planoAtivo = listaFormasPagamento.find(fp => String(fp.CODPLPAG || fp.codplpag || fp.codforma || fp.id || fp.codplano) === String(codigoPlano));
+      const isCartao = planoAtivo?.tipo_pagamento === "CARTAO";
       
       setItensPedido(prev => prev.map(item => {
         const prod = listarProdutos.find(p => String(p.codproduto) === item.produtoId);
@@ -194,7 +195,7 @@ const Orders = () => {
       const responses = await Promise.all([
         getFilial(),
         getCliente(),
-        getVendedor(),
+        getVendedores(),
         getProdutos(),
         getPedidos(),
         getFormasPagamento(),
@@ -587,7 +588,8 @@ const Orders = () => {
         toast.error("Produto sem preço cadastrado na Tabela Comercial.");
         return;
       }
-      const isCartao = (String(codigoPlano) === "2" || nomePlano.toLowerCase().includes('cartão') || nomePlano.toLowerCase().includes('cartao'));
+      const planoAtivo = listaFormasPagamento.find(fp => String(fp.CODPLPAG || fp.codplpag || fp.codforma || fp.id || fp.codplano) === String(codigoPlano));
+      const isCartao = planoAtivo?.tipo_pagamento === "CARTAO";
       const precoCartao = Number(produto.preco_cartao || 0);
       const precoNormal = Number(produto.preco_calculado || 0);
       const precoFinal = (isCartao && precoCartao > 0) ? precoCartao : precoNormal;
@@ -608,7 +610,8 @@ const Orders = () => {
          toast.error("Produto sem preço cadastrado na Tabela Comercial.");
          return;
        }
-       const isCartao = (String(codigoPlano) === "2" || nomePlano.toLowerCase().includes('cartão') || nomePlano.toLowerCase().includes('cartao'));
+       const planoAtivo = listaFormasPagamento.find(fp => String(fp.CODPLPAG || fp.codplpag || fp.codforma || fp.id || fp.codplano) === String(codigoPlano));
+       const isCartao = planoAtivo?.tipo_pagamento === "CARTAO";
        const precoCartao = Number(produtoEncontrado.preco_cartao || 0);
        const precoNormal = Number(produtoEncontrado.preco_calculado || 0);
        const precoFinal = (isCartao && precoCartao > 0) ? precoCartao : precoNormal;
@@ -641,7 +644,7 @@ const Orders = () => {
     valorAcrescimo = (subtotalPedido * Number(planoParaCalculo.taxa_acrescimo)) / 100;
   }
 
-  const totalPedido = subtotalPedido - descontoPedido - descontoKits + valorAcrescimo + valorFrete;
+  const totalPedido = Number(subtotalPedido) - Number(descontoPedido) - Number(descontoKits) + Number(valorAcrescimo) + Number(valorFrete);
 
   const toggleKitAplicado = (kitId: number) => {
     setKitsDetectados(prev => prev.map(k => k.id === kitId ? { ...k, aplicado: !k.aplicado } : k));
@@ -845,15 +848,21 @@ const Orders = () => {
           setEnderecoCliente("");
 
           const vendedorLogado = listaVendedor.find(v => 
-            v.nome && usuario?.nome && v.nome.trim().toLowerCase() === usuario.nome.trim().toLowerCase()
+            usuario?.codvendedor && Number(v.codvendedor) === Number(usuario.codvendedor)
           );
 
           if (vendedorLogado) {
             setCodigoVendedor(String(vendedorLogado.codvendedor));
             setNomeVendedor(vendedorLogado.nome);
+            if (vendedorLogado.codfilial) {
+              setFilialPedido(String(vendedorLogado.codfilial));
+            } else {
+              setFilialPedido("");
+            }
           } else {
             setCodigoVendedor("");
             setNomeVendedor("");
+            setFilialPedido("");
           }
 
           setItensPedido([]);
@@ -864,7 +873,6 @@ const Orders = () => {
           setParcelas("1");
           setObservacoes("");
           setStatusAtualPedido("EM_DIGITACAO");
-          setFilialPedido("");
           setDialogOpen(true);
         }}><Plus className="h-4 w-4 mr-2" /> Novo Pedido</Button>
       </div>
@@ -1854,3 +1862,4 @@ const Orders = () => {
 };
 
 export default Orders;
+

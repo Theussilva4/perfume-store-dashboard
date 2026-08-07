@@ -352,7 +352,7 @@ export default function Kits() {
                             onClick={() => adicionarProduto(p)}
                           >
                             <span className="truncate pr-2">{p.descricao}</span>
-                            <span className="font-semibold text-slate-600">R$ {p.precoVenda?.toFixed(2)}</span>
+                            <span className="font-semibold text-slate-600">R$ {Number(p.precoVenda || 0).toFixed(2)}</span>
                           </div>
                         ))}
                       </div>

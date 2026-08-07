@@ -155,11 +155,11 @@ const Prices = () => {
                     <TableRow key={p.codproduto}>
                       <TableCell className="text-xs text-muted-foreground">{p.codproduto}</TableCell>
                       <TableCell className="font-medium text-sm text-foreground">{p.descricao}</TableCell>
-                      <TableCell>R$ {p.precificacao.custoBase?.toFixed(2) || "0.00"}</TableCell>
-                      <TableCell className="font-bold text-primary">R$ {p.precificacao.precoBase?.toFixed(2) || "0.00"}</TableCell>
-                      <TableCell className="font-bold text-blue-600">R$ {p.precificacao.precoCartao?.toFixed(2) || "0.00"}</TableCell>
-                      <TableCell>{p.precificacao.margem?.toFixed(1) || "0"}%</TableCell>
-                      <TableCell>{p.precificacao.descontoMaximo?.toFixed(1) || "0"}%</TableCell>
+                      <TableCell>R$ {Number(p.precificacao.custoBase || 0).toFixed(2) || "0.00"}</TableCell>
+                      <TableCell className="font-bold text-primary">R$ {Number(p.precificacao.precoBase || 0).toFixed(2) || "0.00"}</TableCell>
+                      <TableCell className="font-bold text-blue-600">R$ {Number(p.precificacao.precoCartao || 0).toFixed(2) || "0.00"}</TableCell>
+                      <TableCell>{Number(p.precificacao.margem || 0).toFixed(1) || "0"}%</TableCell>
+                      <TableCell>{Number(p.precificacao.descontoMaximo || 0).toFixed(1) || "0"}%</TableCell>
                       <TableCell>
                         <Button variant="ghost" size="sm" onClick={() => handleEdit(p)} className="h-8 w-8 p-0">
                           <Edit2 className="h-4 w-4 text-muted-foreground" />
@@ -194,25 +194,25 @@ const Prices = () => {
                   <div className="grid grid-cols-2 gap-2 mt-2">
                     <div className="bg-muted/30 p-2 rounded">
                       <p className="text-[10px] text-muted-foreground uppercase">Custo</p>
-                      <p className="font-medium text-sm">R$ {p.precificacao.custoBase?.toFixed(2) || "0.00"}</p>
+                      <p className="font-medium text-sm">R$ {Number(p.precificacao.custoBase || 0).toFixed(2) || "0.00"}</p>
                     </div>
                     <div className="bg-primary/10 p-2 rounded">
                       <p className="text-[10px] text-primary uppercase font-semibold">À Vista</p>
-                      <p className="font-bold text-sm text-primary">R$ {p.precificacao.precoBase?.toFixed(2) || "0.00"}</p>
+                      <p className="font-bold text-sm text-primary">R$ {Number(p.precificacao.precoBase || 0).toFixed(2) || "0.00"}</p>
                     </div>
                   </div>
                   
                   <div className="grid grid-cols-2 gap-2 mt-1">
                     <div className="bg-blue-50 p-2 rounded">
                       <p className="text-[10px] text-blue-700 uppercase font-semibold">Cartão</p>
-                      <p className="font-bold text-sm text-blue-700">R$ {p.precificacao.precoCartao?.toFixed(2) || "0.00"}</p>
+                      <p className="font-bold text-sm text-blue-700">R$ {Number(p.precificacao.precoCartao || 0).toFixed(2) || "0.00"}</p>
                     </div>
                   </div>
 
                   <div className="flex items-center gap-2 flex-wrap mt-2">
-                    <Badge variant="secondary" className="text-[10px]">Mg: {p.precificacao.margem?.toFixed(1) || "0"}%</Badge>
-                    <Badge variant="outline" className="text-[10px]">Mkup: {p.precificacao.markup?.toFixed(2) || "0"}x</Badge>
-                    <Badge variant="outline" className="text-[10px]">Desc. Máx: {p.precificacao.descontoMaximo?.toFixed(1) || "0"}%</Badge>
+                    <Badge variant="secondary" className="text-[10px]">Mg: {Number(p.precificacao.margem || 0).toFixed(1) || "0"}%</Badge>
+                    <Badge variant="outline" className="text-[10px]">Mkup: {Number(p.precificacao.markup || 0).toFixed(2) || "0"}x</Badge>
+                    <Badge variant="outline" className="text-[10px]">Desc. Máx: {Number(p.precificacao.descontoMaximo || 0).toFixed(1) || "0"}%</Badge>
                   </div>
                 </div>
               ))

@@ -22,6 +22,7 @@ const clienteVazio: Omit<Cliente, "codcliente"> = {
   cep: "",
   observacoes: "",
   data_cadastro: "",
+  data_nascimento: "",
   ativo: "S",
 };
 
@@ -42,6 +43,7 @@ function mapearCliente(c: any): Cliente {
     cep: c.cep|| "",
     observacoes: c.observacoes || "",
     data_cadastro: c.data_cadastro|| "",
+    data_nascimento: c.data_nascimento ? new Date(c.data_nascimento).toISOString().split("T")[0] : "",
     ativo: c.ativo|| "S"
   }
 }
@@ -386,6 +388,17 @@ function formatarCpfCnpj(valor: string) {
                 value={form.telefone}
                 onChange={(e) =>
                   setForm({ ...form, telefone: e.target.value })
+                }
+              />
+            </div>
+
+            <div>
+              <Label>Data de Nascimento</Label>
+              <Input
+                type="date"
+                value={form.data_nascimento}
+                onChange={(e) =>
+                  setForm({ ...form, data_nascimento: e.target.value })
                 }
               />
             </div>

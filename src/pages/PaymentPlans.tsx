@@ -20,6 +20,7 @@ const PaymentPlans = () => {
   // Form state
   const [idEdicao, setIdEdicao] = useState<number | null>(null);
   const [descricao, setDescricao] = useState("");
+  const [tipoPagamento, setTipoPagamento] = useState("A_VISTA");
   const [temAcrescimo, setTemAcrescimo] = useState(false);
   const [taxaAcrescimo, setTaxaAcrescimo] = useState("");
   const [maxParcelas, setMaxParcelas] = useState("1");
@@ -71,6 +72,7 @@ const PaymentPlans = () => {
   const abrirNovo = () => {
     setIdEdicao(null);
     setDescricao("");
+    setTipoPagamento("A_VISTA");
     setTemAcrescimo(false);
     setTaxaAcrescimo("");
     setMaxParcelas("1");
@@ -83,6 +85,7 @@ const PaymentPlans = () => {
   const abrirEdicao = (plano: any) => {
     setIdEdicao(plano.CODPLPAG);
     setDescricao(plano.DESCRICAO || "");
+    setTipoPagamento(plano.tipo_pagamento || "A_VISTA");
     setTemAcrescimo(plano.tem_acrescimo || false);
     setTaxaAcrescimo(plano.taxa_acrescimo ? String(plano.taxa_acrescimo) : "");
     setMaxParcelas(String(plano.max_parcelas || 1));
@@ -118,6 +121,7 @@ const PaymentPlans = () => {
 
     saveMutation.mutate({
       descricao,
+      tipo_pagamento: tipoPagamento,
       tem_acrescimo: temAcrescimo,
       taxa_acrescimo: temAcrescimo ? Number(taxaAcrescimo) : 0,
       max_parcelas: Number(maxParcelas),
@@ -168,6 +172,7 @@ const PaymentPlans = () => {
                 <TableRow>
                   <TableHead className="w-[80px]">Cód</TableHead>
                   <TableHead>Descrição</TableHead>
+                  <TableHead>Tipo</TableHead>
                   <TableHead>Acréscimo</TableHead>
                   <TableHead>Parcelas</TableHead>
                   <TableHead>Status</TableHead>
@@ -188,6 +193,11 @@ const PaymentPlans = () => {
                     <TableRow key={p.CODPLPAG}>
                       <TableCell className="text-muted-foreground font-medium">{p.CODPLPAG}</TableCell>
                       <TableCell className="font-semibold">{p.DESCRICAO}</TableCell>
+                      <TableCell>
+                        <Badge variant="outline" className={p.tipo_pagamento === "CARTAO" ? "border-blue-500 text-blue-600 bg-blue-50" : "border-emerald-500 text-emerald-600 bg-emerald-50"}>
+                          {p.tipo_pagamento === "CARTAO" ? "Cartão" : "À Vista"}
+                        </Badge>
+                      </TableCell>
                       <TableCell>
                         {p.tem_acrescimo ? (
                           <Badge variant="outline" className="text-amber-600 bg-amber-50 border-amber-200">
@@ -227,7 +237,12 @@ const PaymentPlans = () => {
                   <div className="flex items-start justify-between">
                     <div>
                       <h3 className="font-bold text-foreground">{p.DESCRICAO}</h3>
-                      <p className="text-xs text-muted-foreground">Cód: {p.CODPLPAG}</p>
+                      <div className="flex gap-2 items-center mt-1">
+                        <p className="text-xs text-muted-foreground">Cód: {p.CODPLPAG}</p>
+                        <Badge variant="outline" className={`text-[10px] h-4 px-1 py-0 ${p.tipo_pagamento === "CARTAO" ? "border-blue-500 text-blue-600" : "border-emerald-500 text-emerald-600"}`}>
+                          {p.tipo_pagamento === "CARTAO" ? "Cartão" : "À Vista"}
+                        </Badge>
+                      </div>
                     </div>
                     <Button variant="ghost" size="sm" onClick={() => abrirEdicao(p)} className="h-8 w-8 p-0">
                       <Edit2 className="h-4 w-4" />
@@ -275,13 +290,26 @@ const PaymentPlans = () => {
             </DialogTitle>
           </DialogHeader>
           <div className="grid gap-5 py-4">
-            <div className="space-y-2">
-              <Label>Descrição</Label>
-              <Input 
-                placeholder="Ex: Cartão de Crédito 3x" 
-                value={descricao}
-                onChange={(e) => setDescricao(e.target.value)}
-              />
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Descrição</Label>
+                <Input 
+                  placeholder="Ex: Cartão de Crédito 3x" 
+                  value={descricao}
+                  onChange={(e) => setDescricao(e.target.value)}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Tipo de Cobrança</Label>
+                <select
+                  className="flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                  value={tipoPagamento}
+                  onChange={(e) => setTipoPagamento(e.target.value)}
+                >
+                  <option value="A_VISTA">À Vista / Dinheiro</option>
+                  <option value="CARTAO">Cartão (Débito/Crédito)</option>
+                </select>
+              </div>
             </div>
             
             <div className="grid grid-cols-2 gap-4">

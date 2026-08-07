@@ -6,6 +6,7 @@ interface Usuario {
   login: string;
   email: string;
   cargo: "admin" | "vendedor";
+  codvendedor?: number;
 }
 
 interface AuthContextType {
@@ -80,6 +81,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       login: userData.email,
       email: userData.email,
       cargo: userData.tipo === "ADMIN" ? "admin" : "vendedor",
+      codvendedor: userData.codvendedor,
     };
 
     setUsuario(user);

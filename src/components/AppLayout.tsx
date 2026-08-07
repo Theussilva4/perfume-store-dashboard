@@ -61,6 +61,7 @@ const AppLayout = () => {
         { label: "Categorias", key: "/categorias", icon: FolderOpen },
         { label: "Marcas", key: "/marcas", icon: Tag },
         { label: "Clientes", key: "/clientes", icon: Users },
+        { label: "Vendedores", key: "/vendedores", icon: Users },
         { label: "Fornecedores", key: "/fornecedores", icon: Truck },
         { label: "Planos de Pagamento", key: "/planos-pagamento", icon: DollarSign },
       ],
@@ -92,7 +93,7 @@ const AppLayout = () => {
       label: "Sistema",
       items: [
         { label: "Alertas", key: "/alertas", icon: Bell },
-        { label: "Colaboradores", key: "/usuarios/novo", icon: Users },
+        { label: "Colaboradores", key: "/usuarios", icon: Users },
         { label: "Configurações", key: "/configuracoes", icon: Settings },
       ],
     },

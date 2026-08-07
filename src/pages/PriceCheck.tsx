@@ -32,7 +32,7 @@ const PriceCheck = () => {
     setLoading(true);
     try {
       const [prod, est] = await Promise.all([getProdutos(), getEstoque()]);
-      setProdutosAPI(Array.isArray(prod) ? prod.filter(p => p.status !== "I") : []);
+      setProdutosAPI(Array.isArray(prod) ? prod : []);
       setEstoquesAPI(Array.isArray(est) ? est : []);
     } catch (error) {
       console.error(error);
@@ -124,7 +124,12 @@ const PriceCheck = () => {
                       )}
                     </div>
                     <div className="flex-1">
-                      <h3 className="font-semibold text-xl text-foreground mb-2 leading-tight">{p.descricao}</h3>
+                      <div className="flex items-center gap-2 mb-2 flex-wrap">
+                        <h3 className="font-semibold text-xl text-foreground leading-tight">{p.descricao}</h3>
+                        <Badge variant={p.status === 'I' ? 'destructive' : 'default'} className={p.status !== 'I' ? 'bg-green-500 hover:bg-green-600' : ''}>
+                          {p.status === 'I' ? 'Inativo' : 'Ativo'}
+                        </Badge>
+                      </div>
                       <div className="flex flex-wrap gap-2 text-xs text-muted-foreground">
                         <span className="bg-muted px-2 py-1 rounded font-medium">Cód: {p.codproduto}</span>
                         {p.codigo_barras && <span className="bg-muted px-2 py-1 rounded font-medium">EAN: {p.codigo_barras}</span>}

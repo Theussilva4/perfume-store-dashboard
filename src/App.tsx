@@ -7,7 +7,7 @@ import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { BranchProvider } from "@/contexts/BranchContext";
 import AppLayout from "@/components/AppLayout";
 import Login from "@/pages/Login";
-import Register from "@/pages/Register";
+import Users from "@/pages/Users";
 import SetupPassword from "@/pages/SetupPassword";
 import Dashboard from "@/pages/Dashboard";
 import Products from "@/pages/Products";
@@ -16,8 +16,9 @@ import Brands from "@/pages/Brands";
 import Stock from "@/pages/Stock";
 import StockEntry from "@/pages/StockEntry";
 import StockExit from "@/pages/StockExit";
-import Orders from "@/pages/Orders";
+import Orders from "./pages/Orders";
 import OrderDetail from "@/pages/OrderDetail";
+import Sellers from "./pages/Sellers";
 import Clients from "@/pages/Clients";
 import Suppliers from "@/pages/Suppliers";
 import Reports from "@/pages/Reports";
@@ -69,6 +70,7 @@ const App = () => (
               <Route path="pedidos/:id" element={<OrderDetail />} />
               <Route path="consulta-preco" element={<PriceCheck />} />
               <Route path="clientes" element={<Clients />} />
+              <Route path="vendedores" element={<Sellers />} />
               <Route path="fornecedores" element={<Suppliers />} />
               <Route path="compras" element={<Purchases />} />
               <Route path="precos" element={<Prices />} />
@@ -76,7 +78,7 @@ const App = () => (
               <Route path="kits" element={<Kits />} />
               <Route path="relatorios" element={<Reports />} />
               <Route path="analises/estoque" element={<StockAnalytics />} />
-              <Route path="usuarios/novo" element={<Register />} />
+              <Route path="usuarios" element={<Users />} />
               <Route path="alertas" element={<Alerts />} />
               <Route path="configuracoes" element={<SettingsPage />} />
             </Route>
