@@ -199,57 +199,27 @@ const Orders = () => {
     setErro(null);
 
     try {
+      // 1. Fetch only what is needed for the orders list immediately
       const responses = await Promise.all([
         getFilial(),
-        getCliente(),
-        getVendedores(),
-        getProdutos(),
         getPedidos({ dataInicio, dataFim }),
         getFormasPagamento(),
-        comercialService.listarTabela(),
-        getEstoque(),
-        getKits()
       ]);
 
-      const [filiais, clientes, vendedores, produtosRAW, pedidosAPI, formasPgtoAPI, tabelaPrecos, est, kitsData] = responses;
-
-      setEstoquesAPI(Array.isArray(est) ? est : []);
-      setKitsAtivos(Array.isArray(kitsData) ? kitsData.filter((k: any) => k.ativo === "S") : []);
-      const tabelaPrecosSafe = Array.isArray(tabelaPrecos) ? tabelaPrecos : [];
-
-      const produtos = (produtosRAW || []).map((p: any) => {
-        const tb = tabelaPrecosSafe.find((t: any) => String(t.codproduto) === String(p.codproduto));
-        return {
-          ...p,
-          preco_calculado: tb?.precificacao?.precoFinal || p.preco_normal || 0,
-          tem_preco_tabela: !!(tb?.precificacao?.precoFinal),
-          desconto_maximo: tb?.precificacao?.descontoMaximo || 0
-        };
-      });
-
+      const [filiais, pedidosAPI, formasPgtoAPI] = responses;
       setListaFiliais(filiais);
-      setListarClientes(clientes);
-      setListarVendedor(vendedores);
-      setListarProdutos(produtos);
       setListaFormasPagamento(formasPgtoAPI || []);
 
-      // Enriquecendo e nivelando os dados dos pedidos usando a tabela do banco de dados
       const pedidosCompletos = (pedidosAPI || []).map((p: any) => {
         const codCliente = p.codcliente || p.codcliente;
-        const numPedido = p.numpedido || p.numero || p.id || Math.floor(Math.random() * 1000); // fallback provisorio se n tiver bd id
-        const clienteReq = clientes.find((c: any) => String(c.codcliente) === String(codCliente));
+        const numPedido = p.numpedido || p.numero || p.id || Math.floor(Math.random() * 1000); 
         const filialReq = (filiais || []).find((f: any) => String(f.codfilial) === String(p.codfilial || p.filial));
 
         const itensTratados = (p.itens || p.mspedido_item || []).map((item: any, itemIdx: number) => {
           const idProd = item.codproduto ?? item.CODPRODUTO ?? item.produtoId ?? item.id_produto ?? item.coditem ?? `indefinido-${p.id}-${itemIdx}`;
-          const prodLista = produtos.find((prod: any) => String(prod.codproduto) === String(idProd));
-          const nomeProd = prodLista?.descricao || item.nomeProduto || item.Produto?.descricao || item.NOMEPRODUTO || `Produto ID: ${idProd}`;
+          const nomeProd = item.msproduto?.descricao || item.nomeProduto || item.Produto?.descricao || item.NOMEPRODUTO || `Produto ID: ${idProd}`;
           const qtd = Number(item.quantidade ?? item.QUANTIDADE ?? 1);
           const preco = Number(item.preco_unitario ?? item.PRECO_UNITARIO ?? item.preco ?? 0);
-
-          if (!item.codproduto && !item.produtoId) {
-            console.warn(`[Debug API] Um item do Pedido ${numPedido} retornou sem 'codproduto'. Verifica a extrutura do payload:`, item);
-          }
 
           return {
             ...item,
@@ -262,6 +232,7 @@ const Orders = () => {
 
         const codForma = p.CODPLPAG || p.codplpag || p.codforma || p.forma_pagamento || p.formaPagamento;
         const planoPgtoReq = (formasPgtoAPI || []).find((fp: any) => String(fp.CODPLPAG || fp.codplpag || fp.codforma || fp.id || fp.codplano) === String(codForma));
+        const vendedorNome = p.msusuario_mspedido_codusur_vendedorTomsusuario?.nome || p.vendedor?.nome || p.nomeVendedor || "Vendedor";
 
         return {
           ...p,
@@ -279,21 +250,48 @@ const Orders = () => {
           parcelas: p.parcelas || 1,
           observacoes: p.observacoes || "",
           status: p.status || p.STATUS || "EM_DIGITACAO",
-          nomeCliente: clienteReq ? clienteReq.nome : (p.nomeCliente || p.cliente?.nome || 'Cliente não encontrado'),
-          telefoneCliente: clienteReq ? clienteReq.telefone : (p.telefoneCliente || p.cliente?.telefone || ''),
+          nomeCliente: p.mscliente?.nome || p.nomeCliente || p.cliente?.nome || 'Cliente não encontrado',
+          telefoneCliente: p.mscliente?.telefone1 || p.telefoneCliente || p.cliente?.telefone || '',
           motivo_cancelamento: p.motivo_cancelamento,
           data_cancelamento: p.data_cancelamento,
           usuarioCancelou: p.msusuario_mspedido_codusur_cancelouTomsusuario?.nome,
+          nomeVendedor: vendedorNome,
+          vendedorId: p.codusur_vendedor || p.vendedorId || "",
           itens: itensTratados
         };
       });
 
       setListaPedidos(pedidosCompletos);
-    } catch (error: any) {
-      console.error(error);
-      const msg = error?.response?.data?.erro || error.message || String(error);
-      setErro("Erro ao carregar dados: " + msg);
-      toast.error("Falha: " + msg);
+
+      // 2. Fetch the heavy data in the background (non-blocking)
+      Promise.all([
+        getCliente(),
+        getVendedores(),
+        getProdutos(),
+        comercialService.listarTabela(),
+        getEstoque(),
+        getKits()
+      ]).then(([clientes, vendedores, produtosRAW, tabelaPrecos, est, kitsData]) => {
+        setListarClientes(clientes);
+        setListarVendedor(vendedores);
+        setEstoquesAPI(Array.isArray(est) ? est : []);
+        setKitsAtivos(Array.isArray(kitsData) ? kitsData.filter((k: any) => k.ativo === "S") : []);
+        
+        const tabelaPrecosSafe = Array.isArray(tabelaPrecos) ? tabelaPrecos : [];
+        const produtosList = (produtosRAW || []).map((p: any) => {
+          const tb = tabelaPrecosSafe.find((t: any) => String(t.codproduto) === String(p.codproduto));
+          return {
+            ...p,
+            preco_calculado: tb?.precificacao?.precoFinal || p.preco_normal || 0,
+            tem_preco_tabela: !!(tb?.precificacao?.precoFinal),
+            desconto_maximo: tb?.precificacao?.descontoMaximo || 0
+          };
+        });
+        setListarProdutos(produtosList);
+      }).catch(err => console.error("Background data fetch error:", err));
+
+    } catch (e) {
+      toast.error("Erro ao carregar os dados iniciais.");
     } finally {
       setLoading(false);
     }
@@ -338,8 +336,7 @@ const Orders = () => {
 
         const itensTratados = (p.itens || p.mspedido_item || []).map((item: any, itemIdx: number) => {
           const idProd = item.codproduto ?? item.CODPRODUTO ?? item.produtoId ?? item.id_produto ?? item.coditem ?? `indefinido-${p.id}-${itemIdx}`;
-          const prodLista = listarProdutos.find((prod: any) => String(prod.codproduto) === String(idProd));
-          const nomeProd = prodLista?.descricao || item.nomeProduto || item.Produto?.descricao || item.NOMEPRODUTO || `Produto ID: ${idProd}`;
+          const nomeProd = item.msproduto?.descricao || item.nomeProduto || item.Produto?.descricao || item.NOMEPRODUTO || `Produto ID: ${idProd}`;
           const qtd = Number(item.quantidade ?? item.QUANTIDADE ?? 1);
           const preco = Number(item.preco_unitario ?? item.PRECO_UNITARIO ?? item.preco ?? 0);
 
@@ -354,6 +351,7 @@ const Orders = () => {
 
         const codForma = p.CODPLPAG || p.codplpag || p.codforma || p.forma_pagamento || p.formaPagamento;
         const planoPgtoReq = (listaFormasPagamento || []).find((fp: any) => String(fp.CODPLPAG || fp.codplpag || fp.codforma || fp.id || fp.codplano) === String(codForma));
+        const vendedorNome = p.msusuario_mspedido_codusur_vendedorTomsusuario?.nome || p.vendedor?.nome || p.nomeVendedor || "Vendedor";
 
         return {
           ...p,
@@ -371,11 +369,13 @@ const Orders = () => {
           parcelas: p.parcelas || 1,
           observacoes: p.observacoes || "",
           status: p.status || p.STATUS || "EM_DIGITACAO",
-          nomeCliente: clienteReq ? clienteReq.nome : (p.nomeCliente || p.cliente?.nome || 'Cliente não encontrado'),
-          telefoneCliente: clienteReq ? clienteReq.telefone : (p.telefoneCliente || p.cliente?.telefone || ''),
+          nomeCliente: p.mscliente?.nome || p.nomeCliente || p.cliente?.nome || 'Cliente não encontrado',
+          telefoneCliente: p.mscliente?.telefone1 || p.telefoneCliente || p.cliente?.telefone || '',
           motivo_cancelamento: p.motivo_cancelamento,
           data_cancelamento: p.data_cancelamento,
           usuarioCancelou: p.msusuario_mspedido_codusur_cancelouTomsusuario?.nome,
+          nomeVendedor: vendedorNome,
+          vendedorId: p.codusur_vendedor || p.vendedorId || "",
           itens: itensTratados
         };
       });
