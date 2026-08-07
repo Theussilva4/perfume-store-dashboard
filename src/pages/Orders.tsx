@@ -856,7 +856,8 @@ const Orders = () => {
           setEnderecoCliente("");
 
           const vendedorLogado = listaVendedor.find(v => 
-            usuario?.codvendedor && Number(v.codvendedor) === Number(usuario.codvendedor)
+            (usuario?.codvendedor && Number(v.codvendedor) === Number(usuario.codvendedor)) ||
+            (usuario?.nome && v.nome.trim().toLowerCase() === usuario.nome.trim().toLowerCase())
           );
 
           if (vendedorLogado) {
