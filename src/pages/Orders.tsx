@@ -1771,7 +1771,7 @@ const Orders = () => {
                     {pedidoParaDetalhes.itens.map((item: any, idx: number) => {
                       const nome = item.nomeProduto || item.Produto?.descricao || `Produto ID: ${item.produtoId}`;
                       const qtd = item.quantidade || 1;
-                      const preco = Number(item.preco || 0);
+                      const preco = Number(item.preco_unitario || item.preco || 0);
                       return (
                         <li key={idx} className="flex justify-between items-start gap-2 text-sm border-b border-border/40 pb-1 last:border-0">
                           <span className="line-clamp-2">{qtd}x {nome}</span>
