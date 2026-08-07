@@ -1,7 +1,8 @@
 import api from "./api";
 
-export async function getPedidos() {
-  const res = await api.get("/pedidos");
+export async function getPedidos(filters = {}) {
+  const query = new URLSearchParams(filters).toString();
+  const res = await api.get(`/pedidos?${query}`);
   return res.data;
 }
 

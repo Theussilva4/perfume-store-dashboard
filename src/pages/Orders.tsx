@@ -68,6 +68,13 @@ const Orders = () => {
   const [search, setSearch] = useState("");
   const [filtroStatus, setFiltroStatus] = useState("all");
   const [filtroPeriodo, setFiltroPeriodo] = useState("all");
+  
+  const hoje = new Date();
+  hoje.setMinutes(hoje.getMinutes() - hoje.getTimezoneOffset());
+  const hojeStr = hoje.toISOString().split('T')[0];
+  const [dataInicio, setDataInicio] = useState(hojeStr);
+  const [dataFim, setDataFim] = useState(hojeStr);
+
   const [dialogOpen, setDialogOpen] = useState(false);
   const [dialogCancelarOpen, setDialogCancelarOpen] = useState(false);
   const [motivoCancelamento, setMotivoCancelamento] = useState("");
@@ -197,7 +204,7 @@ const Orders = () => {
         getCliente(),
         getVendedores(),
         getProdutos(),
-        getPedidos(),
+        getPedidos({ dataInicio, dataFim }),
         getFormasPagamento(),
         comercialService.listarTabela(),
         getEstoque(),
@@ -879,8 +886,18 @@ const Orders = () => {
       <div className="flex flex-col sm:flex-row gap-3">
         <div className="relative flex-1 max-w-md">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input placeholder="Buscar por cliente ou nº..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-10" />
+          <Input placeholder="Buscar por cliente ou n..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-10" />
         </div>
+        
+        <div className="flex items-center gap-2">
+          <Input type="date" value={dataInicio} onChange={(e) => setDataInicio(e.target.value)} className="w-auto" title="Data Inicial" />
+          <span className="text-muted-foreground">a</span>
+          <Input type="date" value={dataFim} onChange={(e) => setDataFim(e.target.value)} className="w-auto" title="Data Final" />
+          <Button onClick={() => carregarDados()} variant="outline" size="icon" title="Buscar Pedidos">
+            <Search className="h-4 w-4" />
+          </Button>
+        </div>
+
         <Select value={filtroStatus} onValueChange={setFiltroStatus}>
           <SelectTrigger className="w-full sm:w-48"><SelectValue /></SelectTrigger>
           <SelectContent>
