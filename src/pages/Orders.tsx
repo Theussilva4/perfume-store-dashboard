@@ -348,8 +348,9 @@ const Orders = () => {
 
   }
 
-  function formatarCpfCnpj(valor: string) {
-    valor = valor.replace(/\D/g, "");
+  function formatarCpfCnpj(valor: string | null | undefined) {
+    if (!valor) return "Não informado";
+    valor = String(valor).replace(/\D/g, "");
 
     if (valor.length <= 11) {
       return valor
