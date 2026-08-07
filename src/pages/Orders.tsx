@@ -325,6 +325,69 @@ const Orders = () => {
     }
   }
 
+  async function buscarPedidosFiltrados() {
+    setLoading(true);
+    setErro(null);
+    try {
+      const pedidosAPI = await getPedidos({ dataInicio, dataFim });
+      const pedidosCompletos = (pedidosAPI || []).map((p: any) => {
+        const codCliente = p.codcliente || p.codcliente;
+        const numPedido = p.numpedido || p.numero || p.id || Math.floor(Math.random() * 1000); 
+        const clienteReq = listaClientes.find((c: any) => String(c.codcliente) === String(codCliente));
+        const filialReq = (listaFiliais || []).find((f: any) => String(f.codfilial) === String(p.codfilial || p.filial));
+
+        const itensTratados = (p.itens || p.mspedido_item || []).map((item: any, itemIdx: number) => {
+          const idProd = item.codproduto ?? item.CODPRODUTO ?? item.produtoId ?? item.id_produto ?? item.coditem ?? `indefinido-${p.id}-${itemIdx}`;
+          const prodLista = listarProdutos.find((prod: any) => String(prod.codproduto) === String(idProd));
+          const nomeProd = prodLista?.descricao || item.nomeProduto || item.Produto?.descricao || item.NOMEPRODUTO || `Produto ID: ${idProd}`;
+          const qtd = Number(item.quantidade ?? item.QUANTIDADE ?? 1);
+          const preco = Number(item.preco_unitario ?? item.PRECO_UNITARIO ?? item.preco ?? 0);
+
+          return {
+            ...item,
+            produtoId: String(idProd),
+            nomeProduto: nomeProd,
+            quantidade: qtd,
+            preco: preco
+          };
+        });
+
+        const codForma = p.CODPLPAG || p.codplpag || p.codforma || p.forma_pagamento || p.formaPagamento;
+        const planoPgtoReq = (listaFormasPagamento || []).find((fp: any) => String(fp.CODPLPAG || fp.codplpag || fp.codforma || fp.id || fp.codplano) === String(codForma));
+
+        return {
+          ...p,
+          id: String(numPedido),
+          numero: String(p.codigo_venda || numPedido),
+          codcliente: codCliente,
+          subtotal: Number(p.subtotal || 0),
+          desconto: Number(p.desconto || 0),
+          total: Number(p.valor_total || p.total || 0),
+          data: p.data_pedido || p.data || new Date().toISOString(),
+          filial: p.codfilial || p.filial,
+          nomeFilial: filialReq ? filialReq.filial : (rotulosFilial[p.filial] || p.filial),
+          formaPagamento: codForma,
+          nomeFormaPagamento: planoPgtoReq ? (planoPgtoReq.DESCRICAO || planoPgtoReq.descricao || planoPgtoReq.nome) : (p.formaPagamento || 'Não Informado'),
+          parcelas: p.parcelas || 1,
+          observacoes: p.observacoes || "",
+          status: p.status || p.STATUS || "EM_DIGITACAO",
+          nomeCliente: clienteReq ? clienteReq.nome : (p.nomeCliente || p.cliente?.nome || 'Cliente não encontrado'),
+          telefoneCliente: clienteReq ? clienteReq.telefone : (p.telefoneCliente || p.cliente?.telefone || ''),
+          motivo_cancelamento: p.motivo_cancelamento,
+          data_cancelamento: p.data_cancelamento,
+          usuarioCancelou: p.msusuario_mspedido_codusur_cancelouTomsusuario?.nome,
+          itens: itensTratados
+        };
+      });
+
+      setListaPedidos(pedidosCompletos);
+    } catch (e) {
+      toast.error("Erro ao buscar pedidos para a data informada.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
   // 👇 UI de loading (opcional)
   if (loading) {
     return (
@@ -895,7 +958,7 @@ const Orders = () => {
           <Input type="date" value={dataInicio} onChange={(e) => setDataInicio(e.target.value)} className="w-auto" title="Data Inicial" />
           <span className="text-muted-foreground">a</span>
           <Input type="date" value={dataFim} onChange={(e) => setDataFim(e.target.value)} className="w-auto" title="Data Final" />
-          <Button onClick={() => carregarDados()} variant="outline" size="icon" title="Buscar Pedidos">
+          <Button onClick={() => buscarPedidosFiltrados()} variant="outline" size="icon" title="Buscar Pedidos">
             <Search className="h-4 w-4" />
           </Button>
         </div>
