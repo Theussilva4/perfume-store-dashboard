@@ -4,7 +4,7 @@ import { getCompras, createCompra, getCompraById, cancelarCompra } from "@/servi
 import { getFornecedores } from "@/services/fornecedorService";
 import { getProdutos } from "@/services/produtosService";
 import { getFilial } from "@/services/filialService";
-import { getEstoque } from "@/services/estoqueService";
+import { getEstoque, createEntrada } from "@/services/estoqueService";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -33,6 +33,7 @@ const Purchases = () => {
   const { filialSelecionada, rotuloFilial } = useBranch();
   
   // States para nova compra
+  const [tipoEntrada, setTipoEntrada] = useState<"COMPRA" | "AJUSTE">("COMPRA");
   const [fornecedorBusca, setFornecedorBusca] = useState("");
   const [fornecedorUuid, setFornecedorUuid] = useState("");
   const [fornecedorCod, setFornecedorCod] = useState("");
@@ -146,26 +147,37 @@ const Purchases = () => {
     toast.success("Código lido: " + decodedText);
   };
 
-  const handleCriarCompra = async () => {
-    if (!fornecedorUuid) return toast.error("Selecione um fornecedor");
+  const handleSalvarCompra = async () => {
+    if (tipoEntrada === "COMPRA" && !fornecedorUuid) return toast.error("Selecione um fornecedor");
     if (!filialDestino || filialDestino === "todas") return toast.error("Selecione uma filial de destino");
-    if (itensCompra.length === 0) return toast.error("Adicione itens à compra");
+    if (itensCompra.length === 0) return toast.error("Adicione itens");
     
     setIsSubmitting(true);
     try {
-      const payload = {
-        codfornecedor: parseInt(fornecedorCod),
-        codfilial: parseInt(filialDestino),
-        status: statusCompra,
-        itens: itensCompra.map(i => ({
-          codproduto: parseInt(i.codproduto),
-          quantidade: Number(i.quantidade),
-          custo_unitario: Number(i.custo_unitario)
-        }))
-      };
-      
-      await createCompra(payload);
-      toast.success("Compra registrada com sucesso!");
+      if (tipoEntrada === "COMPRA") {
+        const payload = {
+          codfornecedor: parseInt(fornecedorCod),
+          codfilial: parseInt(filialDestino),
+          status: statusCompra,
+          itens: itensCompra.map(i => ({
+            codproduto: parseInt(i.codproduto),
+            quantidade: Number(i.quantidade),
+            custo_unitario: Number(i.custo_unitario)
+          }))
+        };
+        await createCompra(payload);
+        toast.success("Compra registrada com sucesso!");
+      } else {
+        for (const item of itensCompra) {
+          await createEntrada({
+            codproduto: parseInt(item.codproduto),
+            codfilial: parseInt(filialDestino),
+            quantidade: Number(item.quantidade),
+            origem: "AJUSTE"
+          });
+        }
+        toast.success("Ajuste de estoque registrado com sucesso!");
+      }
       
       // Limpar form
       setFornecedorUuid("");
@@ -336,6 +348,17 @@ const Purchases = () => {
           </DialogHeader>
           
           <div className="grid gap-4 py-2">
+            <div className="space-y-2">
+              <Label>Tipo de Entrada</Label>
+              <Select value={tipoEntrada} onValueChange={(v: "COMPRA" | "AJUSTE") => setTipoEntrada(v)}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="COMPRA">Compra Comercial (de Fornecedor)</SelectItem>
+                  <SelectItem value="AJUSTE">Ajuste Manual (Entrada avulsa)</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label>Filial de Destino</Label>
@@ -360,15 +383,17 @@ const Purchases = () => {
               </div>
             </div>
 
-            <div className="space-y-2">
-              <Label>Fornecedor</Label>
-              <div className="flex flex-col sm:flex-row gap-2">
-                <Button type="button" variant="outline" onClick={() => setDialogFornecedorOpen(true)}>
-                  Buscar
-                </Button>
-                <Input value={fornecedorNome} readOnly placeholder="Nenhum fornecedor selecionado" className="flex-1" />
+            {tipoEntrada === "COMPRA" && (
+              <div className="space-y-2">
+                <Label>Fornecedor</Label>
+                <div className="flex flex-col sm:flex-row gap-2">
+                  <Button type="button" variant="outline" onClick={() => setDialogFornecedorOpen(true)}>
+                    Buscar
+                  </Button>
+                  <Input value={fornecedorNome} readOnly placeholder="Nenhum fornecedor selecionado" className="flex-1" />
+                </div>
               </div>
-            </div>
+            )}
 
             <div className="mt-4">
               <p className="text-xs text-muted-foreground uppercase tracking-widest font-medium mb-3">Itens da Compra</p>
@@ -394,10 +419,12 @@ const Purchases = () => {
                   <Label>Qtd.</Label>
                   <Input type="number" value={qtdSelecionada} onChange={e => setQtdSelecionada(Number(e.target.value))} min={1} />
                 </div>
-                <div className="md:col-span-3">
-                  <Label>Custo Unit.</Label>
-                  <Input type="number" step="0.01" value={custoSelecionado} onChange={e => setCustoSelecionado(Number(e.target.value))} min={0} />
-                </div>
+                {tipoEntrada === "COMPRA" && (
+                  <div className="md:col-span-3">
+                    <Label>Custo Unit.</Label>
+                    <Input type="number" step="0.01" value={custoSelecionado} onChange={e => setCustoSelecionado(Number(e.target.value))} min={0} />
+                  </div>
+                )}
                 <div className="md:col-span-2">
                   <Button type="button" onClick={adicionarItem} disabled={!produtoSelecionadoId} className="w-full">
                     Add
@@ -411,18 +438,24 @@ const Purchases = () => {
                     <div key={i} className="flex justify-between items-center text-sm border-b pb-2 last:border-0 last:pb-0">
                       <span className="flex-1">{item.nomeProduto}</span>
                       <span className="w-20 text-center">{item.quantidade}x</span>
-                      <span className="w-28 text-right">R$ {item.custo_unitario.toLocaleString('pt-BR')}</span>
-                      <span className="w-28 text-right font-medium">R$ {(item.quantidade * item.custo_unitario).toLocaleString('pt-BR')}</span>
+                      {tipoEntrada === "COMPRA" && (
+                        <>
+                          <span className="w-28 text-right">R$ {item.custo_unitario.toLocaleString('pt-BR')}</span>
+                          <span className="w-28 text-right font-medium">R$ {(item.quantidade * item.custo_unitario).toLocaleString('pt-BR')}</span>
+                        </>
+                      )}
                       <button onClick={() => removerItem(item.codproduto)} className="text-red-500 hover:text-red-700 ml-3">
                         Remover
                       </button>
                     </div>
                   ))}
                   <div className="border-t pt-2 flex justify-between font-bold">
-                    <span>Total da Compra</span>
-                    <span className="text-primary">
-                      R$ {itensCompra.reduce((s, i) => s + (i.quantidade * i.custo_unitario), 0).toLocaleString('pt-BR')}
-                    </span>
+                    <span>{tipoEntrada === "COMPRA" ? "Total da Compra" : "Itens adicionados"}</span>
+                    {tipoEntrada === "COMPRA" && (
+                      <span className="text-primary">
+                        R$ {itensCompra.reduce((s, i) => s + (i.quantidade * i.custo_unitario), 0).toLocaleString('pt-BR')}
+                      </span>
+                    )}
                   </div>
                 </div>
               )}
@@ -430,8 +463,8 @@ const Purchases = () => {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setDialogOpen(false)} disabled={isSubmitting}>Cancelar</Button>
-            <Button onClick={handleCriarCompra} disabled={isSubmitting}>
-              {isSubmitting ? "Registrando..." : "Registrar Compra"}
+            <Button onClick={handleSalvarCompra} disabled={isSubmitting}>
+              {isSubmitting ? "Registrando..." : (tipoEntrada === "COMPRA" ? "Registrar Compra" : "Registrar Ajuste")}
             </Button>
           </DialogFooter>
         </DialogContent>
