@@ -1048,6 +1048,7 @@ const Orders = () => {
               <tr className="border-b border-border bg-muted/30">
                 <th className="text-left px-4 py-3 font-medium text-muted-foreground">Nº</th>
                 <th className="text-left px-4 py-3 font-medium text-muted-foreground">Cliente</th>
+                <th className="text-left px-4 py-3 font-medium text-muted-foreground">Vendedor</th>
                 <th className="text-right px-4 py-3 font-medium text-muted-foreground">Total</th>
                 <th className="text-center px-4 py-3 font-medium text-muted-foreground">Pagamento</th>
                 <th className="text-center px-4 py-3 font-medium text-muted-foreground">Status</th>
@@ -1064,6 +1065,7 @@ const Orders = () => {
                     <div className="font-medium text-foreground">{pedido.nomeCliente}</div>
                     <div className="text-xs text-muted-foreground">{pedido.telefoneCliente}</div>
                   </td>
+                  <td className="px-4 py-3 text-muted-foreground">{pedido.nomeVendedor || "-"}</td>
                   <td className="px-4 py-3 text-right font-medium">R$ {Number(pedido.total || 0).toLocaleString("pt-BR")}</td>
                   <td className="px-4 py-3 text-center text-muted-foreground">{pedido.nomeFormaPagamento}</td>
                   <td className="px-4 py-3 text-center">
