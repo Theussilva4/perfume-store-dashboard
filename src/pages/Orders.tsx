@@ -954,12 +954,14 @@ const Orders = () => {
           <Input placeholder="Buscar por cliente ou n..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-10" />
         </div>
         
-        <div className="flex items-center gap-2">
-          <Input type="date" value={dataInicio} onChange={(e) => setDataInicio(e.target.value)} className="w-auto" title="Data Inicial" />
-          <span className="text-muted-foreground">a</span>
-          <Input type="date" value={dataFim} onChange={(e) => setDataFim(e.target.value)} className="w-auto" title="Data Final" />
-          <Button onClick={() => buscarPedidosFiltrados()} variant="outline" size="icon" title="Buscar Pedidos">
-            <Search className="h-4 w-4" />
+        <div className="flex flex-col sm:flex-row items-center gap-2">
+          <div className="flex items-center gap-2">
+            <Input type="date" value={dataInicio} onChange={(e) => setDataInicio(e.target.value)} className="w-auto" title="Data Inicial" />
+            <span className="text-muted-foreground">a</span>
+            <Input type="date" value={dataFim} onChange={(e) => setDataFim(e.target.value)} className="w-auto" title="Data Final" />
+          </div>
+          <Button onClick={() => buscarPedidosFiltrados()} variant="secondary" className="w-full sm:w-auto">
+            Buscar
           </Button>
         </div>
 
