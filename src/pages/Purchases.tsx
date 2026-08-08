@@ -384,7 +384,7 @@ const Purchases = () => {
           <div className="grid gap-4 py-2">
             <div className="space-y-2">
               <Label>Tipo de Entrada</Label>
-              <Select value={tipoEntrada} onValueChange={(v: "COMPRA" | "AJUSTE") => setTipoEntrada(v)}>
+              <Select value={tipoEntrada} onValueChange={(v) => setTipoEntrada(v as "COMPRA" | "AJUSTE")}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="COMPRA">Compra Comercial (de Fornecedor)</SelectItem>
