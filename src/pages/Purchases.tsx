@@ -4,7 +4,7 @@ import { getCompras, createCompra, getCompraById, cancelarCompra } from "@/servi
 import { getFornecedores } from "@/services/fornecedorService";
 import { getProdutos } from "@/services/produtosService";
 import { getFilial } from "@/services/filialService";
-import { getEstoque, createEntrada } from "@/services/estoqueService";
+import { getEstoque, createEntrada, getEntradas } from "@/services/estoqueService";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -59,14 +59,39 @@ const Purchases = () => {
   async function carregarDados() {
     setLoading(true);
     try {
-      const [comprasAPI, fornecedoresAPI, produtosAPI, filiaisAPI, estoquesAPI] = await Promise.all([
+      const [comprasAPI, entradasAPI, fornecedoresAPI, produtosAPI, filiaisAPI, estoquesAPI] = await Promise.all([
         getCompras(),
+        getEntradas(),
         getFornecedores(),
         getProdutos(),
         getFilial(),
         getEstoque()
       ]);
-      setListaCompras(Array.isArray(comprasAPI) ? comprasAPI : []);
+      
+      const comprasNormalizadas = Array.isArray(comprasAPI) ? comprasAPI.map((c: any) => ({...c, tipo_registro: "COMPRA"})) : [];
+      const entradasNormalizadas = Array.isArray(entradasAPI) ? entradasAPI.map((e: any) => ({
+        uuid: `ajuste-${e.id}`,
+        codigo_compra: `AJST-${e.id}`,
+        data_compra: e.data_mov,
+        status: "CONCLUIDA",
+        valor_total: 0,
+        msfornecedor: { nome: "Ajuste Manual" },
+        codfilial: e.codfilial,
+        tipo_registro: "AJUSTE",
+        itens: [{
+          codproduto: e.codproduto,
+          msproduto: e.produto,
+          quantidade: e.quantidade,
+          custo_unitario: 0,
+          valor_total: 0
+        }]
+      })) : [];
+
+      const todas = [...comprasNormalizadas, ...entradasNormalizadas].sort((a, b) => 
+        new Date(b.data_compra).getTime() - new Date(a.data_compra).getTime()
+      );
+
+      setListaCompras(todas);
       setListaFornecedores(Array.isArray(fornecedoresAPI) ? fornecedoresAPI : []);
       setListaProdutos(Array.isArray(produtosAPI) ? produtosAPI : []);
       setListaFiliais(Array.isArray(filiaisAPI) ? filiaisAPI : []);
@@ -197,6 +222,14 @@ const Purchases = () => {
 
   const abrirDetalhes = async (compra: any) => {
     try {
+      if (compra.tipo_registro === "AJUSTE") {
+        setCompraSelecionada({
+          ...compra,
+          mscompra_item: compra.itens
+        });
+        setDialogDetalhesOpen(true);
+        return;
+      }
       const detalhes = await getCompraById(compra.uuid);
       setCompraSelecionada(detalhes);
       setDialogDetalhesOpen(true);
@@ -604,8 +637,7 @@ const Purchases = () => {
                 <span className="font-semibold text-lg">Total</span>
                 <span className="font-bold text-lg text-primary">R$ {Number(compraSelecionada.valor_total || 0).toLocaleString("pt-BR")}</span>
               </div>
-              
-              {compraSelecionada.status !== "CANCELADA" && (
+              {compraSelecionada.status !== "CANCELADA" && compraSelecionada.tipo_registro !== "AJUSTE" && (
                 <div className="flex justify-end pt-4 border-t border-border mt-4">
                   <Button 
                     variant="destructive" 
