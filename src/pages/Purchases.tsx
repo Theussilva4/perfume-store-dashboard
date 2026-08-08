@@ -70,7 +70,7 @@ const Purchases = () => {
       
       const comprasNormalizadas = Array.isArray(comprasAPI) ? comprasAPI.map((c: any) => ({...c, tipo_registro: "COMPRA"})) : [];
       const entradasNormalizadas = Array.isArray(entradasAPI) ? entradasAPI.map((e: any) => ({
-        uuid: `ajuste-${e.id}`,
+        uuid: `ajuste-${e.uuid || e.id}`,
         codigo_compra: `AJST-${e.id}`,
         data_compra: e.data_mov,
         status: "CONCLUIDA",
@@ -78,13 +78,13 @@ const Purchases = () => {
         msfornecedor: { nome: "Ajuste Manual" },
         codfilial: e.codfilial,
         tipo_registro: "AJUSTE",
-        itens: [{
-          codproduto: e.codproduto,
-          msproduto: e.produto,
-          quantidade: e.quantidade,
+        itens: (e.itens || []).map((item: any) => ({
+          codproduto: item.codproduto,
+          msproduto: item.produto,
+          quantidade: item.quantidade,
           custo_unitario: 0,
           valor_total: 0
-        }]
+        }))
       })) : [];
 
       const todas = [...comprasNormalizadas, ...entradasNormalizadas].sort((a, b) => 
@@ -193,14 +193,15 @@ const Purchases = () => {
         await createCompra(payload);
         toast.success("Compra registrada com sucesso!");
       } else {
-        for (const item of itensCompra) {
-          await createEntrada({
-            codproduto: parseInt(item.codproduto),
-            codfilial: parseInt(filialDestino),
-            quantidade: Number(item.quantidade),
-            origem: "AJUSTE"
-          });
-        }
+        const payload = {
+          filialDestino: parseInt(filialDestino),
+          origem: "AJUSTE",
+          itens: itensCompra.map(i => ({
+            codproduto: parseInt(i.codproduto),
+            quantidade: Number(i.quantidade)
+          }))
+        };
+        await createEntrada(payload);
         toast.success("Ajuste de estoque registrado com sucesso!");
       }
       
