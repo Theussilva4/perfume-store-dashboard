@@ -239,24 +239,24 @@ export default function MeuCaixa() {
 
       {activeTab === 'ATUAL' && status === 'ABERTO' && (
         <div className="space-y-6 animate-in fade-in zoom-in-95 duration-300">
-          <div className="flex justify-between items-center">
-            <div>
-          <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center bg-white p-4 sm:p-6 rounded-xl shadow-sm border border-gray-100 gap-4 md:gap-0">
+        <div>
+          <h1 className="text-xl sm:text-2xl font-bold text-gray-900 flex items-center gap-2">
             <Wallet className="text-primary" />
             Meu Caixa - {sessaoAtiva?.caixa?.nome}
           </h1>
-          <p className="text-gray-500">
+          <p className="text-sm sm:text-base text-gray-500">
             Aberto em: {new Date(sessaoAtiva?.data_abertura || '').toLocaleString('pt-BR')}
           </p>
         </div>
-        <div className="flex gap-3">
+        <div className="flex flex-wrap sm:flex-nowrap w-full md:w-auto gap-2 sm:gap-3">
           <button
             onClick={() => {
               setTipoMovimento('ENTRADA');
               setCategoriaMovimento('SUPRIMENTO');
               setMovimentoModalOpen(true);
             }}
-            className="px-4 py-2 bg-green-50 text-green-700 rounded-lg font-medium hover:bg-green-100 transition-colors flex items-center gap-2"
+            className="flex-1 md:flex-none px-3 sm:px-4 py-2 bg-green-50 text-green-700 rounded-lg font-medium hover:bg-green-100 transition-colors flex items-center justify-center gap-1 sm:gap-2 text-sm sm:text-base"
           >
             <ArrowDownCircle size={18} />
             Suprimento
@@ -267,14 +267,14 @@ export default function MeuCaixa() {
               setCategoriaMovimento('SANGRIA');
               setMovimentoModalOpen(true);
             }}
-            className="px-4 py-2 bg-red-50 text-red-700 rounded-lg font-medium hover:bg-red-100 transition-colors flex items-center gap-2"
+            className="flex-1 md:flex-none px-3 sm:px-4 py-2 bg-red-50 text-red-700 rounded-lg font-medium hover:bg-red-100 transition-colors flex items-center justify-center gap-1 sm:gap-2 text-sm sm:text-base"
           >
             <ArrowUpCircle size={18} />
             Sangria
           </button>
           <button
             onClick={() => setFecharModalOpen(true)}
-            className="px-4 py-2 bg-gray-900 text-white rounded-lg font-medium hover:bg-gray-800 transition-colors flex items-center gap-2"
+            className="w-full sm:w-auto flex-1 md:flex-none px-3 sm:px-4 py-2 bg-gray-900 text-white rounded-lg font-medium hover:bg-gray-800 transition-colors flex items-center justify-center gap-1 sm:gap-2 text-sm sm:text-base"
           >
             <Lock size={18} />
             Fechar Caixa

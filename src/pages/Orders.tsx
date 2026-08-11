@@ -1202,7 +1202,7 @@ const Orders = () => {
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent 
           aria-describedby={undefined} 
-          className="w-[95vw] md:max-w-4xl lg:max-w-5xl max-h-[90vh] overflow-y-auto"
+          className="w-[98vw] sm:w-[95vw] md:max-w-4xl lg:max-w-5xl max-h-[95vh] sm:max-h-[90vh] overflow-y-auto p-3 sm:p-6"
           onPointerDownOutside={(e) => {
             e.preventDefault();
             if (dialogClienteOpen || dialogVendedorOpen || dialogPlanoOpen || dialogProdutoOpen || scannerOpen) return;
@@ -1226,10 +1226,10 @@ const Orders = () => {
             }
           }}
         >
-          <DialogHeader>
+          <DialogHeader className="px-1 pt-2 sm:p-0">
             <DialogTitle className="font-display text-xl">{idPedidoEdicao ? "Editar Pedido" : "Novo Pedido"}</DialogTitle>
           </DialogHeader>
-          <div className="space-y-5">
+          <div className="space-y-4 sm:space-y-5 px-1 sm:px-0">
             <div className="space-y-2">
               <Label>Filial</Label>
               <Select value={filialPedido} onValueChange={setFilialPedido}>
@@ -1242,9 +1242,9 @@ const Orders = () => {
               </Select>
             </div>
             <div>
-              <p className="text-xs text-muted-foreground uppercase tracking-widest font-medium mb-3">Dados do Cliente</p>
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-2 col-span-2">
+              <p className="text-xs text-muted-foreground uppercase tracking-widest font-medium mb-2 sm:mb-3">Dados do Cliente</p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="space-y-2">
                   <Label>Cliente</Label>
 
                   <div className="flex gap-2">
@@ -1257,8 +1257,8 @@ const Orders = () => {
                           buscarClientePorCodigo(e.currentTarget.value);
                         }
                       }}
-                      placeholder="Código"
-                      className="w-28"
+                      placeholder="Cód"
+                      className="w-16 sm:w-28"
                     />
 
                     {/* Botão ... */}
@@ -1275,11 +1275,11 @@ const Orders = () => {
                       value={nomeCliente}
                       readOnly
                       placeholder="Nome do cliente"
-                      className="flex-1"
+                      className="flex-1 min-w-0"
                     />
                   </div>
                 </div>
-                <div className="space-y-2 col-span-2">
+                <div className="space-y-2">
                   <Label>Vendedor</Label>
 
                   <div className="flex gap-2">
@@ -1292,8 +1292,8 @@ const Orders = () => {
                           buscarVendedorPorCodigo(e.currentTarget.value);
                         }
                       }}
-                      placeholder="Código"
-                      className="w-28"
+                      placeholder="Cód"
+                      className="w-16 sm:w-28"
                     />
 
                     {/* Botão ... */}
@@ -1310,28 +1310,24 @@ const Orders = () => {
                       value={nomeVendedor}
                       readOnly
                       placeholder="Nome do Vendedor"
-                      className="flex-1"
+                      className="flex-1 min-w-0"
                     />
                   </div>
                 </div>
-                {/* <div className="col-span-2 space-y-2">
-                  <Label>Endereço (opcional)</Label>
-                  <Input value={enderecoCliente} onChange={(e) => setEnderecoCliente(e.target.value)} />
-                </div> */}
               </div>
             </div>
 
             <div>
-              <p className="text-xs text-muted-foreground uppercase tracking-widest font-medium mb-3">Produtos</p>
+              <p className="text-xs text-muted-foreground uppercase tracking-widest font-medium mb-2 sm:mb-3">Produtos</p>
 
 
 
-              <div className="grid grid-cols-12 gap-2 md:gap-3 items-end mb-3">
+              <div className="grid grid-cols-12 gap-2 items-end mb-3 bg-muted/20 p-2 sm:p-0 sm:bg-transparent rounded-md">
 
                 {/* CÓDIGO */}
-                <div className="col-span-12 sm:col-span-6 md:col-span-3">
-                  <Label>Cód. Barras</Label>
-                  <div className="flex gap-2">
+                <div className="col-span-12 md:col-span-3 space-y-1">
+                  <Label className="text-xs sm:text-sm">Cód. Barras</Label>
+                  <div className="flex gap-1 sm:gap-2">
                     <Input
                       ref={refCodigo}
                       placeholder="Código"
@@ -1344,6 +1340,7 @@ const Orders = () => {
                           refQtd.current?.focus();
                         }
                       }}
+                      className="min-w-0 flex-1"
                     />
                     <Button
                       type="button"
@@ -1351,7 +1348,7 @@ const Orders = () => {
                       className="px-2"
                       onClick={() => setDialogProdutoOpen(true)}
                     >
-                      ...
+                      <Search className="h-4 w-4" />
                     </Button>
                     <Button
                       type="button"
@@ -1365,7 +1362,7 @@ const Orders = () => {
                     <Button
                       type="button"
                       variant="outline"
-                      className="px-2"
+                      className="px-2 hidden sm:flex"
                       onClick={recarregarProdutos}
                       title="Atualizar lista de produtos"
                     >
@@ -1375,35 +1372,38 @@ const Orders = () => {
                 </div>
 
                 {/* DESCRIÇÃO */}
-                <div className="col-span-12 sm:col-span-6 md:col-span-3">
-                  <Label>Descrição</Label>
+                <div className="col-span-12 md:col-span-3 space-y-1">
+                  <Label className="text-xs sm:text-sm">Descrição</Label>
                   <Input
                     value={
                       listarProdutos.find(p => String(p.codproduto) === produtoSelecionado)?.descricao || ""
                     }
                     readOnly
+                    className="truncate"
                   />
                 </div>
 
                 {/* EMBALAGEM */}
-                <div className="col-span-4 sm:col-span-4 md:col-span-2">
-                  <Label>Emb.</Label>
+                <div className="col-span-3 sm:col-span-4 md:col-span-2 space-y-1">
+                  <Label className="text-xs sm:text-sm text-center block">Emb.</Label>
                   <Input
                     value={
                       listarProdutos.find(p => String(p.codproduto) === produtoSelecionado)?.embalagem || "UN"
                     }
                     readOnly
+                    className="text-center px-1"
                   />
                 </div>
 
                 {/* QUANTIDADE */}
-                <div className="col-span-4 sm:col-span-4 md:col-span-2">
-                  <Label>Qtd.</Label>
+                <div className="col-span-4 sm:col-span-4 md:col-span-2 space-y-1">
+                  <Label className="text-xs sm:text-sm text-center block">Qtd.</Label>
                   <Input
                     ref={refQtd}
                     type="number"
                     value={qtdSelecionada}
                     placeholder="Qtd"
+                    className="text-center px-1"
                     onChange={(e) => setQtdSelecionada(Number(e.target.value))}
                     onKeyDown={(e) => {
                       if (e.key === "Enter") {
@@ -1414,12 +1414,13 @@ const Orders = () => {
                 </div>
 
                 {/* PREÇO */}
-                <div className="col-span-4 sm:col-span-4 md:col-span-2">
-                  <Label>Preço</Label>
+                <div className="col-span-5 sm:col-span-4 md:col-span-2 space-y-1">
+                  <Label className="text-xs sm:text-sm text-center block">Preço</Label>
                   <Input
                     ref={refPreco}
                     type="number"
                     value={precoProduto}
+                    className="text-right px-1 sm:px-3"
                     onChange={(e) => setPrecoProduto(Number(e.target.value))}
                     onKeyDown={(e) => {
                       if (e.key === "Enter") {
@@ -1455,7 +1456,7 @@ const Orders = () => {
                       <span className="text-foreground font-medium flex-1 overflow-hidden text-ellipsis whitespace-nowrap" title={item.nomeProduto}>
                         {item.nomeProduto}
                       </span>
-                      <div className="flex items-center gap-4">
+                      <div className="flex items-center justify-between sm:justify-end gap-2 sm:gap-4 w-full sm:w-auto">
                         <div className="flex flex-col w-16">
                           <span className="text-[10px] text-muted-foreground uppercase tracking-wider mb-0.5">Qtd</span>
                           <input
@@ -1466,17 +1467,17 @@ const Orders = () => {
                             min={1}
                           />
                         </div>
-                        <div className="flex items-center gap-4 text-right">
-                          <div className="flex flex-col w-20">
+                        <div className="flex items-center gap-3 sm:gap-4 text-right">
+                          <div className="flex flex-col w-16 sm:w-20">
                             <span className="text-[10px] text-muted-foreground uppercase tracking-wider mb-0.5">Unitário</span>
-                            <span className="text-sm font-medium text-foreground h-7 flex items-center justify-end">R$ {Number(item.preco || 0).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</span>
+                            <span className="text-xs sm:text-sm font-medium text-foreground h-7 flex items-center justify-end">R$ {Number(item.preco || 0).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</span>
                           </div>
-                          <div className="flex flex-col w-24">
+                          <div className="flex flex-col w-20 sm:w-24">
                             <span className="text-[10px] text-muted-foreground uppercase tracking-wider mb-0.5">Total</span>
-                            <span className="text-sm font-bold text-primary h-7 flex items-center justify-end">R$ {((item.preco || 0) * (item.quantidade || 0)).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</span>
+                            <span className="text-xs sm:text-sm font-bold text-primary h-7 flex items-center justify-end">R$ {((item.preco || 0) * (item.quantidade || 0)).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</span>
                           </div>
                         </div>
-                        <button type="button" onClick={() => removerItem(item.produtoId)} className="text-destructive hover:text-destructive/80 p-1 ml-2 mt-4">
+                        <button type="button" onClick={() => removerItem(item.produtoId)} className="text-destructive hover:text-destructive/80 p-1 sm:ml-2 mt-4">
                           <Trash2 className="h-4 w-4" />
                         </button>
                       </div>
