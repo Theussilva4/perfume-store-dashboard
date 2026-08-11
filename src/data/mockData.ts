@@ -34,6 +34,7 @@ export interface ItemPedido {
   nomeProduto: string;
   quantidade: number;
   preco: number;
+  preco_cartao?: number;
 }
 
 export interface Pedido {

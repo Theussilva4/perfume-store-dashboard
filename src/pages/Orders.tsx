@@ -629,6 +629,7 @@ const Orders = () => {
           nomeProduto: produto.descricao,
           quantidade: qtdSelecionada,
           preco: precoProduto,
+          preco_cartao: Number(produto.preco_cartao || produto.preco_normal || 0),
         },
       ]);
     }
@@ -1590,9 +1591,17 @@ const Orders = () => {
               let valorSugerido = faltaPagar;
               if (planoSelecionado?.tem_acrescimo && planoSelecionado?.taxa_acrescimo) {
                 const taxa = Number(planoSelecionado.taxa_acrescimo);
-                if (taxa > 0 && taxa < 100 && faltaPagar > 0) {
-                  // Cálculo de markup reverso: Gross = Net / (1 - taxa/100)
-                  valorSugerido = faltaPagar / (1 - (taxa / 100));
+                
+                // Se for o 1º pagamento, sugerimos o subtotal baseado no preco_cartao
+                if (pagamentosVenda.length === 0) {
+                  const subtotalCartao = itensPedido.reduce((acc, item) => acc + (Number(item.preco_cartao) || Number(item.preco)) * item.quantidade, 0);
+                  const diferencaCartao = subtotalCartao - subtotalPedido; 
+                  valorSugerido = faltaPagar + diferencaCartao;
+                } else {
+                  // Se já houver pagamentos (split), usa taxa proporcional no restante
+                  if (taxa > 0 && taxa < 100 && faltaPagar > 0) {
+                    valorSugerido = faltaPagar / (1 - (taxa / 100));
+                  }
                 }
               }
 
@@ -1641,13 +1650,27 @@ const Orders = () => {
                           if (e.key === "Enter" && codigoPlano && (valorPagamentoAtual || valorSugerido > 0)) {
                             const valorAdicionar = Number(valorPagamentoAtual || valorSugerido);
                             if (valorAdicionar > 0) {
-                              if (valorAdicionar > faltaPagar) {
-                                const acrescimoDesteLancamento = valorAdicionar - faltaPagar;
-                                setAcrescimoPedido(prev => prev + acrescimoDesteLancamento);
-                                setPagamentosVenda([...pagamentosVenda, { codplano: codigoPlano, nome: nomePlano, valor: valorAdicionar, parcelas: Number(parcelas), acrescimo_aplicado: acrescimoDesteLancamento }]);
-                              } else {
-                                setPagamentosVenda([...pagamentosVenda, { codplano: codigoPlano, nome: nomePlano, valor: valorAdicionar, parcelas: Number(parcelas), acrescimo_aplicado: 0 }]);
+                              let acrescimoDesteLancamento = 0;
+                              
+                              if (planoSelecionado?.tem_acrescimo && planoSelecionado?.taxa_acrescimo) {
+                                const taxa = Number(planoSelecionado.taxa_acrescimo);
+                                
+                                // Se for pagamento único usando o valor exato do cartão
+                                if (pagamentosVenda.length === 0 && Number(valorAdicionar.toFixed(2)) === Number(valorSugerido.toFixed(2))) {
+                                  acrescimoDesteLancamento = valorSugerido - faltaPagar;
+                                } else {
+                                  // Pagamento split (ou valor menor/maior informado) - juros proporcional
+                                  // Gross = Net + Acrescimo  => Net = Gross * (1 - taxa/100) => Acrescimo = Gross * (taxa/100)
+                                  acrescimoDesteLancamento = valorAdicionar * (taxa / 100);
+                                  if (Number(valorAdicionar.toFixed(2)) === Number(valorSugerido.toFixed(2))) {
+                                    acrescimoDesteLancamento = valorSugerido - faltaPagar;
+                                  }
+                                }
                               }
+                              
+                              setAcrescimoPedido(prev => prev + acrescimoDesteLancamento);
+                              setPagamentosVenda([...pagamentosVenda, { codplano: codigoPlano, nome: nomePlano, valor: valorAdicionar, parcelas: Number(parcelas), acrescimo_aplicado: acrescimoDesteLancamento }]);
+                              
                               setCodigoPlano("");
                               setNomePlano("");
                               setValorPagamentoAtual("");
