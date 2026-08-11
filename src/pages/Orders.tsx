@@ -55,6 +55,7 @@ const Orders = () => {
   const [codigoPlano, setCodigoPlano] = useState("");
   const [nomePlano, setNomePlano] = useState("");
   const [pagamentosVenda, setPagamentosVenda] = useState<{ codplano: string, nome: string, valor: number, parcelas: number }[]>([]);
+  const [isMultiPagamento, setIsMultiPagamento] = useState(false);
   const [valorPagamentoAtual, setValorPagamentoAtual] = useState<string>("");
   const [parcelas, setParcelas] = useState("1");
   const [observacoes, setObservacoes] = useState("");
@@ -744,17 +745,37 @@ const Orders = () => {
     try {
       // Separar itens avulsos dos itens que compõem os kits aplicados
       const subtotalBase = itensPedido.reduce((s, i) => s + i.preco * i.quantidade, 0);
-      const totalDoPedidoFinal = Number(subtotalBase) - Number(descontoPedido) - Number(descontoKits) + Number(acrescimoPedido) + Number(valorFrete);
+      
+      // Se for pagamento único, recalcula o acréscimo dinamicamente baseado no plano selecionado
+      let acrescimoFinal = Number(acrescimoPedido);
+      if (!isMultiPagamento && codigoPlano) {
+        const planoSelecionado = formasPagamento.find(p => String(p.codigo) === String(codigoPlano));
+        if (planoSelecionado?.tem_acrescimo) {
+          const subtotalCartao = itensPedido.reduce((acc, item) => acc + (Number(item.preco_cartao) || Number(item.preco)) * item.quantidade, 0);
+          acrescimoFinal = subtotalCartao - subtotalBase;
+        } else {
+          acrescimoFinal = 0;
+        }
+      }
+      
+      const totalDoPedidoFinal = Number(subtotalBase) - Number(descontoPedido) - Number(descontoKits) + acrescimoFinal + Number(valorFrete);
 
       if (statusAtualPedido === "FINALIZADO") {
-        const somaPag = pagamentosVenda.reduce((acc, p) => acc + p.valor, 0);
-        if (somaPag === 0 && totalDoPedidoFinal > 0) {
-          setValidationError({ title: "Pagamento não encontrado", message: "Para finalizar a venda, você deve lançar o(s) pagamento(s)." });
-          return;
-        }
-        if (Math.abs(somaPag - totalDoPedidoFinal) > 0.05 && totalDoPedidoFinal > 0) {
-          setValidationError({ title: "Valores Incorretos", message: `A soma dos pagamentos (R$ ${somaPag.toFixed(2)}) não bate com o Total (R$ ${totalDoPedidoFinal.toFixed(2)}). Corrija antes de finalizar.` });
-          return;
+        if (!isMultiPagamento) {
+          if (!codigoPlano) {
+            setValidationError({ title: "Pagamento não encontrado", message: "Selecione o plano de pagamento." });
+            return;
+          }
+        } else {
+          const somaPag = pagamentosVenda.reduce((acc, p) => acc + p.valor, 0);
+          if (somaPag === 0 && totalDoPedidoFinal > 0) {
+            setValidationError({ title: "Pagamento não encontrado", message: "Para finalizar a venda, você deve lançar o(s) pagamento(s)." });
+            return;
+          }
+          if (Math.abs(somaPag - totalDoPedidoFinal) > 0.05 && totalDoPedidoFinal > 0) {
+            setValidationError({ title: "Valores Incorretos", message: `A soma dos pagamentos (R$ ${somaPag.toFixed(2)}) não bate com o Total (R$ ${totalDoPedidoFinal.toFixed(2)}). Corrija antes de finalizar.` });
+            return;
+          }
         }
       }
 
@@ -800,8 +821,12 @@ const Orders = () => {
         codvendedor: codigoVendedor,
         codusur_criou: usuario?.codusur, // Envia o usuário logado
         codfilial: filialPedido,
-        formaPagamento: pagamentosVenda.length > 0 ? pagamentosVenda[0].codplano : codigoPlano,
-        pagamentos: pagamentosVenda.map(p => ({
+        formaPagamento: !isMultiPagamento ? codigoPlano : (pagamentosVenda.length > 0 ? pagamentosVenda[0].codplano : codigoPlano),
+        pagamentos: !isMultiPagamento ? [{
+          codplano_pagamento: Number(codigoPlano),
+          valor: totalDoPedidoFinal,
+          parcelas: Number(parcelas) || 1
+        }] : pagamentosVenda.map(p => ({
           codplano_pagamento: Number(p.codplano),
           valor: p.valor,
           parcelas: p.parcelas
@@ -809,8 +834,8 @@ const Orders = () => {
         parcelas: Number(parcelas) || 1,
         observacoes,
         status: statusAtualPedido,
-        desconto: Number(descontoPedido) - Number(acrescimoPedido),
-        acrescimo: Number(acrescimoPedido),
+        desconto: Number(descontoPedido) - acrescimoFinal, // ajustado
+        acrescimo: acrescimoFinal,
         valor_frete: valorFrete,
         produtos: itensAvulsos.map(i => ({
           codproduto: i.produtoId,
@@ -847,7 +872,9 @@ const Orders = () => {
       setNomePlano("");
       setParcelas("1");
       setObservacoes("");
+      setIsMultiPagamento(false);
       setFilialPedido("");
+      setIsMultiPagamento(false);
 
     } catch (error: any) {
       console.error(error);
@@ -1639,8 +1666,28 @@ const Orders = () => {
                       </div>
                     </div>
 
-                    <div className="space-y-2 md:col-span-3">
-                      <Label>Valor</Label>
+                    {!isMultiPagamento ? (
+                      <div className="space-y-2 md:col-span-3 flex items-end">
+                        <Button 
+                          type="button" 
+                          variant="outline" 
+                          className="w-full"
+                          onClick={() => {
+                            setIsMultiPagamento(true);
+                            // limpa para que o usuário lance manualmente os valores
+                            setPagamentosVenda([]); 
+                            setAcrescimoPedido(0);
+                            setCodigoPlano("");
+                            setNomePlano("");
+                          }}
+                        >
+                          Adicionar forma de pagamento
+                        </Button>
+                      </div>
+                    ) : (
+                      <>
+                        <div className="space-y-2 md:col-span-3">
+                          <Label>Valor</Label>
                       <Input
                         type="number"
                         placeholder="R$"
@@ -1708,13 +1755,20 @@ const Orders = () => {
                         onClick={() => {
                           const valorAdicionar = Number(valorPagamentoAtual || valorSugerido);
                           if (valorAdicionar > 0) {
-                            if (valorAdicionar > faltaPagar) {
-                              const acrescimoDesteLancamento = valorAdicionar - faltaPagar;
-                              setAcrescimoPedido(prev => prev + acrescimoDesteLancamento);
-                              setPagamentosVenda([...pagamentosVenda, { codplano: codigoPlano, nome: nomePlano, valor: valorAdicionar, parcelas: Number(parcelas), acrescimo_aplicado: acrescimoDesteLancamento }]);
-                            } else {
-                              setPagamentosVenda([...pagamentosVenda, { codplano: codigoPlano, nome: nomePlano, valor: valorAdicionar, parcelas: Number(parcelas), acrescimo_aplicado: 0 }]);
+                            let acrescimoDesteLancamento = 0;
+                            if (planoSelecionado?.tem_acrescimo && planoSelecionado?.taxa_acrescimo) {
+                              const taxa = Number(planoSelecionado.taxa_acrescimo);
+                              if (pagamentosVenda.length === 0 && Number(valorAdicionar.toFixed(2)) === Number(valorSugerido.toFixed(2))) {
+                                acrescimoDesteLancamento = valorSugerido - faltaPagar;
+                              } else {
+                                acrescimoDesteLancamento = valorAdicionar * (taxa / 100);
+                                if (Number(valorAdicionar.toFixed(2)) === Number(valorSugerido.toFixed(2))) {
+                                  acrescimoDesteLancamento = valorSugerido - faltaPagar;
+                                }
+                              }
                             }
+                            setAcrescimoPedido(prev => prev + acrescimoDesteLancamento);
+                            setPagamentosVenda([...pagamentosVenda, { codplano: codigoPlano, nome: nomePlano, valor: valorAdicionar, parcelas: Number(parcelas), acrescimo_aplicado: acrescimoDesteLancamento }]);
                             setCodigoPlano("");
                             setNomePlano("");
                             setValorPagamentoAtual("");
@@ -1724,10 +1778,28 @@ const Orders = () => {
                           }
                         }}
                       >
-                        + Lançar
+                        <Plus className="h-4 w-4 mr-2" /> Lançar
                       </Button>
                     </div>
-                  </div>
+                  </>
+                )}
+              </div>
+
+              {isMultiPagamento && pagamentosVenda.length === 0 && (
+                <div className="flex justify-end mt-2">
+                  <Button 
+                    type="button" 
+                    variant="outline"
+                    onClick={() => {
+                      setIsMultiPagamento(false);
+                      setCodigoPlano("");
+                      setNomePlano("");
+                    }}
+                  >
+                    Cancelar Múltiplos Pagamentos
+                  </Button>
+                </div>
+              )}
 
                   {pagamentosVenda.length > 0 && (
                     <div className="bg-white border rounded-md overflow-hidden">
