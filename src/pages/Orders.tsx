@@ -20,7 +20,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
-import { Plus, Search, Eye, ClipboardList, Trash2, Pencil, ScanBarcode, FileText, RefreshCw, PackageOpen } from "lucide-react";
+import { Plus, Search, Eye, ClipboardList, Trash2, Pencil, ScanBarcode, FileText, RefreshCw, PackageOpen, AlertCircle } from "lucide-react";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 
@@ -54,10 +54,14 @@ const Orders = () => {
   const [statusAtualPedido, setStatusAtualPedido] = useState("EM_ABERTO");
   const [codigoPlano, setCodigoPlano] = useState("");
   const [nomePlano, setNomePlano] = useState("");
+  const [pagamentosVenda, setPagamentosVenda] = useState<{ codplano: string, nome: string, valor: number, parcelas: number }[]>([]);
+  const [valorPagamentoAtual, setValorPagamentoAtual] = useState<string>("");
   const [parcelas, setParcelas] = useState("1");
   const [observacoes, setObservacoes] = useState("");
   const [mostrarPix, setMostrarPix] = useState(false);
   const [dialogPlanoOpen, setDialogPlanoOpen] = useState(false);
+  const [dialogCaixaFechadoOpen, setDialogCaixaFechadoOpen] = useState(false);
+  const [validationError, setValidationError] = useState<{title: string, message: string} | null>(null);
   const [buscaPlano, setBuscaPlano] = useState("");
   const { filialSelecionada, rotuloFilial } = useBranch();
   const navigate = useNavigate();
@@ -86,6 +90,7 @@ const Orders = () => {
   const [produtoSelecionado, setProdutoSelecionado] = useState("");
   const [filialPedido, setFilialPedido] = useState("");
   const [descontoPedido, setDescontoPedido] = useState(0);
+  const [acrescimoPedido, setAcrescimoPedido] = useState(0);
   const [valorFrete, setValorFrete] = useState(0);
   const [qtdSelecionada, setQtdSelecionada] = useState(1);
   const [loading, setLoading] = useState(false);
@@ -112,6 +117,8 @@ const Orders = () => {
   // Recalcular os itens do carrinho ao mudar o plano de pagamento
   useEffect(() => {
     if (itensPedido.length > 0 && listarProdutos.length > 0) {
+      if (pagamentosVenda.length > 0) return; // Travar preço se já iniciou múltiplos pagamentos
+      
       const planoAtivo = listaFormasPagamento.find(fp => String(fp.CODPLPAG || fp.codplpag || fp.codforma || fp.id || fp.codplano) === String(codigoPlano));
       const isCartao = planoAtivo?.tipo_pagamento === "CARTAO";
       
@@ -131,7 +138,7 @@ const Orders = () => {
         return item;
       }));
     }
-  }, [nomePlano, codigoPlano, listarProdutos]);
+  }, [nomePlano, codigoPlano, listarProdutos, pagamentosVenda.length]);
 
   // Motor de Auto-detecção de Kits
   useEffect(() => {
@@ -660,7 +667,7 @@ const Orders = () => {
         return;
       }
       const planoAtivo = listaFormasPagamento.find(fp => String(fp.CODPLPAG || fp.codplpag || fp.codforma || fp.id || fp.codplano) === String(codigoPlano));
-      const isCartao = planoAtivo?.tipo_pagamento === "CARTAO";
+      const isCartao = planoAtivo?.tipo_pagamento === "CARTAO" && pagamentosVenda.length === 0;
       const precoCartao = Number(produto.preco_cartao || 0);
       const precoNormal = Number(produto.preco_calculado || 0);
       const precoFinal = (isCartao && precoCartao > 0) ? precoCartao : precoNormal;
@@ -682,7 +689,7 @@ const Orders = () => {
          return;
        }
        const planoAtivo = listaFormasPagamento.find(fp => String(fp.CODPLPAG || fp.codplpag || fp.codforma || fp.id || fp.codplano) === String(codigoPlano));
-       const isCartao = planoAtivo?.tipo_pagamento === "CARTAO";
+       const isCartao = planoAtivo?.tipo_pagamento === "CARTAO" && pagamentosVenda.length === 0;
        const precoCartao = Number(produtoEncontrado.preco_cartao || 0);
        const precoNormal = Number(produtoEncontrado.preco_calculado || 0);
        const precoFinal = (isCartao && precoCartao > 0) ? precoCartao : precoNormal;
@@ -705,17 +712,7 @@ const Orders = () => {
   };
 
   const subtotalPedido = itensPedido.reduce((s, i) => s + i.preco * i.quantidade, 0);
-  
-  const planoParaCalculo = listaFormasPagamento.find(
-    (fp) => String(fp.CODPLPAG || fp.codplpag || fp.codforma || fp.id || fp.codplano) === String(codigoPlano)
-  );
-
-  let valorAcrescimo = 0;
-  if (planoParaCalculo?.tem_acrescimo && planoParaCalculo?.taxa_acrescimo) {
-    valorAcrescimo = (subtotalPedido * Number(planoParaCalculo.taxa_acrescimo)) / 100;
-  }
-
-  const totalPedido = Number(subtotalPedido) - Number(descontoPedido) - Number(descontoKits) + Number(valorAcrescimo) + Number(valorFrete);
+  const totalPedido = Number(subtotalPedido) - Number(descontoPedido) - Number(descontoKits) + Number(acrescimoPedido) + Number(valorFrete);
 
   const toggleKitAplicado = (kitId: number) => {
     setKitsDetectados(prev => prev.map(k => k.id === kitId ? { ...k, aplicado: !k.aplicado } : k));
@@ -723,28 +720,43 @@ const Orders = () => {
 
   const handleCriarPedido = async () => {
     if (!codigoCliente) {
-      toast.error("Selecione um cliente para o pedido.");
+      setValidationError({ title: "Faltam informações", message: "Por favor, selecione um cliente para o pedido." });
       return;
     }
     if (!codigoVendedor) {
-      toast.error("Selecione um vendedor.");
+      setValidationError({ title: "Faltam informações", message: "Por favor, selecione um vendedor." });
       return;
     }
     if (!filialPedido || filialPedido === "todas") {
-      toast.error("Selecione uma filial específica de destino.");
+      setValidationError({ title: "Faltam informações", message: "Selecione uma filial específica de destino." });
       return;
     }
-    if (!codigoPlano) {
-      toast.error("Selecione um plano de pagamento.");
+    if (!codigoPlano && pagamentosVenda.length === 0) {
+      setValidationError({ title: "Faltam informações", message: "Selecione um plano de pagamento antes de prosseguir." });
       return;
     }
     if (itensPedido.length === 0) {
-      toast.error("Adicione pelo menos um item ao pedido.");
+      setValidationError({ title: "Pedido Vazio", message: "Adicione pelo menos um item ao pedido." });
       return;
     }
 
     try {
       // Separar itens avulsos dos itens que compõem os kits aplicados
+      const subtotalBase = itensPedido.reduce((s, i) => s + i.preco * i.quantidade, 0);
+      const totalDoPedidoFinal = Number(subtotalBase) - Number(descontoPedido) - Number(descontoKits) + Number(acrescimoPedido) + Number(valorFrete);
+
+      if (statusAtualPedido === "FINALIZADO") {
+        const somaPag = pagamentosVenda.reduce((acc, p) => acc + p.valor, 0);
+        if (somaPag === 0 && totalDoPedidoFinal > 0) {
+          setValidationError({ title: "Pagamento não encontrado", message: "Para finalizar a venda, você deve lançar o(s) pagamento(s)." });
+          return;
+        }
+        if (Math.abs(somaPag - totalDoPedidoFinal) > 0.05 && totalDoPedidoFinal > 0) {
+          setValidationError({ title: "Valores Incorretos", message: `A soma dos pagamentos (R$ ${somaPag.toFixed(2)}) não bate com o Total (R$ ${totalDoPedidoFinal.toFixed(2)}). Corrija antes de finalizar.` });
+          return;
+        }
+      }
+
       let itensAvulsos = [...itensPedido];
       const kitsParaEnviar = kitsDetectados.filter(k => k.aplicado).map(k => ({
         kitId: k.id,
@@ -785,12 +797,19 @@ const Orders = () => {
       const payload = {
         codcliente: codigoCliente,
         codvendedor: codigoVendedor,
+        codusur_criou: usuario?.codusur, // Envia o usuário logado
         codfilial: filialPedido,
-        formaPagamento: codigoPlano,
+        formaPagamento: pagamentosVenda.length > 0 ? pagamentosVenda[0].codplano : codigoPlano,
+        pagamentos: pagamentosVenda.map(p => ({
+          codplano_pagamento: Number(p.codplano),
+          valor: p.valor,
+          parcelas: p.parcelas
+        })),
         parcelas: Number(parcelas) || 1,
         observacoes,
         status: statusAtualPedido,
-        desconto: descontoPedido,
+        desconto: Number(descontoPedido) - Number(acrescimoPedido),
+        acrescimo: Number(acrescimoPedido),
         valor_frete: valorFrete,
         produtos: itensAvulsos.map(i => ({
           codproduto: i.produtoId,
@@ -821,6 +840,7 @@ const Orders = () => {
       setNomeVendedor("");
       setItensPedido([]);
       setDescontoPedido(0);
+      setAcrescimoPedido(0);
       setValorFrete(0);
       setCodigoPlano("");
       setNomePlano("");
@@ -828,9 +848,14 @@ const Orders = () => {
       setObservacoes("");
       setFilialPedido("");
 
-    } catch (error) {
+    } catch (error: any) {
       console.error(error);
-      toast.error("Erro ao gravar pedido no banco de dados.");
+      const msg = error.response?.data?.detalhe || error.response?.data?.erro || error.response?.data?.message || "Erro ao gravar pedido no banco de dados.";
+      if (msg.toLowerCase().includes("caixa aberto")) {
+        setDialogCaixaFechadoOpen(true);
+      } else {
+        toast.error(msg);
+      }
     }
   };
 
@@ -882,12 +907,26 @@ const Orders = () => {
     if (vendReq) setNomeVendedor(vendReq.nome);
 
     setFilialPedido(String(pedido.codfilial || pedido.filial || ''));
-    setParcelas(String(pedido.parcelas || 1));
-    setStatusAtualPedido(pedido.status || "EM_DIGITACAO");
-    setCodigoPlano(String(pedido.formaPagamento || ''));
-    setNomePlano(pedido.nomeFormaPagamento || '');
-    setDescontoPedido(pedido.desconto || 0);
-    setValorFrete(pedido.valor_frete || 0);
+      setParcelas(String(pedido.parcelas || 1));
+      setStatusAtualPedido(pedido.status || "EM_DIGITACAO");
+      setCodigoPlano(String(pedido.formaPagamento || ''));
+      setNomePlano(pedido.nomeFormaPagamento || '');
+      setPagamentosVenda(pedido.pagamentos_multiplos ? pedido.pagamentos_multiplos.map((p: any) => ({
+        codplano: String(p.codplano_pagamento),
+        nome: listaFormasPagamento.find(f => String(f.CODPLPAG || f.id || f.codplano) === String(p.codplano_pagamento))?.DESCRICAO || `Plano ${p.codplano_pagamento}`,
+        valor: Number(p.valor),
+        parcelas: 1
+      })) : []);
+      
+      const descBanco = Number(pedido.desconto || 0);
+      if (descBanco < 0) {
+        setDescontoPedido(0);
+        setAcrescimoPedido(Math.abs(descBanco));
+      } else {
+        setDescontoPedido(descBanco);
+        setAcrescimoPedido(0);
+      }
+      setValorFrete(pedido.valor_frete || 0);
     setObservacoes(pedido.observacoes || "");
 
     // Convertendo itens de banco para nosso layout state
@@ -939,9 +978,12 @@ const Orders = () => {
 
           setItensPedido([]);
           setDescontoPedido(0);
+          setAcrescimoPedido(0);
           setValorFrete(0);
           setCodigoPlano("");
           setNomePlano("");
+          setPagamentosVenda([]);
+          setValorPagamentoAtual("");
           setParcelas("1");
           setObservacoes("");
           setStatusAtualPedido("EM_DIGITACAO");
@@ -1413,10 +1455,10 @@ const Orders = () => {
                     </div>
                   ))}
                   {kitsDetectados.length > 0 && (
-                    <div className="border border-purple-200 bg-purple-50 rounded-md p-3 mb-4 mt-2 space-y-2">
-                      <h4 className="text-xs font-bold text-purple-800 uppercase flex items-center gap-1"><PackageOpen className="h-4 w-4" /> Kits Detectados</h4>
+                    <div className="border border-primary/30 bg-primary/10 rounded-md p-3 mb-4 mt-2 space-y-2">
+                      <h4 className="text-xs font-bold text-primary uppercase flex items-center gap-1"><PackageOpen className="h-4 w-4" /> Kits Detectados</h4>
                       {kitsDetectados.map(kit => (
-                        <div key={kit.id} className="flex justify-between items-center bg-white p-2 rounded shadow-sm border border-purple-100">
+                        <div key={kit.id} className="flex justify-between items-center bg-white p-2 rounded shadow-sm border border-primary/20">
                           <div>
                             <p className="text-sm font-semibold text-slate-800">🎉 {kit.nome} {kit.qtd > 1 && `(x${kit.qtd})`}</p>
                             <p className="text-xs text-green-600 font-medium">Economia: R$ {kit.economia.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</p>
@@ -1424,7 +1466,7 @@ const Orders = () => {
                           <Button 
                             size="sm" 
                             variant={kit.aplicado ? "outline" : "default"} 
-                            className={kit.aplicado ? "text-purple-600 border-purple-200 hover:bg-purple-50" : "bg-purple-600 hover:bg-purple-700"}
+                            className={kit.aplicado ? "text-primary border-primary/30 hover:bg-primary/10" : "bg-primary hover:bg-primary/90"}
                             onClick={() => toggleKitAplicado(kit.id)}
                           >
                             {kit.aplicado ? "Remover" : "Aplicar"}
@@ -1454,6 +1496,20 @@ const Orders = () => {
                   </div>
 
                   <div className="flex justify-between font-medium items-center">
+                    <span className="text-sm">Acréscimo Extra (Taxas)</span>
+                    <div className="flex items-center">
+                      <span className="mr-2 text-sm text-muted-foreground">R$</span>
+                      <Input
+                        type="number"
+                        className="w-20 h-8 text-right bg-transparent border-slate-200"
+                        value={acrescimoPedido}
+                        onChange={(e) => setAcrescimoPedido(Number(e.target.value))}
+                        min={0}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="flex justify-between font-medium items-center">
                     <span className="text-sm">Frete (Entrega)</span>
                     <div className="flex items-center">
                       <span className="mr-2 text-sm text-muted-foreground">R$</span>
@@ -1468,19 +1524,13 @@ const Orders = () => {
                   </div>
 
                   {descontoKits > 0 && (
-                    <div className="flex justify-between font-medium items-center text-purple-600">
+                    <div className="flex justify-between font-medium items-center text-primary">
                       <span className="text-sm flex items-center gap-1"><PackageOpen className="h-3 w-3" /> Desconto de Kits</span>
                       <span className="text-sm font-bold">- R$ {descontoKits.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</span>
                     </div>
                   )}
 
                   <div className="border-t border-border pt-2 flex flex-col gap-1">
-                    {valorAcrescimo > 0 && (
-                      <div className="flex justify-between text-sm text-amber-600 font-medium">
-                        <span>Acréscimo ({planoParaCalculo?.taxa_acrescimo}%)</span>
-                        <span>+ R$ {valorAcrescimo.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</span>
-                      </div>
-                    )}
                     <div className="flex justify-between font-bold text-lg">
                       <span>Total Final</span>
                       <span className="text-primary">R$ {(totalPedido || 0).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</span>
@@ -1533,65 +1583,203 @@ const Orders = () => {
               
               const opcoesParcelamento = Array.from({ length: maxRealAllowed }, (_, i) => i + 1);
 
+              const somaPagamentos = pagamentosVenda.reduce((acc, p) => acc + p.valor, 0);
+              const faltaPagar = Math.max(0, totalPedido - somaPagamentos);
+              
+              // Cálculo de acréscimo se o plano tem taxa
+              let valorSugerido = faltaPagar;
+              if (planoSelecionado?.tem_acrescimo && planoSelecionado?.taxa_acrescimo && pagamentosVenda.length > 0) {
+                const taxa = Number(planoSelecionado.taxa_acrescimo);
+                if (taxa > 0 && taxa < 100 && faltaPagar > 0) {
+                  // Cálculo de markup reverso: Gross = Net / (1 - taxa/100)
+                  valorSugerido = faltaPagar / (1 - (taxa / 100));
+                }
+              }
+
               return (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2 md:col-span-1">
-                    <Label>Plano de Pagamento</Label>
-                    <div className="flex gap-2">
+                <div className="space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-12 gap-4 items-end bg-slate-50 p-4 border rounded-md">
+                    <div className="space-y-2 md:col-span-5">
+                      <Label>Plano de Pagamento</Label>
+                      <div className="flex gap-2">
+                        <Input
+                          value={codigoPlano}
+                          onChange={(e) => setCodigoPlano(e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter") {
+                              buscarPlanoPorCodigo(e.currentTarget.value);
+                            }
+                          }}
+                          placeholder="Código"
+                          className="w-24"
+                        />
+                        <Button
+                          type="button"
+                          variant="outline"
+                          onClick={() => setDialogPlanoOpen(true)}
+                          className="px-2"
+                        >
+                          <Search className="h-4 w-4" />
+                        </Button>
+                        <Input
+                          value={nomePlano}
+                          readOnly
+                          placeholder="Nome do Plano"
+                          className="flex-1"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="space-y-2 md:col-span-3">
+                      <Label>Valor</Label>
                       <Input
-                        value={codigoPlano}
-                        onChange={(e) => setCodigoPlano(e.target.value)}
+                        type="number"
+                        placeholder="R$"
+                        value={valorPagamentoAtual !== "" ? valorPagamentoAtual : (valorSugerido > 0 ? valorSugerido.toFixed(2) : "")}
+                        onChange={(e) => setValorPagamentoAtual(e.target.value)}
                         onKeyDown={(e) => {
-                          if (e.key === "Enter") {
-                            buscarPlanoPorCodigo(e.currentTarget.value);
+                          if (e.key === "Enter" && codigoPlano && (valorPagamentoAtual || valorSugerido > 0)) {
+                            const valorAdicionar = Number(valorPagamentoAtual || valorSugerido);
+                            if (valorAdicionar > 0) {
+                              if (valorAdicionar > faltaPagar) {
+                                const acrescimoDesteLancamento = valorAdicionar - faltaPagar;
+                                setAcrescimoPedido(prev => prev + acrescimoDesteLancamento);
+                                setPagamentosVenda([...pagamentosVenda, { codplano: codigoPlano, nome: nomePlano, valor: valorAdicionar, parcelas: Number(parcelas), acrescimo_aplicado: acrescimoDesteLancamento }]);
+                              } else {
+                                setPagamentosVenda([...pagamentosVenda, { codplano: codigoPlano, nome: nomePlano, valor: valorAdicionar, parcelas: Number(parcelas), acrescimo_aplicado: 0 }]);
+                              }
+                              setCodigoPlano("");
+                              setNomePlano("");
+                              setValorPagamentoAtual("");
+                              setParcelas("1");
+                            }
                           }
                         }}
-                        placeholder="Código"
-                        className="w-28"
                       />
+                    </div>
+
+                    {maxRealAllowed > 1 && (
+                      <div className="space-y-2 md:col-span-2">
+                        <Label>Parcelas</Label>
+                        <Select value={parcelas} onValueChange={setParcelas}>
+                          <SelectTrigger>
+                            <SelectValue placeholder="1x" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {opcoesParcelamento.map(n => (
+                              <SelectItem key={n} value={String(n)}>
+                                {n}x
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    )}
+
+                    <div className="md:col-span-2">
                       <Button
                         type="button"
-                        variant="outline"
-                        onClick={() => setDialogPlanoOpen(true)}
+                        className="w-full"
+                        variant="secondary"
+                        disabled={!codigoPlano}
+                        onClick={() => {
+                          const valorAdicionar = Number(valorPagamentoAtual || valorSugerido);
+                          if (valorAdicionar > 0) {
+                            if (valorAdicionar > faltaPagar) {
+                              const acrescimoDesteLancamento = valorAdicionar - faltaPagar;
+                              setAcrescimoPedido(prev => prev + acrescimoDesteLancamento);
+                              setPagamentosVenda([...pagamentosVenda, { codplano: codigoPlano, nome: nomePlano, valor: valorAdicionar, parcelas: Number(parcelas), acrescimo_aplicado: acrescimoDesteLancamento }]);
+                            } else {
+                              setPagamentosVenda([...pagamentosVenda, { codplano: codigoPlano, nome: nomePlano, valor: valorAdicionar, parcelas: Number(parcelas), acrescimo_aplicado: 0 }]);
+                            }
+                            setCodigoPlano("");
+                            setNomePlano("");
+                            setValorPagamentoAtual("");
+                            setParcelas("1");
+                          } else {
+                            toast.error("Insira um valor válido");
+                          }
+                        }}
                       >
-                        ...
+                        + Lançar
                       </Button>
-                      <Input
-                        value={nomePlano}
-                        readOnly
-                        placeholder="Nome do Plano"
-                        className="flex-1"
-                      />
                     </div>
                   </div>
 
-                  {maxRealAllowed > 1 ? (
-                    <div className="space-y-2 md:col-span-1">
-                      <Label>Quantidade de Parcelas</Label>
-                      <Select value={parcelas} onValueChange={setParcelas}>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Selecione..." />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {opcoesParcelamento.map(n => (
-                            <SelectItem key={n} value={String(n)}>
-                              {n}x de R$ {(totalPedido / n).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                  {pagamentosVenda.length > 0 && (
+                    <div className="bg-white border rounded-md overflow-hidden">
+                      <div className="bg-slate-100 px-3 py-2 border-b text-sm font-semibold flex justify-between">
+                        <span>Pagamentos Lançados</span>
+                        <span className="text-primary">Soma: R$ {somaPagamentos.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</span>
+                      </div>
+                      <div className="divide-y">
+                        {pagamentosVenda.map((pag, idx) => (
+                          <div key={idx} className="flex justify-between items-center p-3 text-sm">
+                            <div>
+                              <span className="font-medium">{pag.nome}</span>
+                              <span className="text-muted-foreground ml-2">({pag.parcelas}x)</span>
+                            </div>
+                            <div className="flex items-center gap-3">
+                              <span className="font-bold">R$ {pag.valor.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</span>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  const pagARemover = pagamentosVenda[idx];
+                                  if (pagARemover.acrescimo_aplicado && pagARemover.acrescimo_aplicado > 0) {
+                                    setAcrescimoPedido(prev => Math.max(0, prev - pagARemover.acrescimo_aplicado));
+                                  }
+                                  const novos = [...pagamentosVenda];
+                                  novos.splice(idx, 1);
+                                  setPagamentosVenda(novos);
+                                }}
+                                className="text-destructive hover:text-destructive/80 p-1"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                      {faltaPagar > 0 && (
+                        <div className="bg-red-50 p-3 text-red-700 font-bold text-center border-t border-red-100 flex justify-between">
+                          <span>Falta Pagar:</span>
+                          <span>R$ {faltaPagar.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</span>
+                        </div>
+                      )}
+                      {somaPagamentos > totalPedido && (
+                        <div className="bg-blue-50 p-3 text-blue-700 font-bold text-center border-t border-blue-100 flex justify-between">
+                          <span>Troco:</span>
+                          <span>R$ {(somaPagamentos - totalPedido).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</span>
+                        </div>
+                      )}
                     </div>
-                  ) : null}
+                  )}
                 </div>
               );
             })()}
 
             {(() => {
-              if (!nomePlano.toLowerCase().includes("pix") || totalPedido <= 0) {
+              const pixPayment = pagamentosVenda.find(p => p.nome.toLowerCase().includes("pix"));
+              const isPixSelected = nomePlano.toLowerCase().includes("pix");
+              
+              if (!pixPayment && !isPixSelected) {
                 return null;
               }
               
-              const payload = generatePixPayload(totalPedido);
+              let valorPix = 0;
+              if (pixPayment) {
+                valorPix = pixPayment.valor;
+              } else if (isPixSelected && totalPedido > 0) {
+                const somaPagamentosAtual = pagamentosVenda.reduce((acc, p) => acc + p.valor, 0);
+                valorPix = Math.max(0, totalPedido - somaPagamentosAtual);
+                if (valorPagamentoAtual) {
+                  valorPix = Number(valorPagamentoAtual);
+                }
+              }
+
+              if (valorPix <= 0) return null;
+              
+              const payload = generatePixPayload(valorPix);
               
               return (
                 <div className="flex flex-col items-center justify-center p-4 border-2 border-dashed border-primary/50 bg-primary/5 rounded-lg mt-4 animate-in fade-in zoom-in-95 duration-300">
@@ -1613,7 +1801,7 @@ const Orders = () => {
                         <QRCodeSVG value={payload} size={160} level="M" />
                       </div>
                       
-                      <p className="text-base font-bold text-foreground">Valor: R$ {totalPedido.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</p>
+                      <p className="text-base font-bold text-foreground">Valor: R$ {valorPix.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</p>
                       <p className="text-xs text-muted-foreground mt-1 text-center max-w-[250px]">
                         Peça para o cliente escanear o QR Code acima pelo aplicativo do banco.
                       </p>
@@ -1971,6 +2159,57 @@ const Orders = () => {
         onOpenChange={setScannerOpen} 
         onScan={handleScanProduto} 
       />
+
+      {/* DIALOG CAIXA FECHADO */}
+      <Dialog open={dialogCaixaFechadoOpen} onOpenChange={setDialogCaixaFechadoOpen}>
+        <DialogContent className="max-w-md p-6 text-center">
+          <div className="flex justify-center mb-4">
+            <div className="bg-red-100 p-4 rounded-full">
+              <AlertCircle size={48} className="text-red-600" />
+            </div>
+          </div>
+          <DialogHeader>
+            <DialogTitle className="text-center text-xl">Atenção! Caixa Fechado</DialogTitle>
+          </DialogHeader>
+          <div className="py-4">
+            <p className="text-gray-600">
+              Você precisa ter um caixa aberto para finalizar uma venda e registrar pagamentos.
+            </p>
+            <p className="text-sm text-gray-500 mt-4">
+              Abra seu caixa primeiro ou limpe os pagamentos inseridos para salvar este pedido como "Pendente".
+            </p>
+          </div>
+          <DialogFooter className="sm:justify-center">
+            <Button onClick={() => setDialogCaixaFechadoOpen(false)} className="w-full sm:w-auto bg-primary hover:bg-primary/90">
+              Ok, Entendido
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* DIALOG DE VALIDAÇÃO (Campos Faltando) */}
+      <Dialog open={validationError !== null} onOpenChange={(open) => !open && setValidationError(null)}>
+        <DialogContent className="max-w-md p-6 text-center">
+          <div className="flex justify-center mb-4">
+            <div className="bg-yellow-100 p-4 rounded-full">
+              <AlertCircle size={48} className="text-yellow-600" />
+            </div>
+          </div>
+          <DialogHeader>
+            <DialogTitle className="text-center text-xl">{validationError?.title}</DialogTitle>
+          </DialogHeader>
+          <div className="py-4">
+            <p className="text-gray-600 text-lg">
+              {validationError?.message}
+            </p>
+          </div>
+          <DialogFooter className="sm:justify-center">
+            <Button onClick={() => setValidationError(null)} className="w-full sm:w-auto bg-primary hover:bg-primary/90">
+              Ok, Entendido
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

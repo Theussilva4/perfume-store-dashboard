@@ -83,7 +83,7 @@ const Prices = () => {
   const margem = vendaAtual > 0 ? (lucro / vendaAtual) * 100 : 0;
   const markup = custoAtual > 0 ? (vendaAtual / custoAtual) : 0;
 
-  const margemAlvo = configuracao?.margem_alvo || 40;
+  const margemAlvo = selectedProduct?.margem_padrao_categoria ?? configuracao?.margem_alvo ?? 40;
   const margemMinima = configuracao?.margem_minima || 10;
   const sugestaoVenda = custoAtual > 0 ? custoAtual / (1 - (margemAlvo / 100)) : 0;
 

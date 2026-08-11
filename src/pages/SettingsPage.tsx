@@ -4,8 +4,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
 import logo from "@/assets/logo.png";
+import CaixasConfig from "@/components/CaixasConfig";
 
 const SettingsPage = () => {
   const [form, setForm] = useState({
@@ -20,6 +22,7 @@ const SettingsPage = () => {
     askProductSupplier: true,
     allowBuyFromAnySupplier: true,
     allowProductsWithoutPrice: false,
+    atualizacaoCustoCompra: "PERGUNTAR",
   });
 
   const [isLoading, setIsLoading] = useState(true);
@@ -41,6 +44,7 @@ const SettingsPage = () => {
             askProductSupplier: data.exigir_fornecedor !== false,
             allowBuyFromAnySupplier: data.venda_qualquer_fornecedor !== false,
             allowProductsWithoutPrice: data.venda_sem_preco === true,
+            atualizacaoCustoCompra: data.atualizacao_custo_compra || "PERGUNTAR",
           });
         }
       } catch (error) {
@@ -66,6 +70,7 @@ const SettingsPage = () => {
         exigir_fornecedor: form.askProductSupplier,
         venda_qualquer_fornecedor: form.allowBuyFromAnySupplier,
         venda_sem_preco: form.allowProductsWithoutPrice,
+        atualizacao_custo_compra: form.atualizacaoCustoCompra,
       });
       
       // Keep syncing with localStorage to not break other parts that might rely on it for now
@@ -80,6 +85,7 @@ const SettingsPage = () => {
       localStorage.setItem("askProductSupplier", String(form.askProductSupplier));
       localStorage.setItem("allowBuyFromAnySupplier", String(form.allowBuyFromAnySupplier));
       localStorage.setItem("allowProductsWithoutPrice", String(form.allowProductsWithoutPrice));
+      localStorage.setItem("atualizacaoCustoCompra", form.atualizacaoCustoCompra);
       
       toast.success("Configurações salvas no banco de dados!");
     } catch (error) {
@@ -187,10 +193,35 @@ const SettingsPage = () => {
               onCheckedChange={(checked) => setForm({ ...form, allowProductsWithoutPrice: checked })} 
             />
           </div>
+
+          <div className="flex items-center justify-between pt-2 border-t border-border mt-2">
+            <div className="flex-1">
+              <p className="text-sm font-medium text-foreground">Atualização de Custo (Compra)</p>
+              <p className="text-xs text-muted-foreground">Como o sistema deve atualizar o custo dos produtos ao registrar uma compra com valor diferente.</p>
+            </div>
+            <div className="w-[300px]">
+              <Select
+                value={form.atualizacaoCustoCompra}
+                onValueChange={(val) => setForm({ ...form, atualizacaoCustoCompra: val })}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione..." />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="PERGUNTAR">Perguntar Sempre</SelectItem>
+                  <SelectItem value="CUSTO_MEDIO">Custo Médio Automático</SelectItem>
+                  <SelectItem value="ULTIMO_CUSTO">Último Custo Automático</SelectItem>
+                  <SelectItem value="MANTER">Não Atualizar (Manual)</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
         </div>
 
-        <Button onClick={handleSave}>Salvar Configurações</Button>
+        <Button onClick={handleSave} className="bg-primary hover:bg-primary/90">Salvar Configurações</Button>
       </div>
+
+      <CaixasConfig />
     </div>
   );
 };

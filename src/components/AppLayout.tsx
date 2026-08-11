@@ -3,9 +3,28 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useBranch, filiais } from "@/contexts/BranchContext";
 import logo from "@/assets/logo.png";
 import {
-  LayoutDashboard, Package, FolderOpen, Tag, Warehouse, ArrowDownToLine, ArrowUpFromLine,
-  ClipboardList, Users, BarChart3, Settings, Bell, LogOut, Menu, X, Building2, Truck,
-  DollarSign, Percent, Search, FileText
+  LayoutDashboard,
+  Package,
+  FolderOpen,
+  Tag,
+  Users,
+  Settings,
+  Bell,
+  LogOut,
+  Menu,
+  X,
+  Warehouse,
+  BarChart3,
+  DollarSign,
+  ClipboardList,
+  ArrowDownToLine,
+  ArrowUpFromLine,
+  Percent,
+  Search,
+  FileText,
+  Truck,
+  Wallet,
+  Building2
 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
@@ -50,6 +69,7 @@ const AppLayout = () => {
       label: "Principal",
       items: [
         { label: "Dashboard", key: "/", icon: LayoutDashboard },
+        { label: "Meu Caixa", key: "/meu-caixa", icon: Wallet },
         { label: "Pedidos", key: "/pedidos", icon: ClipboardList, badge: pendingOrdersCount > 0 ? pendingOrdersCount : undefined },
         { label: "Consultar Preço", key: "/consulta-preco", icon: Search },
       ],
@@ -87,6 +107,7 @@ const AppLayout = () => {
       items: [
         { label: "Relatórios", key: "/relatorios", icon: BarChart3 },
         { label: "Analítico de Estoque", key: "/analises/estoque", icon: FileText },
+        { label: "Apuração de Vendas", key: "/analises/vendas", icon: FileText },
       ],
     },
     {

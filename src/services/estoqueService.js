@@ -49,3 +49,5 @@ export async function getExtratoEstoque(produtoId, dataInicial, dataFinal) {
   const res = await api.get(`/estoque/produto/${produtoId}/extrato${query}`);
   return res.data;
 }
+
+// Trigger Vite HMR

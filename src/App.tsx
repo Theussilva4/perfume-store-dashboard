@@ -32,6 +32,9 @@ import Kits from "@/pages/Kits";
 import PaymentPlans from "./pages/PaymentPlans";
 import PriceCheck from "@/pages/PriceCheck";
 import StockAnalytics from "@/pages/StockAnalytics";
+import SalesReport from "@/pages/SalesReport";
+import MeuCaixa from "@/pages/MeuCaixa";
+
 const queryClient = new QueryClient();
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
@@ -78,6 +81,8 @@ const App = () => (
               <Route path="kits" element={<Kits />} />
               <Route path="relatorios" element={<Reports />} />
               <Route path="analises/estoque" element={<StockAnalytics />} />
+              <Route path="analises/vendas" element={<SalesReport />} />
+              <Route path="meu-caixa" element={<MeuCaixa />} />
               <Route path="usuarios" element={<Users />} />
               <Route path="alertas" element={<Alerts />} />
               <Route path="configuracoes" element={<SettingsPage />} />

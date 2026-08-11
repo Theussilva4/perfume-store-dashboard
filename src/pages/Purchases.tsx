@@ -42,6 +42,11 @@ const Purchases = () => {
   
   const [filialDestino, setFilialDestino] = useState("");
   const [statusCompra, setStatusCompra] = useState("CONCLUIDA");
+
+  // Variaveis para Modal de Variação de Custo
+  const [dialogCustoOpen, setDialogCustoOpen] = useState(false);
+  const [variacoesCusto, setVariacoesCusto] = useState<any[]>([]);
+  const [escolhasCusto, setEscolhasCusto] = useState<Record<string, "MANTER" | "ATUALIZAR" | "MEDIO">>({});
   
   const [produtoBusca, setProdutoBusca] = useState("");
   const [produtoSelecionadoId, setProdutoSelecionadoId] = useState("");
@@ -142,20 +147,22 @@ const Purchases = () => {
     if (!produto) return;
     
     const existente = itensCompra.find(i => i.codproduto === String(produto.codproduto));
-    if (existente) {
-      setItensCompra(prev => prev.map(i => 
-        i.codproduto === String(produto.codproduto) 
-          ? { ...i, quantidade: i.quantidade + qtdSelecionada, custo_unitario: custoSelecionado } 
-          : i
-      ));
-    } else {
-      setItensCompra(prev => [...prev, {
-        codproduto: String(produto.codproduto),
-        nomeProduto: produto.descricao,
-        quantidade: qtdSelecionada,
-        custo_unitario: custoSelecionado
-      }]);
-    }
+      if (existente) {
+        setItensCompra(prev => prev.map(i => 
+          i.codproduto === String(produto.codproduto) 
+            ? { ...i, quantidade: i.quantidade + qtdSelecionada, custo_unitario: custoSelecionado } 
+            : i
+        ));
+      } else {
+        setItensCompra(prev => [...prev, {
+          codproduto: String(produto.codproduto),
+          nomeProduto: produto.descricao,
+          quantidade: qtdSelecionada,
+          custo_unitario: custoSelecionado,
+          custo_atual: produto.custo || 0,
+          estoque_atual: produto.estoque || 0
+        }]);
+      }
     
     setProdutoBusca("");
     setProdutoSelecionadoId("");
@@ -178,6 +185,26 @@ const Purchases = () => {
     if (itensCompra.length === 0) return toast.error("Adicione itens");
     
     setIsSubmitting(true);
+    const atualizacaoCustoCompra = localStorage.getItem("atualizacaoCustoCompra") || "PERGUNTAR";
+
+    if (tipoEntrada === "COMPRA" && atualizacaoCustoCompra === "PERGUNTAR") {
+      const variacoes = itensCompra.filter(item => Number(item.custo_unitario) !== Number(item.custo_atual));
+      if (variacoes.length > 0) {
+        setVariacoesCusto(variacoes);
+        const inicialEscolhas: Record<string, "MANTER" | "ATUALIZAR" | "MEDIO"> = {};
+        variacoes.forEach(v => inicialEscolhas[v.codproduto] = "MANTER");
+        setEscolhasCusto(inicialEscolhas);
+        setDialogCustoOpen(true);
+        setIsSubmitting(false);
+        return; // Interrompe para esperar a decisao do usuario
+      }
+    }
+    
+    await enviarCompraPayload();
+  };
+
+  const enviarCompraPayload = async (atualizacoesCusto?: any[]) => {
+    setIsSubmitting(true);
     try {
       if (tipoEntrada === "COMPRA") {
         const payload = {
@@ -188,7 +215,8 @@ const Purchases = () => {
             codproduto: parseInt(i.codproduto),
             quantidade: Number(i.quantidade),
             custo_unitario: Number(i.custo_unitario)
-          }))
+          })),
+          atualizacoesCusto
         };
         await createCompra(payload);
         toast.success("Compra registrada com sucesso!");
@@ -213,12 +241,29 @@ const Purchases = () => {
       setItensCompra([]);
       setDialogOpen(false);
       carregarDados();
-    } catch (error) {
-      console.error(error);
-      toast.error("Erro ao registrar compra");
+    } catch (e) {
+      toast.error("Erro ao registrar");
     } finally {
       setIsSubmitting(false);
     }
+  };
+
+  const confirmarVariacoesCusto = async () => {
+    const atualizacoesCusto = variacoesCusto.map(v => {
+      const metodo = escolhasCusto[v.codproduto];
+      let novo_custo = v.custo_atual;
+      if (metodo === "ATUALIZAR") novo_custo = v.custo_unitario;
+      else if (metodo === "MEDIO") {
+        novo_custo = ((v.estoque_atual * v.custo_atual) + (v.quantidade * v.custo_unitario)) / ((v.estoque_atual || 0) + v.quantidade);
+      }
+      return {
+        codproduto: parseInt(v.codproduto),
+        metodo,
+        novo_custo
+      };
+    });
+    setDialogCustoOpen(false);
+    await enviarCompraPayload(atualizacoesCusto);
   };
 
   const abrirDetalhes = async (compra: any) => {
@@ -270,6 +315,63 @@ const Purchases = () => {
         <Button onClick={() => setDialogOpen(true)}>
           <Plus className="h-4 w-4 mr-2" /> Nova Compra
         </Button>
+
+        {/* DIALOG VARIACOES DE CUSTO */}
+        <Dialog open={dialogCustoOpen} onOpenChange={setDialogCustoOpen}>
+          <DialogContent className="max-w-2xl">
+            <DialogHeader>
+              <DialogTitle>Variação de Custo Encontrada</DialogTitle>
+            </DialogHeader>
+            <div className="py-4">
+              <p className="text-sm text-muted-foreground mb-4">
+                Os produtos abaixo possuem custo diferente do cadastrado no sistema. Escolha como atualizar:
+              </p>
+              <div className="space-y-4 max-h-80 overflow-y-auto pr-2">
+                {variacoesCusto.map(item => (
+                  <div key={item.codproduto} className="border p-4 rounded-md space-y-2">
+                    <p className="font-semibold">{item.nomeProduto}</p>
+                    <div className="flex gap-4 text-sm text-muted-foreground mb-2">
+                      <span>Custo Atual: <strong className="text-foreground">R$ {Number(item.custo_atual).toLocaleString('pt-BR', {minimumFractionDigits:2})}</strong></span>
+                      <span>Novo Custo (NF): <strong className="text-orange-500">R$ {Number(item.custo_unitario).toLocaleString('pt-BR', {minimumFractionDigits:2})}</strong></span>
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                      <Button 
+                        type="button"
+                        variant={escolhasCusto[item.codproduto] === "MEDIO" ? "default" : "outline"} 
+                        onClick={() => setEscolhasCusto(prev => ({...prev, [item.codproduto]: "MEDIO"}))}
+                        className="text-xs"
+                      >
+                        Custo Médio
+                      </Button>
+                      <Button 
+                        type="button"
+                        variant={escolhasCusto[item.codproduto] === "ATUALIZAR" ? "default" : "outline"} 
+                        onClick={() => setEscolhasCusto(prev => ({...prev, [item.codproduto]: "ATUALIZAR"}))}
+                        className="text-xs"
+                      >
+                        Usar Novo Custo
+                      </Button>
+                      <Button 
+                        type="button"
+                        variant={escolhasCusto[item.codproduto] === "MANTER" ? "default" : "outline"} 
+                        onClick={() => setEscolhasCusto(prev => ({...prev, [item.codproduto]: "MANTER"}))}
+                        className="text-xs"
+                      >
+                        Manter Atual
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setDialogCustoOpen(false)} disabled={isSubmitting}>Cancelar</Button>
+              <Button onClick={confirmarVariacoesCusto} disabled={isSubmitting}>
+                Confirmar e Registrar Compra
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
 
       <div className="flex flex-col sm:flex-row gap-3">
