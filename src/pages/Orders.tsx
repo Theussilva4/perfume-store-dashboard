@@ -1588,7 +1588,7 @@ const Orders = () => {
               
               // Cálculo de acréscimo se o plano tem taxa
               let valorSugerido = faltaPagar;
-              if (planoSelecionado?.tem_acrescimo && planoSelecionado?.taxa_acrescimo && pagamentosVenda.length > 0) {
+              if (planoSelecionado?.tem_acrescimo && planoSelecionado?.taxa_acrescimo) {
                 const taxa = Number(planoSelecionado.taxa_acrescimo);
                 if (taxa > 0 && taxa < 100 && faltaPagar > 0) {
                   // Cálculo de markup reverso: Gross = Net / (1 - taxa/100)
