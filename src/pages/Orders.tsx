@@ -749,7 +749,9 @@ const Orders = () => {
       // Se for pagamento único, recalcula o acréscimo dinamicamente baseado no plano selecionado
       let acrescimoFinal = Number(acrescimoPedido);
       if (!isMultiPagamento && codigoPlano) {
-        const planoSelecionado = formasPagamento.find(p => String(p.codigo) === String(codigoPlano));
+        const planoSelecionado = listaFormasPagamento.find(
+          (p) => String(p.CODPLPAG || p.codplpag || p.codforma || p.id || p.codplano) === String(codigoPlano)
+        );
         if (planoSelecionado?.tem_acrescimo) {
           const subtotalCartao = itensPedido.reduce((acc, item) => acc + (Number(item.preco_cartao) || Number(item.preco)) * item.quantidade, 0);
           acrescimoFinal = subtotalCartao - subtotalBase;
