@@ -290,7 +290,37 @@ export default function MeuCaixa() {
             Extrato de Movimentações
           </h3>
         </div>
-        <div className="overflow-x-auto">
+        {/* VISÃO MOBILE: Cards */}
+        <div className="md:hidden divide-y divide-gray-100">
+          {extrato.map(mov => (
+            <div key={mov.codmovimento} className="p-4 space-y-2 bg-white hover:bg-gray-50">
+              <div className="flex justify-between items-start gap-2">
+                <div className="font-medium text-sm text-gray-900 flex-1">{mov.categoria}</div>
+                <div className={`text-sm font-bold whitespace-nowrap ${mov.tipo === 'ENTRADA' ? 'text-green-600' : 'text-red-600'}`}>
+                  {mov.tipo === 'ENTRADA' ? '+' : '-'} R$ {Number(mov.valor).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                </div>
+              </div>
+              <div className="flex justify-between items-center text-xs text-gray-500">
+                <span>{new Date(mov.data_movimento).toLocaleTimeString('pt-BR')}</span>
+                <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full font-medium ${mov.tipo === 'ENTRADA' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+                  {mov.tipo === 'ENTRADA' ? <ArrowDownCircle size={12} /> : <ArrowUpCircle size={12} />}
+                  {mov.tipo}
+                </span>
+              </div>
+              {mov.observacao && (
+                <div className="text-xs text-gray-500 italic mt-1 pt-2 border-t border-gray-50">{mov.observacao}</div>
+              )}
+            </div>
+          ))}
+          {extrato.length === 0 && (
+            <div className="p-6 text-center text-gray-500 text-sm">
+              Nenhuma movimentação neste caixa ainda.
+            </div>
+          )}
+        </div>
+
+        {/* VISÃO DESKTOP: Tabela */}
+        <div className="hidden md:block overflow-x-auto">
           <table className="w-full">
             <thead className="bg-gray-50">
               <tr>
@@ -318,7 +348,7 @@ export default function MeuCaixa() {
                   <td className="px-6 py-4 text-sm font-medium text-gray-900">
                     {mov.categoria}
                   </td>
-                  <td className="px-6 py-4 text-sm text-gray-500">
+                  <td className="px-6 py-4 text-sm text-gray-500 max-w-[200px] truncate" title={mov.observacao || ''}>
                     {mov.observacao || '-'}
                   </td>
                   <td className={`px-6 py-4 text-sm font-bold text-right ${
