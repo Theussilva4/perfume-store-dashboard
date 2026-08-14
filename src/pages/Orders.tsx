@@ -1652,14 +1652,15 @@ const Orders = () => {
                   }
                 } else {
                   // PRECO_FIXO behavior
+                  const subtotalCartao = itensPedido.reduce((acc, item) => acc + (Number(item.preco_cartao) || Number(item.preco)) * item.quantidade, 0);
+                  const diferencaCartaoTotal = subtotalCartao - subtotalPedido; 
+                  
                   if (pagamentosVenda.length === 0) {
-                    const subtotalCartao = itensPedido.reduce((acc, item) => acc + (Number(item.preco_cartao) || Number(item.preco)) * item.quantidade, 0);
-                    const diferencaCartao = subtotalCartao - subtotalPedido; 
-                    valorSugerido = faltaPagar + diferencaCartao;
+                    valorSugerido = faltaPagar + diferencaCartaoTotal;
                   } else {
-                    if (taxaAtual > 0 && taxaAtual < 100 && faltaPagar > 0) {
-                      valorSugerido = faltaPagar / (1 - (taxaAtual / 100));
-                    }
+                    const baseTotal = Number(subtotalPedido) - Number(descontoPedido) - Number(descontoKits) + Number(valorFrete);
+                    const proporcao = baseTotal > 0 ? (faltaPagar / baseTotal) : 0;
+                    valorSugerido = faltaPagar + (diferencaCartaoTotal * proporcao);
                   }
                 }
               }
