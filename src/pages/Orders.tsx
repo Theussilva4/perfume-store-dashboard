@@ -1618,17 +1618,18 @@ const Orders = () => {
               const somaPagamentos = pagamentosVenda.reduce((acc, p) => acc + p.valor, 0);
               const faltaPagar = Math.max(0, totalPedido - somaPagamentos);
               
-              // Cálculo de acréscimo se o plano tem taxa
+              // Cálculo de acréscimo se o plano tem taxa ou for cartão
               let valorSugerido = faltaPagar;
               let taxaAtual = 0;
-              if (planoSelecionado?.tem_acrescimo) {
+              const isCartao = planoSelecionado?.tipo_pagamento === 'CARTAO_CREDITO' || planoSelecionado?.tipo_pagamento === 'CARTAO_DEBITO';
+              if (planoSelecionado?.tem_acrescimo || isCartao) {
                 taxaAtual = Number(planoSelecionado?.taxa_acrescimo || 0);
                 
                 // Sobrescreve com regra específica da bandeira/parcela se PERCENTUAL
-                if (modoCobrancaCartao === "PERCENTUAL" && planoSelecionado.regras_parcelamento) {
+                if (modoCobrancaCartao === "PERCENTUAL" && planoSelecionado?.regras_parcelamento) {
                   try {
                     const parsed = JSON.parse(planoSelecionado.regras_parcelamento);
-                    let regrasParaUso = [];
+                    let regrasParaUso: any = [];
                     if (parsed && parsed.bandeiras && bandeiraSelecionada) {
                        regrasParaUso = parsed.bandeiras[bandeiraSelecionada] || [];
                     } else if (Array.isArray(parsed)) {
@@ -1644,8 +1645,6 @@ const Orders = () => {
                   } catch(e){}
                 }
 
-                if (taxaAtual > 0) {
-                  const taxa = taxaAtual;
                 // Cálculo do valor sugerido com acréscimo
                 if (modoCobrancaCartao === "PERCENTUAL") {
                   if (taxaAtual > 0 && taxaAtual < 100 && faltaPagar > 0) {
@@ -1662,7 +1661,6 @@ const Orders = () => {
                       valorSugerido = faltaPagar / (1 - (taxaAtual / 100));
                     }
                   }
-                }
                 }
               }
 
@@ -1750,7 +1748,8 @@ const Orders = () => {
                                 } catch(e){}
                               }
 
-                              if (planoSelecionado?.tem_acrescimo && taxaUsada > 0) {
+                              const isCartao = planoSelecionado?.tipo_pagamento === 'CARTAO_CREDITO' || planoSelecionado?.tipo_pagamento === 'CARTAO_DEBITO';
+                              if ((planoSelecionado?.tem_acrescimo || isCartao) && (taxaUsada > 0 || modoCobrancaCartao !== "PERCENTUAL")) {
                                 const taxa = taxaUsada;
                                 
                                 // Se for pagamento único usando o valor exato do cartão
@@ -1759,7 +1758,12 @@ const Orders = () => {
                                 } else {
                                   // Pagamento split (ou valor menor/maior informado) - juros proporcional
                                   // Gross = Net + Acrescimo  => Net = Gross * (1 - taxa/100) => Acrescimo = Gross * (taxa/100)
-                                  acrescimoDesteLancamento = valorAdicionar * (taxa / 100);
+                                  if (modoCobrancaCartao === "PERCENTUAL") {
+                                    acrescimoDesteLancamento = valorAdicionar * (taxa / 100);
+                                  } else {
+                                    // Para modo Tabela Cartão, o sugerido já tem o juro da tabela. Apenas pegamos a proporção
+                                    acrescimoDesteLancamento = (valorAdicionar / valorSugerido) * (valorSugerido - faltaPagar);
+                                  }
                                   if (Number(valorAdicionar.toFixed(2)) === Number(valorSugerido.toFixed(2))) {
                                     acrescimoDesteLancamento = valorSugerido - faltaPagar;
                                   }
@@ -1828,12 +1832,17 @@ const Orders = () => {
                               } catch(e){}
                             }
 
-                            if (planoSelecionado?.tem_acrescimo && taxaUsada > 0) {
+                            const isCartao = planoSelecionado?.tipo_pagamento === 'CARTAO_CREDITO' || planoSelecionado?.tipo_pagamento === 'CARTAO_DEBITO';
+                            if ((planoSelecionado?.tem_acrescimo || isCartao) && (taxaUsada > 0 || modoCobrancaCartao !== "PERCENTUAL")) {
                               const taxa = taxaUsada;
                               if (pagamentosVenda.length === 0 && Number(valorAdicionar.toFixed(2)) === Number(valorSugerido.toFixed(2))) {
                                 acrescimoDesteLancamento = valorSugerido - faltaPagar;
                               } else {
-                                acrescimoDesteLancamento = valorAdicionar * (taxa / 100);
+                                if (modoCobrancaCartao === "PERCENTUAL") {
+                                  acrescimoDesteLancamento = valorAdicionar * (taxa / 100);
+                                } else {
+                                  acrescimoDesteLancamento = (valorAdicionar / valorSugerido) * (valorSugerido - faltaPagar);
+                                }
                                 if (Number(valorAdicionar.toFixed(2)) === Number(valorSugerido.toFixed(2))) {
                                   acrescimoDesteLancamento = valorSugerido - faltaPagar;
                                 }
