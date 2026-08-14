@@ -271,53 +271,102 @@ export default function Expirations() {
           </div>
 
           <TabsContent value="rastreados" className="p-0 m-0">
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b bg-muted/30">
-                    <th className="px-4 py-3 text-left font-medium">Produto</th>
-                    <th className="px-4 py-3 text-left font-medium">Lote</th>
-                    <th className="px-4 py-3 text-center font-medium">Qtd</th>
-                    <th className="px-4 py-3 text-center font-medium">Validade</th>
-                    <th className="px-4 py-3 text-center font-medium">Status</th>
-                    <th className="px-4 py-3 text-right font-medium">Ações</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-border">
-                  {lotesFiltrados.length === 0 ? (
-                    <tr><td colSpan={6} className="text-center py-8 text-muted-foreground">Nenhum lote encontrado</td></tr>
-                  ) : (
-                    lotesFiltrados.map((lote) => (
-                      <tr key={lote.id} className="hover:bg-muted/20">
-                        <td className="px-4 py-3 font-medium">
-                          {lote.msproduto?.descricao}
-                          <div className="text-xs text-muted-foreground">Cód: {lote.codproduto}</div>
-                        </td>
-                        <td className="px-4 py-3 text-muted-foreground font-mono">{lote.lote}</td>
-                        <td className="px-4 py-3 text-center font-semibold">{lote.quantidade}</td>
-                        <td className="px-4 py-3 text-center font-medium">{formatarData(lote.validade)}</td>
-                        <td className="px-4 py-3 text-center">{getStatusBadge(lote.validade)}</td>
-                        <td className="px-4 py-3 text-right">
-                          <Button 
-                            variant="destructive" 
-                            size="sm"
-                            onClick={() => {
-                              setLoteSelecionado(lote);
-                              setDescarteQtd(1);
-                              setDescarteMotivo("");
-                              setDescarteObs("");
-                              setDialogDescarteOpen(true);
-                            }}
-                          >
-                            <Trash2 className="h-4 w-4 sm:mr-2" />
-                            <span className="hidden sm:inline">Descartar</span>
-                          </Button>
-                        </td>
-                      </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
+            <div className="w-full">
+              {/* Mobile View */}
+              <div className="md:hidden divide-y divide-border">
+                {lotesFiltrados.length === 0 ? (
+                  <div className="text-center py-8 text-muted-foreground">Nenhum lote encontrado</div>
+                ) : (
+                  lotesFiltrados.map((lote) => (
+                    <div key={lote.id} className="p-4 space-y-3 bg-white">
+                      <div className="flex justify-between items-start gap-2">
+                        <div>
+                          <div className="font-medium text-sm">{lote.msproduto?.descricao}</div>
+                          <div className="text-xs text-muted-foreground">Cód: {lote.codproduto} | Lote: {lote.lote}</div>
+                        </div>
+                        {getStatusBadge(lote.validade)}
+                      </div>
+                      
+                      <div className="flex justify-between items-center bg-muted/20 p-2 rounded-md">
+                        <div className="text-sm">
+                          <span className="text-muted-foreground mr-2">Validade:</span>
+                          <span className="font-medium">{formatarData(lote.validade)}</span>
+                        </div>
+                        <div className="text-sm">
+                          <span className="text-muted-foreground mr-2">Qtd:</span>
+                          <span className="font-bold">{lote.quantidade}</span>
+                        </div>
+                      </div>
+
+                      <Button 
+                        variant="destructive" 
+                        size="sm"
+                        className="w-full"
+                        onClick={() => {
+                          setLoteSelecionado(lote);
+                          setDescarteQtd(1);
+                          setDescarteMotivo("");
+                          setDescarteObs("");
+                          setDialogDescarteOpen(true);
+                        }}
+                      >
+                        <Trash2 className="h-4 w-4 mr-2" />
+                        Descartar Lote
+                      </Button>
+                    </div>
+                  ))
+                )}
+              </div>
+
+              {/* Desktop View */}
+              <div className="hidden md:block overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b bg-muted/30">
+                      <th className="px-4 py-3 text-left font-medium">Produto</th>
+                      <th className="px-4 py-3 text-left font-medium">Lote</th>
+                      <th className="px-4 py-3 text-center font-medium">Qtd</th>
+                      <th className="px-4 py-3 text-center font-medium">Validade</th>
+                      <th className="px-4 py-3 text-center font-medium">Status</th>
+                      <th className="px-4 py-3 text-right font-medium">Ações</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-border">
+                    {lotesFiltrados.length === 0 ? (
+                      <tr><td colSpan={6} className="text-center py-8 text-muted-foreground">Nenhum lote encontrado</td></tr>
+                    ) : (
+                      lotesFiltrados.map((lote) => (
+                        <tr key={lote.id} className="hover:bg-muted/20">
+                          <td className="px-4 py-3 font-medium">
+                            {lote.msproduto?.descricao}
+                            <div className="text-xs text-muted-foreground">Cód: {lote.codproduto}</div>
+                          </td>
+                          <td className="px-4 py-3 text-muted-foreground font-mono">{lote.lote}</td>
+                          <td className="px-4 py-3 text-center font-semibold">{lote.quantidade}</td>
+                          <td className="px-4 py-3 text-center font-medium">{formatarData(lote.validade)}</td>
+                          <td className="px-4 py-3 text-center">{getStatusBadge(lote.validade)}</td>
+                          <td className="px-4 py-3 text-right">
+                            <Button 
+                              variant="destructive" 
+                              size="sm"
+                              onClick={() => {
+                                setLoteSelecionado(lote);
+                                setDescarteQtd(1);
+                                setDescarteMotivo("");
+                                setDescarteObs("");
+                                setDialogDescarteOpen(true);
+                              }}
+                            >
+                              <Trash2 className="h-4 w-4 sm:mr-2" />
+                              <span className="hidden sm:inline">Descartar</span>
+                            </Button>
+                          </td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
             </div>
           </TabsContent>
 
@@ -334,50 +383,102 @@ export default function Expirations() {
                   Produtos que controlam validade e possuem saldo global no estoque maior do que o saldo rastreado em lotes.
                 </div>
                 <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b bg-muted/30">
-                    <th className="px-4 py-3 text-left font-medium">Produto</th>
-                    <th className="px-4 py-3 text-center font-medium">Estoque Total</th>
-                    <th className="px-4 py-3 text-center font-medium">Já Rastreado</th>
-                    <th className="px-4 py-3 text-center font-medium text-orange-600">Pendente</th>
-                    <th className="px-4 py-3 text-right font-medium">Ações</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-border">
-                  {pendenciasFiltradas.length === 0 ? (
-                    <tr><td colSpan={5} className="text-center py-8 text-muted-foreground">Nenhuma pendência encontrada. Parabéns! 🎉</td></tr>
-                  ) : (
-                    pendenciasFiltradas.map((pend) => (
-                      <tr key={pend.codproduto} className="hover:bg-muted/20">
-                        <td className="px-4 py-3 font-medium">
-                          {pend.msproduto?.descricao}
-                          <div className="text-xs text-muted-foreground">Cód: {pend.codproduto}</div>
-                        </td>
-                        <td className="px-4 py-3 text-center font-medium">{pend.quantidade}</td>
-                        <td className="px-4 py-3 text-center text-muted-foreground">{pend.qtd_rastreada}</td>
-                        <td className="px-4 py-3 text-center font-bold text-orange-600">{pend.qtd_pendente}</td>
-                        <td className="px-4 py-3 text-right">
-                          <Button 
-                            variant="default" 
-                            size="sm"
-                            onClick={() => {
-                              setPendenciaSelecionada(pend);
-                              setAtribQtd(pend.qtd_pendente);
-                              setAtribLote("");
-                              setAtribValidade("");
-                              setDialogAtribuirOpen(true);
-                            }}
-                          >
-                            <Plus className="h-4 w-4 mr-2" />
-                            Atribuir Lote
-                          </Button>
-                        </td>
-                      </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
+            <div className="w-full">
+              {/* Mobile View */}
+              <div className="md:hidden divide-y divide-border">
+                {pendenciasFiltradas.length === 0 ? (
+                  <div className="text-center py-8 text-muted-foreground">Nenhuma pendência encontrada. Parabéns! 🎉</div>
+                ) : (
+                  pendenciasFiltradas.map((pend) => (
+                    <div key={pend.codproduto} className="p-4 space-y-3 bg-white">
+                      <div>
+                        <div className="font-medium text-sm">{pend.msproduto?.descricao}</div>
+                        <div className="text-xs text-muted-foreground">Cód: {pend.codproduto}</div>
+                      </div>
+                      
+                      <div className="grid grid-cols-3 gap-2 bg-muted/20 p-2 rounded-md text-center">
+                        <div className="flex flex-col">
+                          <span className="text-xs text-muted-foreground">Estoque</span>
+                          <span className="font-medium text-sm">{pend.quantidade}</span>
+                        </div>
+                        <div className="flex flex-col border-x border-border">
+                          <span className="text-xs text-muted-foreground">Rastreado</span>
+                          <span className="font-medium text-sm text-muted-foreground">{pend.qtd_rastreada}</span>
+                        </div>
+                        <div className="flex flex-col">
+                          <span className="text-xs text-muted-foreground text-orange-600">Pendente</span>
+                          <span className="font-bold text-sm text-orange-600">{pend.qtd_pendente}</span>
+                        </div>
+                      </div>
+
+                      <Button 
+                        variant="default" 
+                        size="sm"
+                        className="w-full"
+                        onClick={() => {
+                          setPendenciaSelecionada(pend);
+                          setAtribQtd(pend.qtd_pendente);
+                          setAtribLote("");
+                          setAtribValidade("");
+                          setDialogAtribuirOpen(true);
+                        }}
+                      >
+                        <Plus className="h-4 w-4 mr-2" />
+                        Atribuir Lote
+                      </Button>
+                    </div>
+                  ))
+                )}
+              </div>
+
+              {/* Desktop View */}
+              <div className="hidden md:block overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b bg-muted/30">
+                      <th className="px-4 py-3 text-left font-medium">Produto</th>
+                      <th className="px-4 py-3 text-center font-medium">Estoque Total</th>
+                      <th className="px-4 py-3 text-center font-medium">Já Rastreado</th>
+                      <th className="px-4 py-3 text-center font-medium text-orange-600">Pendente</th>
+                      <th className="px-4 py-3 text-right font-medium">Ações</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-border">
+                    {pendenciasFiltradas.length === 0 ? (
+                      <tr><td colSpan={5} className="text-center py-8 text-muted-foreground">Nenhuma pendência encontrada. Parabéns! 🎉</td></tr>
+                    ) : (
+                      pendenciasFiltradas.map((pend) => (
+                        <tr key={pend.codproduto} className="hover:bg-muted/20">
+                          <td className="px-4 py-3 font-medium">
+                            {pend.msproduto?.descricao}
+                            <div className="text-xs text-muted-foreground">Cód: {pend.codproduto}</div>
+                          </td>
+                          <td className="px-4 py-3 text-center font-medium">{pend.quantidade}</td>
+                          <td className="px-4 py-3 text-center text-muted-foreground">{pend.qtd_rastreada}</td>
+                          <td className="px-4 py-3 text-center font-bold text-orange-600">{pend.qtd_pendente}</td>
+                          <td className="px-4 py-3 text-right">
+                            <Button 
+                              variant="default" 
+                              size="sm"
+                              onClick={() => {
+                                setPendenciaSelecionada(pend);
+                                setAtribQtd(pend.qtd_pendente);
+                                setAtribLote("");
+                                setAtribValidade("");
+                                setDialogAtribuirOpen(true);
+                              }}
+                            >
+                              <Plus className="h-4 w-4 mr-2" />
+                              Atribuir Lote
+                            </Button>
+                          </td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
             </div>
             </>
             )}
