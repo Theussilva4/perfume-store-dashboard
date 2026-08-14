@@ -26,7 +26,10 @@ const PaymentPlans = () => {
   const [maxParcelas, setMaxParcelas] = useState("1");
   const [valorMinimoParcela, setValorMinimoParcela] = useState("0");
   const [regrasParcelamento, setRegrasParcelamento] = useState<{valor: number, parcelas: number}[]>([]);
+  const [bandeirasCartao, setBandeirasCartao] = useState<Record<string, {parcelas: number, acrescimo_percentual: number, valor_minimo: number}[]>>({});
   const [ativo, setAtivo] = useState(true);
+  const [dialogBandeiraOpen, setDialogBandeiraOpen] = useState(false);
+  const [novaBandeiraNome, setNovaBandeiraNome] = useState("");
 
   const { data: planos = [], isLoading } = useQuery({
     queryKey: ["planos-pagamento"],
@@ -78,6 +81,7 @@ const PaymentPlans = () => {
     setMaxParcelas("1");
     setValorMinimoParcela("0");
     setRegrasParcelamento([]);
+    setBandeirasCartao({});
     setAtivo(true);
     setIsModalOpen(true);
   };
@@ -92,14 +96,21 @@ const PaymentPlans = () => {
     setValorMinimoParcela(String(plano.valor_minimo_parcela || 0));
     
     let parsedRegras = [];
+    let newBandeiras = {};
     if (plano.regras_parcelamento) {
       try {
-        parsedRegras = JSON.parse(plano.regras_parcelamento);
+        const parsed = JSON.parse(plano.regras_parcelamento);
+        if (parsed && !Array.isArray(parsed) && parsed.bandeiras) {
+          newBandeiras = parsed.bandeiras;
+        } else if (Array.isArray(parsed)) {
+          parsedRegras = parsed;
+        }
       } catch (e) {
         console.error("Erro ao fazer parse de regras_parcelamento");
       }
     }
     setRegrasParcelamento(parsedRegras);
+    setBandeirasCartao(newBandeiras);
     
     setAtivo(plano.ATIVO === "S");
     setIsModalOpen(true);
@@ -119,6 +130,13 @@ const PaymentPlans = () => {
       return;
     }
 
+    let regrasParaSalvar = null;
+    if (tipoPagamento === "CARTAO" && Object.keys(bandeirasCartao).length > 0) {
+      regrasParaSalvar = { bandeiras: bandeirasCartao };
+    } else if (regrasParcelamento.length > 0) {
+      regrasParaSalvar = regrasParcelamento;
+    }
+
     saveMutation.mutate({
       descricao,
       tipo_pagamento: tipoPagamento,
@@ -126,7 +144,7 @@ const PaymentPlans = () => {
       taxa_acrescimo: temAcrescimo ? Number(taxaAcrescimo) : 0,
       max_parcelas: Number(maxParcelas),
       valor_minimo_parcela: Number(valorMinimoParcela) || 0,
-      regras_parcelamento: regrasParcelamento.length > 0 ? regrasParcelamento : null,
+      regras_parcelamento: regrasParaSalvar,
     });
   };
 
@@ -363,68 +381,202 @@ const PaymentPlans = () => {
             )}
             
             <div className="border-t pt-4 mt-2">
-              <div className="flex items-center justify-between mb-3">
-                <div>
-                  <h4 className="font-semibold text-sm">Regras de Parcelamento (Degraus)</h4>
-                  <p className="text-[11px] text-muted-foreground">Opcional. Ex: "A partir de R$ 50 = 2x, A partir de R$ 100 = 3x"</p>
-                </div>
-                <Button 
-                  type="button" 
-                  variant="outline" 
-                  size="sm"
-                  onClick={() => setRegrasParcelamento([...regrasParcelamento, { valor: 0, parcelas: 1 }])}
-                >
-                  <Plus className="h-4 w-4 mr-1" />
-                  Nova Regra
-                </Button>
-              </div>
-              
-              {regrasParcelamento.length > 0 && (
-                <div className="space-y-3 mb-4 max-h-[200px] overflow-y-auto pr-2">
-                  {regrasParcelamento.map((regra, index) => (
-                    <div key={index} className="flex items-end gap-2 bg-muted/20 p-2 rounded-md border border-border/50">
-                      <div className="flex-1 space-y-1">
-                        <Label className="text-[10px] text-muted-foreground">Valor da Compra a partir de (R$)</Label>
-                        <Input 
-                          type="number" 
-                          min="0"
-                          step="0.01"
-                          value={regra.valor || ""}
-                          onChange={(e) => {
-                            const newRegras = [...regrasParcelamento];
-                            newRegras[index].valor = Number(e.target.value);
-                            setRegrasParcelamento(newRegras);
-                          }}
-                        />
-                      </div>
-                      <div className="flex-1 space-y-1">
-                        <Label className="text-[10px] text-muted-foreground">Libera até X parcelas</Label>
-                        <Input 
-                          type="number" 
-                          min="1"
-                          value={regra.parcelas || ""}
-                          onChange={(e) => {
-                            const newRegras = [...regrasParcelamento];
-                            newRegras[index].parcelas = Number(e.target.value);
-                            setRegrasParcelamento(newRegras);
-                          }}
-                        />
-                      </div>
-                      <Button 
-                        type="button" 
-                        variant="ghost" 
-                        className="text-destructive hover:bg-destructive/10 px-2"
-                        onClick={() => {
-                          const newRegras = [...regrasParcelamento];
-                          newRegras.splice(index, 1);
-                          setRegrasParcelamento(newRegras);
-                        }}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
+              {tipoPagamento === "CARTAO" ? (
+                <>
+                  <div className="flex items-center justify-between mb-3">
+                    <div>
+                      <h4 className="font-semibold text-sm">Bandeiras e Taxas por Parcela</h4>
+                      <p className="text-[11px] text-muted-foreground">Configure as taxas de acréscimo para cada bandeira e quantidade de parcelas.</p>
                     </div>
-                  ))}
-                </div>
+                    <Button 
+                      type="button" 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => {
+                        setNovaBandeiraNome("");
+                        setDialogBandeiraOpen(true);
+                      }}
+                    >
+                      <Plus className="h-4 w-4 mr-1" />
+                      Nova Bandeira
+                    </Button>
+                  </div>
+
+                  <div className="space-y-4 max-h-[300px] overflow-y-auto pr-2">
+                    {Object.keys(bandeirasCartao).length === 0 && (
+                      <div className="text-center py-4 text-sm text-muted-foreground bg-muted/20 rounded-md">
+                        Nenhuma bandeira configurada.
+                      </div>
+                    )}
+                    {Object.keys(bandeirasCartao).map((bandeira) => (
+                      <div key={bandeira} className="border border-border/50 rounded-md p-3 bg-muted/10">
+                        <div className="flex items-center justify-between mb-2">
+                          <h5 className="font-semibold text-sm text-primary">{bandeira}</h5>
+                          <div className="flex gap-2">
+                            <Button 
+                              type="button" 
+                              variant="ghost" 
+                              size="sm"
+                              className="h-7 text-xs"
+                              onClick={() => {
+                                const newBandeiras = { ...bandeirasCartao };
+                                newBandeiras[bandeira].push({ parcelas: 1, acrescimo_percentual: 0, valor_minimo: 0 });
+                                setBandeirasCartao(newBandeiras);
+                              }}
+                            >
+                              <Plus className="h-3 w-3 mr-1" />
+                              Regra
+                            </Button>
+                            <Button 
+                              type="button" 
+                              variant="ghost" 
+                              size="sm"
+                              className="h-7 w-7 p-0 text-destructive hover:bg-destructive/10"
+                              onClick={() => {
+                                const newBandeiras = { ...bandeirasCartao };
+                                delete newBandeiras[bandeira];
+                                setBandeirasCartao(newBandeiras);
+                              }}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </div>
+
+                        {bandeirasCartao[bandeira].length > 0 && (
+                          <div className="space-y-2">
+                            {bandeirasCartao[bandeira].map((regra, index) => (
+                              <div key={index} className="flex flex-wrap sm:flex-nowrap items-end gap-2 bg-background p-2 rounded border border-border/50">
+                                <div className="flex-1 space-y-1">
+                                  <Label className="text-[10px] text-muted-foreground">Parcelas</Label>
+                                  <Input 
+                                    type="number" 
+                                    min="1"
+                                    className="h-8 text-xs"
+                                    value={regra.parcelas || ""}
+                                    onChange={(e) => {
+                                      const newBandeiras = { ...bandeirasCartao };
+                                      newBandeiras[bandeira][index].parcelas = Number(e.target.value);
+                                      setBandeirasCartao(newBandeiras);
+                                    }}
+                                  />
+                                </div>
+                                <div className="flex-1 space-y-1">
+                                  <Label className="text-[10px] text-muted-foreground">Acréscimo (%)</Label>
+                                  <Input 
+                                    type="number" 
+                                    min="0"
+                                    step="0.01"
+                                    className="h-8 text-xs"
+                                    value={regra.acrescimo_percentual ?? ""}
+                                    onChange={(e) => {
+                                      const newBandeiras = { ...bandeirasCartao };
+                                      newBandeiras[bandeira][index].acrescimo_percentual = Number(e.target.value);
+                                      setBandeirasCartao(newBandeiras);
+                                    }}
+                                  />
+                                </div>
+                                <div className="flex-1 space-y-1">
+                                  <Label className="text-[10px] text-muted-foreground">Valor Mín (R$)</Label>
+                                  <Input 
+                                    type="number" 
+                                    min="0"
+                                    step="0.01"
+                                    className="h-8 text-xs"
+                                    value={regra.valor_minimo ?? ""}
+                                    onChange={(e) => {
+                                      const newBandeiras = { ...bandeirasCartao };
+                                      newBandeiras[bandeira][index].valor_minimo = Number(e.target.value);
+                                      setBandeirasCartao(newBandeiras);
+                                    }}
+                                  />
+                                </div>
+                                <Button 
+                                  type="button" 
+                                  variant="ghost" 
+                                  className="h-8 w-8 p-0 text-destructive hover:bg-destructive/10"
+                                  onClick={() => {
+                                    const newBandeiras = { ...bandeirasCartao };
+                                    newBandeiras[bandeira].splice(index, 1);
+                                    setBandeirasCartao(newBandeiras);
+                                  }}
+                                >
+                                  <Trash2 className="h-3 w-3" />
+                                </Button>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div className="flex items-center justify-between mb-3">
+                    <div>
+                      <h4 className="font-semibold text-sm">Regras de Parcelamento (Degraus)</h4>
+                      <p className="text-[11px] text-muted-foreground">Opcional. Ex: "A partir de R$ 50 = 2x, A partir de R$ 100 = 3x"</p>
+                    </div>
+                    <Button 
+                      type="button" 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => setRegrasParcelamento([...regrasParcelamento, { valor: 0, parcelas: 1 }])}
+                    >
+                      <Plus className="h-4 w-4 mr-1" />
+                      Nova Regra
+                    </Button>
+                  </div>
+                  
+                  {regrasParcelamento.length > 0 && (
+                    <div className="space-y-3 mb-4 max-h-[200px] overflow-y-auto pr-2">
+                      {regrasParcelamento.map((regra, index) => (
+                        <div key={index} className="flex items-end gap-2 bg-muted/20 p-2 rounded-md border border-border/50">
+                          <div className="flex-1 space-y-1">
+                            <Label className="text-[10px] text-muted-foreground">Valor da Compra a partir de (R$)</Label>
+                            <Input 
+                              type="number" 
+                              min="0"
+                              step="0.01"
+                              value={regra.valor || ""}
+                              onChange={(e) => {
+                                const newRegras = [...regrasParcelamento];
+                                newRegras[index].valor = Number(e.target.value);
+                                setRegrasParcelamento(newRegras);
+                              }}
+                            />
+                          </div>
+                          <div className="flex-1 space-y-1">
+                            <Label className="text-[10px] text-muted-foreground">Libera até X parcelas</Label>
+                            <Input 
+                              type="number" 
+                              min="1"
+                              value={regra.parcelas || ""}
+                              onChange={(e) => {
+                                const newRegras = [...regrasParcelamento];
+                                newRegras[index].parcelas = Number(e.target.value);
+                                setRegrasParcelamento(newRegras);
+                              }}
+                            />
+                          </div>
+                          <Button 
+                            type="button" 
+                            variant="ghost" 
+                            className="text-destructive hover:bg-destructive/10 px-2"
+                            onClick={() => {
+                              const newRegras = [...regrasParcelamento];
+                              newRegras.splice(index, 1);
+                              setRegrasParcelamento(newRegras);
+                            }}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </>
               )}
             </div>
 
@@ -434,6 +586,52 @@ const PaymentPlans = () => {
             <Button onClick={handleSave} disabled={saveMutation.isPending}>
               {saveMutation.isPending ? "Salvando..." : "Salvar"}
             </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={dialogBandeiraOpen} onOpenChange={setDialogBandeiraOpen}>
+        <DialogContent className="sm:max-w-[400px]">
+          <DialogHeader>
+            <DialogTitle>Nova Bandeira</DialogTitle>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="space-y-2">
+              <Label>Nome da Bandeira</Label>
+              <Input 
+                placeholder="Ex: Visa, Mastercard" 
+                value={novaBandeiraNome}
+                onChange={(e) => setNovaBandeiraNome(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    e.preventDefault();
+                    if (novaBandeiraNome.trim() && !bandeirasCartao[novaBandeiraNome.trim()]) {
+                      setBandeirasCartao({
+                        ...bandeirasCartao,
+                        [novaBandeiraNome.trim()]: []
+                      });
+                      setDialogBandeiraOpen(false);
+                    } else if (bandeirasCartao[novaBandeiraNome.trim()]) {
+                      toast.error("Bandeira já existe");
+                    }
+                  }
+                }}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDialogBandeiraOpen(false)}>Cancelar</Button>
+            <Button onClick={() => {
+              if (novaBandeiraNome.trim() && !bandeirasCartao[novaBandeiraNome.trim()]) {
+                setBandeirasCartao({
+                  ...bandeirasCartao,
+                  [novaBandeiraNome.trim()]: []
+                });
+                setDialogBandeiraOpen(false);
+              } else if (bandeirasCartao[novaBandeiraNome.trim()]) {
+                toast.error("Bandeira já existe");
+              }
+            }}>Adicionar</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

@@ -18,7 +18,7 @@ const formataMoeda = (valor: number) => {
 };
 
 export default function Dashboard() {
-  const { rotuloFilial } = useBranch();
+  const { rotuloFilial, filialSelecionada } = useBranch();
   const [metrics, setMetrics] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
@@ -33,7 +33,9 @@ export default function Dashboard() {
     async function carregar() {
       setLoading(true);
       try {
-        const data = await getDashboardMetrics(dataInicial, dataFinal);
+        const codfilial = filialSelecionada !== "todas" ? Number(filialSelecionada) : undefined;
+        
+        const data = await getDashboardMetrics(dataInicial, dataFinal, codfilial);
         setMetrics(data);
       } catch (err) {
         console.error(err);
@@ -43,7 +45,7 @@ export default function Dashboard() {
       }
     }
     carregar();
-  }, [dataInicial, dataFinal]);
+  }, [dataInicial, dataFinal, filialSelecionada]);
 
   if (loading && !metrics) {
     return <div className="p-8 text-center text-muted-foreground animate-pulse">Carregando painel gerencial...</div>;
@@ -66,7 +68,8 @@ export default function Dashboard() {
     graficoVendas = [],
     maisVendidos = [],
     ultimosPedidos = [],
-    estoqueBaixo = []
+    estoqueBaixo = [],
+    fefo = { vencidos: 0, vence30: 0, vence90: 0, pendencias: 0 }
   } = metrics;
 
   return (
@@ -414,18 +417,51 @@ export default function Dashboard() {
             </CardContent>
           </Card>
 
-          {/* Produtos próximos do vencimento (Placeholder) */}
-          <Card className="shadow-sm border-dashed border-2 bg-muted/20">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-lg flex items-center gap-2 text-muted-foreground">
-                ⏰ Validade e Lotes
+          {/* Validades e Lotes (FEFO) */}
+          <Card className="shadow-sm border-indigo-200">
+            <CardHeader className="pb-2 bg-indigo-50/50">
+              <CardTitle className="text-lg flex items-center justify-between text-indigo-800">
+                <div className="flex items-center gap-2">
+                  <Clock className="h-5 w-5" />
+                  Validade e Lotes
+                </div>
               </CardTitle>
             </CardHeader>
-            <CardContent>
-              <div className="flex flex-col items-center justify-center py-6 text-muted-foreground">
-                <Clock className="h-8 w-8 mb-2 opacity-20" />
-                <p className="text-sm font-medium">Em breve: Controle de Vencimento</p>
-                <p className="text-xs text-center mt-1">Este card mostrará os lotes que expiram em 15 ou 30 dias.</p>
+            <CardContent className="pt-4">
+              <div className="space-y-4">
+                
+                {/* Indicadores de Vencimento */}
+                <div className="grid grid-cols-3 gap-2 text-center">
+                  <div className="flex flex-col bg-red-50 p-2 rounded-md border border-red-100">
+                    <span className="text-xl font-bold text-red-600">{fefo.vencidos}</span>
+                    <span className="text-xs text-red-800 font-medium">Vencidos</span>
+                  </div>
+                  <div className="flex flex-col bg-amber-50 p-2 rounded-md border border-amber-100">
+                    <span className="text-xl font-bold text-amber-600">{fefo.vence30}</span>
+                    <span className="text-xs text-amber-800 font-medium">{'<'} 30 dias</span>
+                  </div>
+                  <div className="flex flex-col bg-yellow-50 p-2 rounded-md border border-yellow-100">
+                    <span className="text-xl font-bold text-yellow-600">{fefo.vence90}</span>
+                    <span className="text-xs text-yellow-800 font-medium">{'<'} 90 dias</span>
+                  </div>
+                </div>
+
+                {/* Pendências de Rastreabilidade */}
+                {fefo.pendencias > 0 && (
+                  <div className="flex items-center justify-between p-3 bg-orange-50 border border-orange-200 rounded-md">
+                    <div className="flex items-center gap-2">
+                      <AlertTriangle className="h-5 w-5 text-orange-600" />
+                      <div className="flex flex-col">
+                        <span className="text-sm font-semibold text-orange-800">Lotes Pendentes</span>
+                        <span className="text-xs text-orange-700">Produtos sem rastreio</span>
+                      </div>
+                    </div>
+                    <Badge variant="destructive" className="bg-orange-600">
+                      {fefo.pendencias} itens
+                    </Badge>
+                  </div>
+                )}
+                
               </div>
             </CardContent>
           </Card>

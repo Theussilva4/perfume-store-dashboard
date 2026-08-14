@@ -16,6 +16,7 @@ import Brands from "@/pages/Brands";
 import Stock from "@/pages/Stock";
 import StockEntry from "@/pages/StockEntry";
 import StockExit from "@/pages/StockExit";
+import StockTransfers from "@/pages/StockTransfers";
 import Orders from "./pages/Orders";
 import OrderDetail from "@/pages/OrderDetail";
 import Sellers from "./pages/Sellers";
@@ -34,6 +35,8 @@ import PriceCheck from "@/pages/PriceCheck";
 import StockAnalytics from "@/pages/StockAnalytics";
 import SalesReport from "@/pages/SalesReport";
 import MeuCaixa from "@/pages/MeuCaixa";
+import Conference from "@/pages/Conference";
+import Expirations from "./pages/Expirations";
 
 const queryClient = new QueryClient();
 
@@ -69,6 +72,7 @@ const App = () => (
               <Route path="estoque" element={<Stock />} />
               <Route path="estoque/entradas" element={<StockEntry />} />
               <Route path="estoque/saidas" element={<StockExit />} />
+              <Route path="estoque/transferencias" element={<StockTransfers />} />
               <Route path="pedidos" element={<Orders />} />
               <Route path="pedidos/:id" element={<OrderDetail />} />
               <Route path="consulta-preco" element={<PriceCheck />} />
@@ -76,6 +80,7 @@ const App = () => (
               <Route path="vendedores" element={<Sellers />} />
               <Route path="fornecedores" element={<Suppliers />} />
               <Route path="compras" element={<Purchases />} />
+              <Route path="conferencia" element={<Conference />} />
               <Route path="precos" element={<Prices />} />
               <Route path="promocoes" element={<Promotions />} />
               <Route path="kits" element={<Kits />} />
@@ -85,7 +90,8 @@ const App = () => (
               <Route path="meu-caixa" element={<MeuCaixa />} />
               <Route path="usuarios" element={<Users />} />
               <Route path="alertas" element={<Alerts />} />
-              <Route path="configuracoes" element={<SettingsPage />} />
+              <Route path="/configuracoes" element={<SettingsPage />} />
+              <Route path="/validades" element={<Expirations />} />
             </Route>
             <Route path="*" element={<NotFound />} />
           </Routes>

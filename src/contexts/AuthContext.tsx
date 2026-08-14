@@ -7,6 +7,7 @@ interface Usuario {
   email: string;
   cargo: "admin" | "vendedor";
   codvendedor?: number;
+  codfilial?: number;
 }
 
 interface AuthContextType {

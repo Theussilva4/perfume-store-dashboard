@@ -10,7 +10,8 @@ import { getFormasPagamento } from '@/services/formaPagamentoService'
 import { createPedido, getPedidos, updatePedido, alterarStatusPedido, cancelarPedido } from '@/services/pedidosService'
 import { getKits } from '@/services/kitsService'
 import { getEstoque } from "@/services/estoqueService";
-import { useBranch, filiais } from "@/contexts/BranchContext";
+import api from "@/services/api";
+import { useBranch } from "@/contexts/BranchContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -55,7 +56,6 @@ const Orders = () => {
   const [codigoPlano, setCodigoPlano] = useState("");
   const [nomePlano, setNomePlano] = useState("");
   const [pagamentosVenda, setPagamentosVenda] = useState<{ codplano: string, nome: string, valor: number, parcelas: number }[]>([]);
-  const [isMultiPagamento, setIsMultiPagamento] = useState(false);
   const [valorPagamentoAtual, setValorPagamentoAtual] = useState<string>("");
   const [parcelas, setParcelas] = useState("1");
   const [observacoes, setObservacoes] = useState("");
@@ -96,6 +96,9 @@ const Orders = () => {
   const [qtdSelecionada, setQtdSelecionada] = useState(1);
   const [loading, setLoading] = useState(false);
   const [totalCalculadoPedido, setTotalCalculadoPedido] = useState(0);
+  const [modoCobrancaCartao, setModoCobrancaCartao] = useState("PERCENTUAL");
+  const [bandeiraSelecionada, setBandeiraSelecionada] = useState("");
+  const [regrasBandeiras, setRegrasBandeiras] = useState<any>({});
 
   const [kitsAtivos, setKitsAtivos] = useState<any[]>([]);
   const [kitsDetectados, setKitsDetectados] = useState<{ id: number, nome: string, economia: number, qtd: number, aplicado: boolean }[]>([]);
@@ -129,8 +132,11 @@ const Orders = () => {
           const precoCartao = Number(prod.preco_cartao || 0);
           const precoNormal = Number(prod.preco_calculado || 0);
           
-          // Se for cartão E houver preço de cartão definido, usa o preço de cartão. Senão, usa o à vista (calculado).
-          const precoIdeal = (isCartao && precoCartao > 0) ? precoCartao : precoNormal;
+          // Se for cartão E houver preço de cartão definido, usa o preço de cartão SOMENTE SE for PRECO_FIXO.
+          let precoIdeal = precoNormal;
+          if (isCartao && modoCobrancaCartao === "PRECO_FIXO" && precoCartao > 0) {
+            precoIdeal = precoCartao;
+          }
           
           if (item.preco !== precoIdeal) {
             return { ...item, preco: precoIdeal };
@@ -139,7 +145,7 @@ const Orders = () => {
         return item;
       }));
     }
-  }, [nomePlano, codigoPlano, listarProdutos, pagamentosVenda.length]);
+  }, [nomePlano, codigoPlano, listarProdutos, pagamentosVenda.length, modoCobrancaCartao]);
 
   // Motor de Auto-detecção de Kits
   useEffect(() => {
@@ -278,8 +284,12 @@ const Orders = () => {
         getProdutos(),
         comercialService.listarTabela(),
         getEstoque(),
-        getKits()
-      ]).then(([clientes, vendedores, produtosRAW, tabelaPrecos, est, kitsData]) => {
+        getKits(),
+        api.get("/configuracoes").catch(() => ({ data: {} }))
+      ]).then(([clientes, vendedores, produtosRAW, tabelaPrecos, est, kitsData, configRes]) => {
+        if (configRes && configRes.data) {
+          setModoCobrancaCartao(configRes.data.modo_cobranca_cartao || "PERCENTUAL");
+        }
         setListarClientes(clientes);
         setListarVendedor(vendedores);
         setEstoquesAPI(Array.isArray(est) ? est : []);
@@ -487,6 +497,20 @@ const Orders = () => {
       setNomePlano(plano.DESCRICAO || plano.descricao || plano.nome);
       setCodigoPlano(String(plano.CODPLPAG || plano.codplpag || plano.codforma || plano.id || plano.codplano));
       setParcelas("1");
+      setBandeiraSelecionada("");
+      let bnd = {};
+      if (plano.regras_parcelamento) {
+        try {
+           const parsed = JSON.parse(plano.regras_parcelamento);
+           if (parsed && parsed.bandeiras) {
+             bnd = parsed.bandeiras;
+           }
+        } catch(e){}
+      }
+      setRegrasBandeiras(bnd);
+      if (Object.keys(bnd).length > 0) {
+        setBandeiraSelecionada(Object.keys(bnd)[0]);
+      }
     } else {
       setNomePlano("");
       toast.error("Plano de pagamento não encontrado");
@@ -672,7 +696,7 @@ const Orders = () => {
       const isCartao = planoAtivo?.tipo_pagamento === "CARTAO" && pagamentosVenda.length === 0;
       const precoCartao = Number(produto.preco_cartao || 0);
       const precoNormal = Number(produto.preco_calculado || 0);
-      const precoFinal = (isCartao && precoCartao > 0) ? precoCartao : precoNormal;
+      const precoFinal = (isCartao && modoCobrancaCartao === "PRECO_FIXO" && precoCartao > 0) ? precoCartao : precoNormal;
 
       setProdutoSelecionado(String(produto.codproduto));
       setPrecoProduto(precoFinal);
@@ -694,7 +718,7 @@ const Orders = () => {
        const isCartao = planoAtivo?.tipo_pagamento === "CARTAO" && pagamentosVenda.length === 0;
        const precoCartao = Number(produtoEncontrado.preco_cartao || 0);
        const precoNormal = Number(produtoEncontrado.preco_calculado || 0);
-       const precoFinal = (isCartao && precoCartao > 0) ? precoCartao : precoNormal;
+       const precoFinal = (isCartao && modoCobrancaCartao === "PRECO_FIXO" && precoCartao > 0) ? precoCartao : precoNormal;
 
        setProdutoSelecionado(String(produtoEncontrado.codproduto));
        setPrecoProduto(precoFinal);
@@ -733,8 +757,8 @@ const Orders = () => {
       setValidationError({ title: "Faltam informações", message: "Selecione uma filial específica de destino." });
       return;
     }
-    if (!codigoPlano && pagamentosVenda.length === 0) {
-      setValidationError({ title: "Faltam informações", message: "Selecione um plano de pagamento antes de prosseguir." });
+    if (pagamentosVenda.length === 0 && statusAtualPedido === "FINALIZADO") {
+      setValidationError({ title: "Faltam informações", message: "Para finalizar a venda, lance pelo menos um pagamento." });
       return;
     }
     if (itensPedido.length === 0) {
@@ -746,38 +770,19 @@ const Orders = () => {
       // Separar itens avulsos dos itens que compõem os kits aplicados
       const subtotalBase = itensPedido.reduce((s, i) => s + i.preco * i.quantidade, 0);
       
-      // Se for pagamento único, recalcula o acréscimo dinamicamente baseado no plano selecionado
       let acrescimoFinal = Number(acrescimoPedido);
-      if (!isMultiPagamento && codigoPlano) {
-        const planoSelecionado = listaFormasPagamento.find(
-          (p) => String(p.CODPLPAG || p.codplpag || p.codforma || p.id || p.codplano) === String(codigoPlano)
-        );
-        if (planoSelecionado?.tem_acrescimo) {
-          const subtotalCartao = itensPedido.reduce((acc, item) => acc + (Number(item.preco_cartao) || Number(item.preco)) * item.quantidade, 0);
-          acrescimoFinal = subtotalCartao - subtotalBase;
-        } else {
-          acrescimoFinal = 0;
-        }
-      }
       
       const totalDoPedidoFinal = Number(subtotalBase) - Number(descontoPedido) - Number(descontoKits) + acrescimoFinal + Number(valorFrete);
 
       if (statusAtualPedido === "FINALIZADO") {
-        if (!isMultiPagamento) {
-          if (!codigoPlano) {
-            setValidationError({ title: "Pagamento não encontrado", message: "Selecione o plano de pagamento." });
-            return;
-          }
-        } else {
-          const somaPag = pagamentosVenda.reduce((acc, p) => acc + p.valor, 0);
-          if (somaPag === 0 && totalDoPedidoFinal > 0) {
-            setValidationError({ title: "Pagamento não encontrado", message: "Para finalizar a venda, você deve lançar o(s) pagamento(s)." });
-            return;
-          }
-          if (Math.abs(somaPag - totalDoPedidoFinal) > 0.05 && totalDoPedidoFinal > 0) {
-            setValidationError({ title: "Valores Incorretos", message: `A soma dos pagamentos (R$ ${somaPag.toFixed(2)}) não bate com o Total (R$ ${totalDoPedidoFinal.toFixed(2)}). Corrija antes de finalizar.` });
-            return;
-          }
+        const somaPag = pagamentosVenda.reduce((acc, p) => acc + p.valor, 0);
+        if (somaPag === 0 && totalDoPedidoFinal > 0) {
+          setValidationError({ title: "Pagamento não encontrado", message: "Para finalizar a venda, você deve lançar o(s) pagamento(s)." });
+          return;
+        }
+        if (Math.abs(somaPag - totalDoPedidoFinal) > 0.05 && totalDoPedidoFinal > 0) {
+          setValidationError({ title: "Valores Incorretos", message: `A soma dos pagamentos (R$ ${somaPag.toFixed(2)}) não bate com o Total (R$ ${totalDoPedidoFinal.toFixed(2)}). Corrija antes de finalizar.` });
+          return;
         }
       }
 
@@ -823,15 +828,13 @@ const Orders = () => {
         codvendedor: codigoVendedor,
         codusur_criou: usuario?.codusur, // Envia o usuário logado
         codfilial: filialPedido,
-        formaPagamento: !isMultiPagamento ? codigoPlano : (pagamentosVenda.length > 0 ? pagamentosVenda[0].codplano : codigoPlano),
-        pagamentos: !isMultiPagamento ? [{
-          codplano_pagamento: Number(codigoPlano),
-          valor: totalDoPedidoFinal,
-          parcelas: Number(parcelas) || 1
-        }] : pagamentosVenda.map(p => ({
+        formaPagamento: pagamentosVenda.length > 0 ? pagamentosVenda[0].codplano : codigoPlano,
+        pagamentos: pagamentosVenda.map(p => ({
           codplano_pagamento: Number(p.codplano),
           valor: p.valor,
-          parcelas: p.parcelas
+          parcelas: p.parcelas,
+          bandeira: p.bandeira,
+          snapshot_acrescimo_aplicado: p.acrescimo_aplicado
         })),
         parcelas: Number(parcelas) || 1,
         observacoes,
@@ -874,9 +877,7 @@ const Orders = () => {
       setNomePlano("");
       setParcelas("1");
       setObservacoes("");
-      setIsMultiPagamento(false);
       setFilialPedido("");
-      setIsMultiPagamento(false);
 
     } catch (error: any) {
       console.error(error);
@@ -1619,19 +1620,49 @@ const Orders = () => {
               
               // Cálculo de acréscimo se o plano tem taxa
               let valorSugerido = faltaPagar;
-              if (planoSelecionado?.tem_acrescimo && planoSelecionado?.taxa_acrescimo) {
-                const taxa = Number(planoSelecionado.taxa_acrescimo);
+              let taxaAtual = 0;
+              if (planoSelecionado?.tem_acrescimo) {
+                taxaAtual = Number(planoSelecionado?.taxa_acrescimo || 0);
                 
-                // Se for o 1º pagamento, sugerimos o subtotal baseado no preco_cartao
-                if (pagamentosVenda.length === 0) {
-                  const subtotalCartao = itensPedido.reduce((acc, item) => acc + (Number(item.preco_cartao) || Number(item.preco)) * item.quantidade, 0);
-                  const diferencaCartao = subtotalCartao - subtotalPedido; 
-                  valorSugerido = faltaPagar + diferencaCartao;
-                } else {
-                  // Se já houver pagamentos (split), usa taxa proporcional no restante
-                  if (taxa > 0 && taxa < 100 && faltaPagar > 0) {
-                    valorSugerido = faltaPagar / (1 - (taxa / 100));
+                // Sobrescreve com regra específica da bandeira/parcela se PERCENTUAL
+                if (modoCobrancaCartao === "PERCENTUAL" && planoSelecionado.regras_parcelamento) {
+                  try {
+                    const parsed = JSON.parse(planoSelecionado.regras_parcelamento);
+                    let regrasParaUso = [];
+                    if (parsed && parsed.bandeiras && bandeiraSelecionada) {
+                       regrasParaUso = parsed.bandeiras[bandeiraSelecionada] || [];
+                    } else if (Array.isArray(parsed)) {
+                       regrasParaUso = parsed;
+                    }
+                    if (regrasParaUso.length > 0) {
+                      const parcelaEscolhida = Number(parcelas || 1);
+                      const regraEncontrada = regrasParaUso.find((r:any) => Number(r.parcelas) === parcelaEscolhida);
+                      if (regraEncontrada) {
+                        taxaAtual = Number(regraEncontrada.acrescimo_percentual || 0);
+                      }
+                    }
+                  } catch(e){}
+                }
+
+                if (taxaAtual > 0) {
+                  const taxa = taxaAtual;
+                // Cálculo do valor sugerido com acréscimo
+                if (modoCobrancaCartao === "PERCENTUAL") {
+                  if (taxaAtual > 0 && taxaAtual < 100 && faltaPagar > 0) {
+                    valorSugerido = faltaPagar / (1 - (taxaAtual / 100));
                   }
+                } else {
+                  // PRECO_FIXO behavior
+                  if (pagamentosVenda.length === 0) {
+                    const subtotalCartao = itensPedido.reduce((acc, item) => acc + (Number(item.preco_cartao) || Number(item.preco)) * item.quantidade, 0);
+                    const diferencaCartao = subtotalCartao - subtotalPedido; 
+                    valorSugerido = faltaPagar + diferencaCartao;
+                  } else {
+                    if (taxaAtual > 0 && taxaAtual < 100 && faltaPagar > 0) {
+                      valorSugerido = faltaPagar / (1 - (taxaAtual / 100));
+                    }
+                  }
+                }
                 }
               }
 
@@ -1669,26 +1700,22 @@ const Orders = () => {
                       </div>
                     </div>
 
-                    {!isMultiPagamento ? (
-                      <div className="space-y-2 md:col-span-3 flex items-end">
-                        <Button 
-                          type="button" 
-                          variant="outline" 
-                          className="w-full"
-                          onClick={() => {
-                            setIsMultiPagamento(true);
-                            // limpa para que o usuário lance manualmente os valores
-                            setPagamentosVenda([]); 
-                            setAcrescimoPedido(0);
-                            setCodigoPlano("");
-                            setNomePlano("");
-                          }}
-                        >
-                          Adicionar forma de pagamento
-                        </Button>
+                    {planoSelecionado?.tipo_pagamento === "CARTAO" && regrasBandeiras && Object.keys(regrasBandeiras).length > 0 && (
+                      <div className="space-y-2 md:col-span-3">
+                        <Label>Bandeira</Label>
+                        <Select value={bandeiraSelecionada} onValueChange={setBandeiraSelecionada}>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Selecione..." />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {Object.keys(regrasBandeiras).map((b) => (
+                              <SelectItem key={b} value={b}>{b}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
                       </div>
-                    ) : (
-                      <>
+                    )}
+                    
                         <div className="space-y-2 md:col-span-3">
                           <Label>Valor</Label>
                       <Input
@@ -1702,8 +1729,29 @@ const Orders = () => {
                             if (valorAdicionar > 0) {
                               let acrescimoDesteLancamento = 0;
                               
-                              if (planoSelecionado?.tem_acrescimo && planoSelecionado?.taxa_acrescimo) {
-                                const taxa = Number(planoSelecionado.taxa_acrescimo);
+                              let taxaUsada = Number(planoSelecionado?.taxa_acrescimo || 0);
+                              
+                              if (modoCobrancaCartao === "PERCENTUAL" && planoSelecionado?.regras_parcelamento) {
+                                try {
+                                  const parsed = JSON.parse(planoSelecionado.regras_parcelamento);
+                                  let regrasParaUso = [];
+                                  if (parsed && parsed.bandeiras && bandeiraSelecionada) {
+                                     regrasParaUso = parsed.bandeiras[bandeiraSelecionada] || [];
+                                  } else if (Array.isArray(parsed)) {
+                                     regrasParaUso = parsed;
+                                  }
+                                  if (regrasParaUso.length > 0) {
+                                    const parcelaEscolhida = Number(parcelas || 1);
+                                    const regraEncontrada = regrasParaUso.find((r:any) => Number(r.parcelas) === parcelaEscolhida);
+                                    if (regraEncontrada) {
+                                      taxaUsada = Number(regraEncontrada.acrescimo_percentual || 0);
+                                    }
+                                  }
+                                } catch(e){}
+                              }
+
+                              if (planoSelecionado?.tem_acrescimo && taxaUsada > 0) {
+                                const taxa = taxaUsada;
                                 
                                 // Se for pagamento único usando o valor exato do cartão
                                 if (pagamentosVenda.length === 0 && Number(valorAdicionar.toFixed(2)) === Number(valorSugerido.toFixed(2))) {
@@ -1719,7 +1767,7 @@ const Orders = () => {
                               }
                               
                               setAcrescimoPedido(prev => prev + acrescimoDesteLancamento);
-                              setPagamentosVenda([...pagamentosVenda, { codplano: codigoPlano, nome: nomePlano, valor: valorAdicionar, parcelas: Number(parcelas), acrescimo_aplicado: acrescimoDesteLancamento }]);
+                              setPagamentosVenda([...pagamentosVenda, { codplano: codigoPlano, nome: nomePlano, valor: valorAdicionar, parcelas: Number(parcelas), acrescimo_aplicado: acrescimoDesteLancamento, bandeira: bandeiraSelecionada }]);
                               
                               setCodigoPlano("");
                               setNomePlano("");
@@ -1759,8 +1807,29 @@ const Orders = () => {
                           const valorAdicionar = Number(valorPagamentoAtual || valorSugerido);
                           if (valorAdicionar > 0) {
                             let acrescimoDesteLancamento = 0;
-                            if (planoSelecionado?.tem_acrescimo && planoSelecionado?.taxa_acrescimo) {
-                              const taxa = Number(planoSelecionado.taxa_acrescimo);
+                            let taxaUsada = Number(planoSelecionado?.taxa_acrescimo || 0);
+                            
+                            if (modoCobrancaCartao === "PERCENTUAL" && planoSelecionado?.regras_parcelamento) {
+                              try {
+                                const parsed = JSON.parse(planoSelecionado.regras_parcelamento);
+                                let regrasParaUso = [];
+                                if (parsed && parsed.bandeiras && bandeiraSelecionada) {
+                                   regrasParaUso = parsed.bandeiras[bandeiraSelecionada] || [];
+                                } else if (Array.isArray(parsed)) {
+                                   regrasParaUso = parsed;
+                                }
+                                if (regrasParaUso.length > 0) {
+                                  const parcelaEscolhida = Number(parcelas || 1);
+                                  const regraEncontrada = regrasParaUso.find((r:any) => Number(r.parcelas) === parcelaEscolhida);
+                                  if (regraEncontrada) {
+                                    taxaUsada = Number(regraEncontrada.acrescimo_percentual || 0);
+                                  }
+                                }
+                              } catch(e){}
+                            }
+
+                            if (planoSelecionado?.tem_acrescimo && taxaUsada > 0) {
+                              const taxa = taxaUsada;
                               if (pagamentosVenda.length === 0 && Number(valorAdicionar.toFixed(2)) === Number(valorSugerido.toFixed(2))) {
                                 acrescimoDesteLancamento = valorSugerido - faltaPagar;
                               } else {
@@ -1771,7 +1840,7 @@ const Orders = () => {
                               }
                             }
                             setAcrescimoPedido(prev => prev + acrescimoDesteLancamento);
-                            setPagamentosVenda([...pagamentosVenda, { codplano: codigoPlano, nome: nomePlano, valor: valorAdicionar, parcelas: Number(parcelas), acrescimo_aplicado: acrescimoDesteLancamento }]);
+                            setPagamentosVenda([...pagamentosVenda, { codplano: codigoPlano, nome: nomePlano, valor: valorAdicionar, parcelas: Number(parcelas), acrescimo_aplicado: acrescimoDesteLancamento, bandeira: bandeiraSelecionada }]);
                             setCodigoPlano("");
                             setNomePlano("");
                             setValorPagamentoAtual("");
@@ -1784,25 +1853,9 @@ const Orders = () => {
                         <Plus className="h-4 w-4 mr-2" /> Lançar
                       </Button>
                     </div>
-                  </>
-                )}
               </div>
 
-              {isMultiPagamento && pagamentosVenda.length === 0 && (
-                <div className="flex justify-end mt-2">
-                  <Button 
-                    type="button" 
-                    variant="outline"
-                    onClick={() => {
-                      setIsMultiPagamento(false);
-                      setCodigoPlano("");
-                      setNomePlano("");
-                    }}
-                  >
-                    Cancelar Múltiplos Pagamentos
-                  </Button>
-                </div>
-              )}
+
 
                   {pagamentosVenda.length > 0 && (
                     <div className="bg-white border rounded-md overflow-hidden">

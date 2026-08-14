@@ -14,12 +14,14 @@ export interface Produto {
     filial1: number;
   };
   ativo: boolean;
+  revisao?: boolean;
   codigoBarras?: string;
   volume?: number;
   margem?: number;
   precoPromocional?: number;
   imagemUrl?: string;
   imagemPublicId?: string;
+  controlaValidade?: boolean;
 }
 
 export interface categoria {

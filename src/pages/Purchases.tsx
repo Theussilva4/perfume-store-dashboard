@@ -14,6 +14,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useBranch } from "@/contexts/BranchContext";
 import { BarcodeScannerModal } from "@/components/BarcodeScannerModal";
+import api from "@/services/api";
 
 const Purchases = () => {
   const [listaCompras, setListaCompras] = useState<any[]>([]);
@@ -52,6 +53,8 @@ const Purchases = () => {
   const [produtoSelecionadoId, setProdutoSelecionadoId] = useState("");
   const [qtdSelecionada, setQtdSelecionada] = useState(1);
   const [custoSelecionado, setCustoSelecionado] = useState(0);
+  const [loteSelecionado, setLoteSelecionado] = useState("");
+  const [validadeSelecionada, setValidadeSelecionada] = useState("");
   const [dialogProdutoOpen, setDialogProdutoOpen] = useState(false);
   const [scannerOpen, setScannerOpen] = useState(false);
   
@@ -137,7 +140,9 @@ const Purchases = () => {
     // filtro de texto
     const fornecedor = (c.msfornecedor?.nome || "").toLowerCase();
     const termo = search.toLowerCase();
-    const matchSearch = fornecedor.includes(termo) || String(c.codigo_compra || "").includes(termo);
+    const matchSearch = fornecedor.includes(termo) || 
+      String(c.codigo_compra || "").toLowerCase().includes(termo) ||
+      String(c.numero_documento || "").toLowerCase().includes(termo);
     
     return matchFilial && matchSearch;
   });
@@ -147,9 +152,9 @@ const Purchases = () => {
     if (!produto) return;
     
     const existente = itensCompra.find(i => i.codproduto === String(produto.codproduto));
-      if (existente) {
+      if (existente && existente.lote === loteSelecionado && existente.validade === validadeSelecionada) {
         setItensCompra(prev => prev.map(i => 
-          i.codproduto === String(produto.codproduto) 
+          i.codproduto === String(produto.codproduto) && i.lote === loteSelecionado && i.validade === validadeSelecionada
             ? { ...i, quantidade: i.quantidade + qtdSelecionada, custo_unitario: custoSelecionado } 
             : i
         ));
@@ -160,7 +165,9 @@ const Purchases = () => {
           quantidade: qtdSelecionada,
           custo_unitario: custoSelecionado,
           custo_atual: produto.custo || 0,
-          estoque_atual: produto.estoque || 0
+          estoque_atual: produto.estoque || 0,
+          lote: loteSelecionado,
+          validade: validadeSelecionada
         }]);
       }
     
@@ -168,6 +175,8 @@ const Purchases = () => {
     setProdutoSelecionadoId("");
     setQtdSelecionada(1);
     setCustoSelecionado(0);
+    setLoteSelecionado("");
+    setValidadeSelecionada("");
   };
 
   const removerItem = (id: string) => {
@@ -214,7 +223,9 @@ const Purchases = () => {
           itens: itensCompra.map(i => ({
             codproduto: parseInt(i.codproduto),
             quantidade: Number(i.quantidade),
-            custo_unitario: Number(i.custo_unitario)
+            custo_unitario: Number(i.custo_unitario),
+            lote: i.lote || undefined,
+            validade: i.validade || undefined
           })),
           atualizacoesCusto
         };
@@ -226,7 +237,9 @@ const Purchases = () => {
           origem: "AJUSTE",
           itens: itensCompra.map(i => ({
             codproduto: parseInt(i.codproduto),
-            quantidade: Number(i.quantidade)
+            quantidade: Number(i.quantidade),
+            lote: i.lote || undefined,
+            validade: i.validade || undefined
           }))
         };
         await createEntrada(payload);
@@ -305,6 +318,29 @@ const Purchases = () => {
     }
   };
 
+  const handleImportarXml = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const formData = new FormData();
+    formData.append("xml", file);
+
+    const promise = api.post("/compras/importar-xml", formData, {
+      headers: { "Content-Type": "multipart/form-data" }
+    }).then(res => {
+      carregarDados();
+      return res.data.message;
+    });
+
+    toast.promise(promise, {
+      loading: "Lendo XML e pré-cadastrando produtos...",
+      success: (msg) => msg || "Nota importada com sucesso!",
+      error: (err: any) => err.response?.data?.error || "Erro ao importar XML."
+    });
+
+    e.target.value = ""; // reset
+  };
+
   return (
     <div className="space-y-6 animate-fade-in-up">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -312,9 +348,17 @@ const Purchases = () => {
           <h2 className="font-display text-2xl md:text-3xl font-semibold text-primary">Compras e Entrada</h2>
           <p className="text-sm text-muted-foreground mt-1">{rotuloFilial} • {comprasFiltradas.length} compras</p>
         </div>
-        <Button onClick={() => setDialogOpen(true)}>
-          <Plus className="h-4 w-4 mr-2" /> Nova Compra
-        </Button>
+        <div className="flex gap-2">
+          <label className="cursor-pointer">
+            <input type="file" accept=".xml" className="hidden" onChange={handleImportarXml} />
+            <div className="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-input bg-primary text-primary-foreground hover:bg-primary/90 h-10 px-4 py-2">
+              <Plus className="h-4 w-4 mr-2" /> Importar XML (NF-e)
+            </div>
+          </label>
+          <Button variant="outline" onClick={() => setDialogOpen(true)}>
+            <Plus className="h-4 w-4 mr-2" /> Manual
+          </Button>
+        </div>
 
         {/* DIALOG VARIACOES DE CUSTO */}
         <Dialog open={dialogCustoOpen} onOpenChange={setDialogCustoOpen}>
@@ -393,9 +437,15 @@ const Purchases = () => {
             <div key={compra.uuid || `compra-m-${i}`} className="bg-background border border-border rounded-lg p-4 space-y-3 shadow-sm">
               <div className="flex justify-between items-start">
                 <div>
-                  <h4 className="font-semibold text-foreground text-sm">Código #{compra.codigo_compra}</h4>
+                  <h4 className="font-semibold text-foreground text-sm flex gap-2 items-center">
+                    #{compra.codigo_compra}
+                    {compra.numero_documento && <Badge variant="secondary" className="text-[10px]">NF: {compra.numero_documento}</Badge>}
+                  </h4>
                   <p className="text-base font-medium text-foreground mt-1">{compra.msfornecedor?.nome || 'N/A'}</p>
-                  <span className="flex items-center gap-1 text-xs text-muted-foreground mt-1">📅 {new Date(compra.created_at || compra.data_compra).toLocaleDateString("pt-BR")}</span>
+                  <div className="flex flex-col gap-0.5 mt-2">
+                    <span className="text-xs text-muted-foreground">Entrada: {new Date(compra.created_at).toLocaleDateString("pt-BR")}</span>
+                    {compra.numero_documento && <span className="text-xs text-muted-foreground">Emissão: {new Date(compra.data_compra).toLocaleDateString("pt-BR")}</span>}
+                  </div>
                 </div>
                 <div className="text-right">
                   <div className="font-bold text-primary">R$ {Number(compra.valor_total || 0).toLocaleString("pt-BR")}</div>
@@ -437,8 +487,18 @@ const Purchases = () => {
             <tbody>
               {comprasFiltradas.map((compra, i) => (
                 <tr key={compra.uuid || `compra-${i}`} className="border-b border-border last:border-0 hover:bg-muted/20 transition-colors">
-                  <td className="px-4 py-3 font-medium text-foreground">{compra.codigo_compra}</td>
-                  <td className="px-4 py-3">{new Date(compra.created_at || compra.data_compra).toLocaleDateString("pt-BR")}</td>
+                  <td className="px-4 py-3 font-medium text-foreground">
+                    <div className="flex flex-col">
+                      <span>{compra.codigo_compra}</span>
+                      {compra.numero_documento && <span className="text-xs text-muted-foreground">NF: {compra.numero_documento}</span>}
+                    </div>
+                  </td>
+                  <td className="px-4 py-3">
+                    <div className="flex flex-col">
+                      <span>{new Date(compra.created_at).toLocaleDateString("pt-BR")}</span>
+                      {compra.numero_documento && <span className="text-xs text-muted-foreground">Emi: {new Date(compra.data_compra).toLocaleDateString("pt-BR")}</span>}
+                    </div>
+                  </td>
                   <td className="px-4 py-3">{compra.msfornecedor?.nome || 'N/A'}</td>
                   <td className="px-4 py-3 text-right font-medium">R$ {Number(compra.valor_total || 0).toLocaleString("pt-BR")}</td>
                   <td className="px-4 py-3 text-center">
@@ -561,6 +621,14 @@ const Purchases = () => {
                     <Input type="number" step="0.01" value={custoSelecionado} onChange={e => setCustoSelecionado(Number(e.target.value))} min={0} />
                   </div>
                 )}
+                <div className="md:col-span-3">
+                  <Label>Lote</Label>
+                  <Input value={loteSelecionado} onChange={e => setLoteSelecionado(e.target.value)} placeholder="Ex: L123" />
+                </div>
+                <div className="md:col-span-3">
+                  <Label>Validade</Label>
+                  <Input type="date" value={validadeSelecionada} onChange={e => setValidadeSelecionada(e.target.value)} />
+                </div>
                 <div className="md:col-span-2">
                   <Button type="button" onClick={adicionarItem} disabled={!produtoSelecionadoId} className="w-full">
                     Add
@@ -576,10 +644,14 @@ const Purchases = () => {
                       <span className="w-20 text-center">{item.quantidade}x</span>
                       {tipoEntrada === "COMPRA" && (
                         <>
-                          <span className="w-28 text-right">R$ {item.custo_unitario.toLocaleString('pt-BR')}</span>
-                          <span className="w-28 text-right font-medium">R$ {(item.quantidade * item.custo_unitario).toLocaleString('pt-BR')}</span>
+                          <span className="w-24 text-right">R$ {item.custo_unitario.toLocaleString('pt-BR')}</span>
+                          <span className="w-24 text-right font-medium">R$ {(item.quantidade * item.custo_unitario).toLocaleString('pt-BR')}</span>
                         </>
                       )}
+                      <div className="flex flex-col text-xs text-muted-foreground ml-2 w-32">
+                        <span>Lote: {item.lote || '-'}</span>
+                        <span>Val: {item.validade ? new Date(item.validade).toLocaleDateString('pt-BR', {timeZone:'UTC'}) : '-'}</span>
+                      </div>
                       <button onClick={() => removerItem(item.codproduto)} className="text-red-500 hover:text-red-700 ml-3">
                         Remover
                       </button>

@@ -29,6 +29,7 @@ const produtoVazio: Omit<Produto, "codproduto"> = {
   precoPromocional: undefined,
   imagemUrl: undefined,
   imagemPublicId: undefined,
+  controlaValidade: true,
 };
 
 function mapearProduto(p: any): Produto {
@@ -44,13 +45,15 @@ function mapearProduto(p: any): Produto {
     estoque: Number(p.msestoque?.[0]?.quantidade || 0),
     estoqueMinimo: Number(p.estoque_minimo || 5),
     estoquePorFilial: { matriz: 1, filial1: 5 },
-    ativo: p.ativo === "S",
+    ativo: p.ativo === "S" || p.ativo === "R", // Mantém visível se estiver em revisão
+    revisao: p.ativo === "R",
     codigoBarras: p.codigo_barras ? String(p.codigo_barras) : "",
     volume: p.volume_ml ? Number(p.volume_ml) : undefined,
     margem: undefined,
     precoPromocional: p.preco_promocao ? Number(p.preco_promocao) : undefined,
     imagemUrl: p.imagem_url || undefined,
     imagemPublicId: p.imagem_public_id || undefined,
+    controlaValidade: p.controla_validade === "S",
   };
 }
 
@@ -81,7 +84,8 @@ const Products = () => {
       String(p.codigoBarras)?.includes(search) ||
       String(p.codproduto)?.includes(search);
     const matchCat =
-      filtroCategoria === "all" || p.codcategoria === Number(filtroCategoria);
+      filtroCategoria === "all" || 
+      (filtroCategoria === "revisao" ? p.revisao : p.codcategoria === Number(filtroCategoria));
     const matchAtivo = mostrarInativos || p.ativo;
     return matchSearch && matchCat && matchAtivo;
   });
@@ -163,6 +167,7 @@ const Products = () => {
       if (form.estoqueMinimo !== undefined) formData.append("estoque_minimo", String(form.estoqueMinimo));
       if (form.codfornecedor) formData.append("codfornecedor", String(form.codfornecedor));
       formData.append("ativo", form.ativo ? "S" : "N");
+      formData.append("controla_validade", form.controlaValidade ? "S" : "N");
       if (form.codigoBarras) formData.append("codigo_barras", form.codigoBarras);
       if (form.volume) formData.append("volume_ml", String(form.volume));
       
@@ -254,12 +259,13 @@ const Products = () => {
           </Button>
         </div>
         <Select value={filtroCategoria} onValueChange={setFiltroCategoria}>
-          <SelectTrigger className="w-full sm:w-48"><SelectValue placeholder="Categoria" /></SelectTrigger>
+          <SelectTrigger className="w-full sm:w-48"><SelectValue placeholder="Filtrar por Categoria" /></SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">Todas categorias</SelectItem>
-            {categorias.map((c) => (
-              <SelectItem key={c.codcategoria} value={String(c.codcategoria)}>
-                {c.categoria}
+            <SelectItem value="all">Todas as Categorias</SelectItem>
+            <SelectItem value="revisao" className="text-orange-600 font-medium">Aguardando Revisão</SelectItem>
+            {categorias.map((cat) => (
+              <SelectItem key={cat.codcategoria} value={cat.codcategoria.toString()}>
+                {cat.categoria}
               </SelectItem>
             ))}
           </SelectContent>
@@ -276,10 +282,6 @@ const Products = () => {
       {/* VISÃO MOBILE (CARDS) */}
       <div className="grid grid-cols-1 gap-4 md:hidden">
         {filtrados.map((produto) => {
-          const categoriaEncontrada = categorias.find(
-            (c) => c.codcategoria === Number(produto.codcategoria)
-          );
-
           return (
             <div
               key={produto.codproduto}
@@ -312,7 +314,24 @@ const Products = () => {
                 <h3 className="font-medium text-sm text-foreground">{produto.descricao}</h3>
                 <p className="text-xs text-muted-foreground">Código: {produto.codproduto}</p>
                 <p className="text-xs text-muted-foreground">Marca: {produto.marca}</p>
-                <p className="text-xs text-muted-foreground">Categoria: {categoriaEncontrada?.categoria || "Sem Categoria"}</p>
+                <div className="flex gap-2 mb-2 mt-1">
+                      {produto.revisao ? (
+                        <Badge variant="outline" className="bg-orange-100 text-orange-700 hover:bg-orange-100">
+                          Revisão
+                        </Badge>
+                      ) : produto.ativo ? (
+                        <Badge variant="outline" className="bg-emerald-100 text-emerald-700 hover:bg-emerald-100">
+                          Ativo
+                        </Badge>
+                      ) : (
+                        <Badge variant="outline" className="bg-rose-100 text-rose-700 hover:bg-rose-100">
+                          Inativo
+                        </Badge>
+                      )}
+                      <Badge variant="secondary" className="bg-zinc-100">
+                        {categorias.find(c => c.codcategoria === produto.codcategoria)?.categoria || 'Sem Categoria'}
+                      </Badge>
+                    </div>
                 {produto.volume && <p className="text-xs text-muted-foreground">Volume: {produto.volume}ml</p>}
               </div>
 
@@ -400,12 +419,14 @@ const Products = () => {
                   <td className="px-4 py-3 text-center">
                     <button
                       onClick={() => alternarAtivo(produto)}
-                      className={`text-[10px] px-2 py-0.5 rounded-full border transition-colors ${produto.ativo
+                      className={`text-[10px] px-2 py-0.5 rounded-full border transition-colors ${produto.revisao 
+                        ? "border-orange-500/20 text-orange-600 hover:bg-orange-500/5"
+                        : produto.ativo
                         ? "border-primary/20 text-primary hover:bg-primary/5"
                         : "border-destructive/20 text-destructive hover:bg-destructive/5"
                       }`}
                     >
-                      {produto.ativo ? "Ativo" : "Inativo"}
+                      {produto.revisao ? "Revisão" : produto.ativo ? "Ativo" : "Inativo"}
                     </button>
                   </td>
                   <td className="px-4 py-3 text-right">
@@ -513,6 +534,20 @@ const Products = () => {
                     <Label>Marca</Label>
                     <Input value={form.marca} onChange={(e) => setForm({ ...form, marca: e.target.value })} />
                   </div>
+
+                  <div className="flex items-center space-x-2 pt-4">
+                    <input 
+                      type="checkbox" 
+                      id="controlaValidade"
+                      className="rounded border-input h-4 w-4 text-primary"
+                      checked={form.controlaValidade} 
+                      onChange={(e) => setForm({ ...form, controlaValidade: e.target.checked })} 
+                    />
+                    <Label htmlFor="controlaValidade" className="cursor-pointer">
+                      Controla Validade? (Rastreabilidade por Lotes)
+                    </Label>
+                  </div>
+
                   <div className="space-y-2">
                     <Label>Categoria</Label>
                     <Select

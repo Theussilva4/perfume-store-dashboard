@@ -1,7 +1,8 @@
 import { Outlet, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
-import { useBranch, filiais } from "@/contexts/BranchContext";
+import { useBranch } from "@/contexts/BranchContext";
 import logo from "@/assets/logo.png";
+import packageJson from "../../package.json";
 import {
   LayoutDashboard,
   Package,
@@ -24,7 +25,10 @@ import {
   FileText,
   Truck,
   Wallet,
-  Building2
+  Building2,
+  ArrowRightLeft,
+  ClipboardCheck,
+  CalendarClock
 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
@@ -36,7 +40,7 @@ const AppLayout = () => {
   const { usuario, sair } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
-  const { filialSelecionada, setFilialSelecionada } = useBranch();
+  const { filialSelecionada, setFilialSelecionada, filiais } = useBranch();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [pendingOrdersCount, setPendingOrdersCount] = useState(0);
 
@@ -99,7 +103,10 @@ const AppLayout = () => {
       items: [
         { label: "Controle", key: "/estoque", icon: Warehouse },
         { label: "Compras", key: "/compras", icon: ArrowDownToLine },
+        { label: "Conferência (Bônus)", key: "/conferencia", icon: ClipboardCheck },
         { label: "Saídas", key: "/estoque/saidas", icon: ArrowUpFromLine },
+        { label: "Transferências", key: "/estoque/transferencias", icon: ArrowRightLeft },
+        { label: "Validades (FEFO)", key: "/validades", icon: CalendarClock },
       ],
     },
     {
@@ -195,6 +202,11 @@ const AppLayout = () => {
           <LogOut className="h-4 w-4 mr-2" />
           Sair
         </Button>
+        <div className="mt-4 text-center">
+          <span className="text-[10px] text-muted-foreground/30 font-medium tracking-widest">
+            v{packageJson.version}
+          </span>
+        </div>
       </div>
     </>
   );

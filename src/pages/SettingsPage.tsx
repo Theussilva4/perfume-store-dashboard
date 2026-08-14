@@ -23,6 +23,7 @@ const SettingsPage = () => {
     allowBuyFromAnySupplier: true,
     allowProductsWithoutPrice: false,
     atualizacaoCustoCompra: "PERGUNTAR",
+    modoCobrancaCartao: "PERCENTUAL",
   });
 
   const [isLoading, setIsLoading] = useState(true);
@@ -45,6 +46,7 @@ const SettingsPage = () => {
             allowBuyFromAnySupplier: data.venda_qualquer_fornecedor !== false,
             allowProductsWithoutPrice: data.venda_sem_preco === true,
             atualizacaoCustoCompra: data.atualizacao_custo_compra || "PERGUNTAR",
+            modoCobrancaCartao: data.modo_cobranca_cartao || "PERCENTUAL",
           });
         }
       } catch (error) {
@@ -71,6 +73,7 @@ const SettingsPage = () => {
         venda_qualquer_fornecedor: form.allowBuyFromAnySupplier,
         venda_sem_preco: form.allowProductsWithoutPrice,
         atualizacao_custo_compra: form.atualizacaoCustoCompra,
+        modo_cobranca_cartao: form.modoCobrancaCartao,
       });
       
       // Keep syncing with localStorage to not break other parts that might rely on it for now
@@ -212,6 +215,27 @@ const SettingsPage = () => {
                   <SelectItem value="CUSTO_MEDIO">Custo Médio Automático</SelectItem>
                   <SelectItem value="ULTIMO_CUSTO">Último Custo Automático</SelectItem>
                   <SelectItem value="MANTER">Não Atualizar (Manual)</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          <div className="flex items-center justify-between pt-2 border-t border-border mt-2">
+            <div className="flex-1">
+              <p className="text-sm font-medium text-foreground">Modo de Cobrança Cartão</p>
+              <p className="text-xs text-muted-foreground">Define como os juros e valores de cartão de crédito são calculados no PDV.</p>
+            </div>
+            <div className="w-[300px]">
+              <Select
+                value={form.modoCobrancaCartao}
+                onValueChange={(val) => setForm({ ...form, modoCobrancaCartao: val })}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione..." />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="PERCENTUAL">Acréscimo Percentual (Gross-Up)</SelectItem>
+                  <SelectItem value="PRECO_FIXO">Preço Fixo de Cartão (Tabela Produto)</SelectItem>
                 </SelectContent>
               </Select>
             </div>
