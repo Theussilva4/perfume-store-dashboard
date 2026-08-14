@@ -1654,14 +1654,10 @@ const Orders = () => {
                   // PRECO_FIXO behavior
                   const subtotalCartao = itensPedido.reduce((acc, item) => acc + (Number(item.preco_cartao) || Number(item.preco)) * item.quantidade, 0);
                   const diferencaCartaoTotal = subtotalCartao - subtotalPedido; 
+                  const acrescimoJaAplicado = pagamentosVenda.reduce((acc, p) => acc + (p.acrescimo_aplicado || 0), 0);
+                  const acrescimoPendente = Math.max(0, diferencaCartaoTotal - acrescimoJaAplicado);
                   
-                  if (pagamentosVenda.length === 0) {
-                    valorSugerido = faltaPagar + diferencaCartaoTotal;
-                  } else {
-                    const baseTotal = Number(subtotalPedido) - Number(descontoPedido) - Number(descontoKits) + Number(valorFrete);
-                    const proporcao = baseTotal > 0 ? (faltaPagar / baseTotal) : 0;
-                    valorSugerido = faltaPagar + (diferencaCartaoTotal * proporcao);
-                  }
+                  valorSugerido = faltaPagar + acrescimoPendente;
                 }
               }
 
