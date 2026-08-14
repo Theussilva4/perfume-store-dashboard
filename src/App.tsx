@@ -37,7 +37,7 @@ import SalesReport from "@/pages/SalesReport";
 import MeuCaixa from "@/pages/MeuCaixa";
 import Conference from "@/pages/Conference";
 import Expirations from "./pages/Expirations";
-
+import AccountsReceivable from "@/pages/AccountsReceivable";
 const queryClient = new QueryClient();
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
@@ -87,6 +87,7 @@ const App = () => (
               <Route path="relatorios" element={<Reports />} />
               <Route path="analises/estoque" element={<StockAnalytics />} />
               <Route path="analises/vendas" element={<SalesReport />} />
+              <Route path="contas-receber" element={<AccountsReceivable />} />
               <Route path="meu-caixa" element={<MeuCaixa />} />
               <Route path="usuarios" element={<Users />} />
               <Route path="alertas" element={<Alerts />} />

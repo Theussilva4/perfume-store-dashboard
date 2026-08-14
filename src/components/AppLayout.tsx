@@ -74,6 +74,7 @@ const AppLayout = () => {
       items: [
         { label: "Dashboard", key: "/", icon: LayoutDashboard },
         { label: "Meu Caixa", key: "/meu-caixa", icon: Wallet },
+        { label: "Contas a Receber", key: "/contas-receber", icon: DollarSign },
         { label: "Pedidos", key: "/pedidos", icon: ClipboardList, badge: pendingOrdersCount > 0 ? pendingOrdersCount : undefined },
         { label: "Consultar Preço", key: "/consulta-preco", icon: Search },
       ],
