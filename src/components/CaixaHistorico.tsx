@@ -58,61 +58,112 @@ export function CaixaHistorico() {
             Histórico de Caixas Fechados
           </h3>
         </div>
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Data/Hora</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Terminal</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Operador</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Diferença</th>
-                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Ações</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-100">
-              {sessoes.map(sessao => (
-                <tr key={sessao.codsessao} className="hover:bg-gray-50">
-                  <td className="px-6 py-4 text-sm text-gray-600">
+        <div className="w-full">
+          {/* Mobile View */}
+          <div className="md:hidden divide-y divide-gray-100">
+            {sessoes.length === 0 ? (
+              <div className="p-8 text-center text-gray-500">Nenhum caixa fechado encontrado.</div>
+            ) : (
+              sessoes.map(sessao => (
+                <div key={sessao.codsessao} className="p-4 space-y-3 bg-white">
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <div className="font-bold text-gray-800">{sessao.caixa?.nome}</div>
+                      <div className="text-xs text-gray-500 mt-1">
+                        <div>Abriu: {sessao.usuario_abertura?.nome || 'Desconhecido'}</div>
+                        <div>Fechou: {sessao.usuario_fechamento?.nome || 'Desconhecido'}</div>
+                      </div>
+                    </div>
+                    <div>
+                      {Number(sessao.diferenca) === 0 ? (
+                        <span className="inline-flex items-center gap-1 text-green-600 text-sm font-medium bg-green-50 px-2 py-1 rounded-md">
+                          <CheckCircle size={14} /> Ok
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1 text-red-600 text-sm font-medium bg-red-50 px-2 py-1 rounded-md">
+                          <AlertCircle size={14} /> 
+                          R$ {Number(sessao.diferenca).toLocaleString('pt-BR', {minimumFractionDigits: 2})}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                  
+                  <div className="bg-gray-50 p-2 rounded-md text-xs text-gray-600 grid grid-cols-1 gap-1">
                     <div><strong>A:</strong> {new Date(sessao.data_abertura).toLocaleString('pt-BR')}</div>
                     <div><strong>F:</strong> {new Date(sessao.data_fechamento || '').toLocaleString('pt-BR')}</div>
-                  </td>
-                  <td className="px-6 py-4 text-sm font-medium">
-                    {sessao.caixa?.nome}
-                  </td>
-                  <td className="px-6 py-4 text-sm text-gray-600">
-                    {sessao.usuario_fechamento?.nome || 'Desconhecido'}
-                  </td>
-                  <td className="px-6 py-4">
-                    {Number(sessao.diferenca) === 0 ? (
-                      <span className="inline-flex items-center gap-1 text-green-600 text-sm font-medium">
-                        <CheckCircle size={14} /> Ok
-                      </span>
-                    ) : (
-                      <span className="inline-flex items-center gap-1 text-red-600 text-sm font-medium">
-                        <AlertCircle size={14} /> 
-                        R$ {Number(sessao.diferenca).toLocaleString('pt-BR', {minimumFractionDigits: 2})}
-                      </span>
-                    )}
-                  </td>
-                  <td className="px-6 py-4 text-right">
-                    <button 
-                      onClick={() => abrirRelatorio(sessao.codsessao)}
-                      className="p-2 text-primary hover:bg-primary/10 rounded-lg transition-colors"
-                    >
-                      <Eye size={18} />
-                    </button>
-                  </td>
-                </tr>
-              ))}
-              {sessoes.length === 0 && (
+                  </div>
+
+                  <button 
+                    onClick={() => abrirRelatorio(sessao.codsessao)}
+                    className="w-full bg-primary/10 text-primary hover:bg-primary/20 font-medium py-2 rounded-lg transition-colors flex items-center justify-center gap-2"
+                  >
+                    <Eye size={16} />
+                    Ver Detalhes
+                  </button>
+                </div>
+              ))
+            )}
+          </div>
+
+          {/* Desktop View */}
+          <div className="hidden md:block overflow-x-auto">
+            <table className="w-full">
+              <thead className="bg-gray-50">
                 <tr>
-                  <td colSpan={5} className="px-6 py-8 text-center text-gray-500">
-                    Nenhum caixa fechado encontrado.
-                  </td>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Data/Hora</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Terminal</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Operadores</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Diferença</th>
+                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Ações</th>
                 </tr>
-              )}
-            </tbody>
-          </table>
+              </thead>
+              <tbody className="divide-y divide-gray-100">
+                {sessoes.length === 0 ? (
+                  <tr>
+                    <td colSpan={5} className="px-6 py-8 text-center text-gray-500">
+                      Nenhum caixa fechado encontrado.
+                    </td>
+                  </tr>
+                ) : (
+                  sessoes.map(sessao => (
+                    <tr key={sessao.codsessao} className="hover:bg-gray-50">
+                      <td className="px-6 py-4 text-sm text-gray-600">
+                        <div><strong>A:</strong> {new Date(sessao.data_abertura).toLocaleString('pt-BR')}</div>
+                        <div><strong>F:</strong> {new Date(sessao.data_fechamento || '').toLocaleString('pt-BR')}</div>
+                      </td>
+                      <td className="px-6 py-4 text-sm font-medium">
+                        {sessao.caixa?.nome}
+                      </td>
+                      <td className="px-6 py-4 text-sm text-gray-600">
+                        <div><span className="font-semibold">Abriu:</span> {sessao.usuario_abertura?.nome || 'Desconhecido'}</div>
+                        <div><span className="font-semibold">Fechou:</span> {sessao.usuario_fechamento?.nome || 'Desconhecido'}</div>
+                      </td>
+                      <td className="px-6 py-4">
+                        {Number(sessao.diferenca) === 0 ? (
+                          <span className="inline-flex items-center gap-1 text-green-600 text-sm font-medium">
+                            <CheckCircle size={14} /> Ok
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center gap-1 text-red-600 text-sm font-medium">
+                            <AlertCircle size={14} /> 
+                            R$ {Number(sessao.diferenca).toLocaleString('pt-BR', {minimumFractionDigits: 2})}
+                          </span>
+                        )}
+                      </td>
+                      <td className="px-6 py-4 text-right">
+                        <button 
+                          onClick={() => abrirRelatorio(sessao.codsessao)}
+                          className="p-2 text-primary hover:bg-primary/10 rounded-lg transition-colors"
+                        >
+                          <Eye size={18} />
+                        </button>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
 
@@ -262,52 +313,92 @@ export function CaixaHistorico() {
               )}
 
               {modalTab === 'EXTRATO' && (
-                <div className="overflow-x-auto border border-gray-200 rounded-xl">
-                  <table className="w-full text-sm">
-                    <thead className="bg-gray-50 text-gray-500 border-b border-gray-200">
-                      <tr>
-                        <th className="px-4 py-3 text-left font-medium">Hora</th>
-                        <th className="px-4 py-3 text-left font-medium">Categoria</th>
-                        <th className="px-4 py-3 text-left font-medium">Plano/Forma</th>
-                        <th className="px-4 py-3 text-left font-medium">Observação</th>
-                        <th className="px-4 py-3 text-right font-medium">Valor</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-gray-100">
-                      {extrato.map((mov) => (
-                        <tr key={mov.codmovimento} className="hover:bg-gray-50">
-                          <td className="px-4 py-3 text-gray-600 whitespace-nowrap">
-                            {new Date(mov.data_movimento).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
-                          </td>
-                          <td className="px-4 py-3">
-                            <span className={`inline-flex px-2 py-1 rounded-full text-xs font-medium ${
-                              mov.categoria === 'VENDA' ? 'bg-green-100 text-green-700' : 
-                              mov.categoria === 'ABERTURA' ? 'bg-blue-100 text-blue-700' :
-                              mov.tipo === 'SAIDA' ? 'bg-red-100 text-red-700' : 'bg-gray-100 text-gray-700'
-                            }`}>
-                              {mov.categoria}
-                            </span>
-                          </td>
-                          <td className="px-4 py-3 font-medium text-gray-700">
+                <div className="w-full">
+                  {/* Mobile View */}
+                  <div className="md:hidden divide-y divide-gray-100 border border-gray-200 rounded-xl overflow-hidden">
+                    {extrato.length === 0 ? (
+                      <div className="p-8 text-center text-gray-500">Nenhuma movimentação encontrada neste caixa.</div>
+                    ) : (
+                      extrato.map((mov) => (
+                        <div key={mov.codmovimento} className="p-4 bg-white space-y-2">
+                          <div className="flex justify-between items-start">
+                            <div className="flex items-center gap-2">
+                              <span className={`inline-flex px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                                mov.categoria === 'VENDA' ? 'bg-green-100 text-green-700' : 
+                                mov.categoria === 'ABERTURA' ? 'bg-blue-100 text-blue-700' :
+                                mov.tipo === 'SAIDA' ? 'bg-red-100 text-red-700' : 'bg-gray-100 text-gray-700'
+                              }`}>
+                                {mov.categoria}
+                              </span>
+                              <span className="text-xs text-gray-500 font-medium">
+                                {new Date(mov.data_movimento).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+                              </span>
+                            </div>
+                            <div className={`text-sm font-bold ${mov.tipo === 'ENTRADA' ? 'text-green-600' : 'text-red-600'}`}>
+                              {mov.tipo === 'ENTRADA' ? '+' : '-'} R$ {Number(mov.valor).toLocaleString('pt-BR', {minimumFractionDigits: 2})}
+                            </div>
+                          </div>
+                          <div className="text-sm font-medium text-gray-800">
                             {mov.plano_pagamento?.DESCRICAO || '-'}
-                          </td>
-                          <td className="px-4 py-3 text-gray-500 max-w-[200px] truncate" title={mov.observacao}>
-                            {mov.observacao || '-'}
-                          </td>
-                          <td className={`px-4 py-3 text-right font-bold whitespace-nowrap ${mov.tipo === 'ENTRADA' ? 'text-green-600' : 'text-red-600'}`}>
-                            {mov.tipo === 'ENTRADA' ? '+' : '-'} R$ {Number(mov.valor).toLocaleString('pt-BR', {minimumFractionDigits: 2})}
-                          </td>
-                        </tr>
-                      ))}
-                      {extrato.length === 0 && (
+                          </div>
+                          {mov.observacao && (
+                            <div className="text-xs text-gray-500 bg-gray-50 p-2 rounded-md">
+                              {mov.observacao}
+                            </div>
+                          )}
+                        </div>
+                      ))
+                    )}
+                  </div>
+
+                  {/* Desktop View */}
+                  <div className="hidden md:block overflow-x-auto border border-gray-200 rounded-xl">
+                    <table className="w-full text-sm">
+                      <thead className="bg-gray-50 text-gray-500 border-b border-gray-200">
                         <tr>
-                          <td colSpan={5} className="px-4 py-8 text-center text-gray-500">
-                            Nenhuma movimentação encontrada neste caixa.
-                          </td>
+                          <th className="px-4 py-3 text-left font-medium">Hora</th>
+                          <th className="px-4 py-3 text-left font-medium">Categoria</th>
+                          <th className="px-4 py-3 text-left font-medium">Plano/Forma</th>
+                          <th className="px-4 py-3 text-left font-medium">Observação</th>
+                          <th className="px-4 py-3 text-right font-medium">Valor</th>
                         </tr>
-                      )}
-                    </tbody>
-                  </table>
+                      </thead>
+                      <tbody className="divide-y divide-gray-100">
+                        {extrato.map((mov) => (
+                          <tr key={mov.codmovimento} className="hover:bg-gray-50">
+                            <td className="px-4 py-3 text-gray-600 whitespace-nowrap">
+                              {new Date(mov.data_movimento).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+                            </td>
+                            <td className="px-4 py-3">
+                              <span className={`inline-flex px-2 py-1 rounded-full text-xs font-medium ${
+                                mov.categoria === 'VENDA' ? 'bg-green-100 text-green-700' : 
+                                mov.categoria === 'ABERTURA' ? 'bg-blue-100 text-blue-700' :
+                                mov.tipo === 'SAIDA' ? 'bg-red-100 text-red-700' : 'bg-gray-100 text-gray-700'
+                              }`}>
+                                {mov.categoria}
+                              </span>
+                            </td>
+                            <td className="px-4 py-3 font-medium text-gray-700">
+                              {mov.plano_pagamento?.DESCRICAO || '-'}
+                            </td>
+                            <td className="px-4 py-3 text-gray-500 max-w-[200px] truncate" title={mov.observacao}>
+                              {mov.observacao || '-'}
+                            </td>
+                            <td className={`px-4 py-3 text-right font-bold whitespace-nowrap ${mov.tipo === 'ENTRADA' ? 'text-green-600' : 'text-red-600'}`}>
+                              {mov.tipo === 'ENTRADA' ? '+' : '-'} R$ {Number(mov.valor).toLocaleString('pt-BR', {minimumFractionDigits: 2})}
+                            </td>
+                          </tr>
+                        ))}
+                        {extrato.length === 0 && (
+                          <tr>
+                            <td colSpan={5} className="px-4 py-8 text-center text-gray-500">
+                              Nenhuma movimentação encontrada neste caixa.
+                            </td>
+                          </tr>
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
                 </div>
               )}
 

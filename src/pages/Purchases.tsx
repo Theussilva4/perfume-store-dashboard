@@ -39,6 +39,7 @@ const Purchases = () => {
   const [fornecedorUuid, setFornecedorUuid] = useState("");
   const [fornecedorCod, setFornecedorCod] = useState("");
   const [fornecedorNome, setFornecedorNome] = useState("");
+  const [notaFiscalFornecedor, setNotaFiscalFornecedor] = useState("");
   const [dialogFornecedorOpen, setDialogFornecedorOpen] = useState(false);
   
   const [filialDestino, setFilialDestino] = useState("");
@@ -77,23 +78,26 @@ const Purchases = () => {
       ]);
       
       const comprasNormalizadas = Array.isArray(comprasAPI) ? comprasAPI.map((c: any) => ({...c, tipo_registro: "COMPRA"})) : [];
-      const entradasNormalizadas = Array.isArray(entradasAPI) ? entradasAPI.map((e: any) => ({
-        uuid: `ajuste-${e.uuid || e.id}`,
-        codigo_compra: `AJST-${e.id}`,
-        data_compra: e.data_mov,
-        status: "CONCLUIDA",
-        valor_total: 0,
-        msfornecedor: { nome: "Ajuste Manual" },
-        codfilial: e.codfilial,
-        tipo_registro: "AJUSTE",
-        itens: (e.itens || []).map((item: any) => ({
-          codproduto: item.codproduto,
-          msproduto: item.produto,
-          quantidade: item.quantidade,
-          custo_unitario: 0,
-          valor_total: 0
-        }))
-      })) : [];
+      const entradasNormalizadas = Array.isArray(entradasAPI) ? entradasAPI.map((e: any) => {
+        const valorAjuste = (e.itens || []).reduce((acc: number, item: any) => acc + (Number(item.quantidade) * Number(item.produto?.custo || 0)), 0);
+        return {
+          uuid: `ajuste-${e.uuid || e.id}`,
+          codigo_compra: `AJST-${e.id}`,
+          data_compra: e.data_mov,
+          status: "CONCLUIDA",
+          valor_total: valorAjuste,
+          msfornecedor: { nome: "Ajuste Manual" },
+          codfilial: e.codfilial,
+          tipo_registro: "AJUSTE",
+          itens: (e.itens || []).map((item: any) => ({
+            codproduto: item.codproduto,
+            msproduto: item.produto,
+            quantidade: item.quantidade,
+            custo_unitario: item.produto?.custo || 0,
+            valor_total: Number(item.quantidade) * Number(item.produto?.custo || 0)
+          }))
+        };
+      }) : [];
 
       const todas = [...comprasNormalizadas, ...entradasNormalizadas].sort((a, b) => 
         new Date(b.data_compra).getTime() - new Date(a.data_compra).getTime()
@@ -146,6 +150,49 @@ const Purchases = () => {
     
     return matchFilial && matchSearch;
   });
+
+  const handleBuscaRapidaProduto = () => {
+    if (!produtoBusca.trim()) return;
+    const termo = produtoBusca.toLowerCase().trim();
+    const prod = listaProdutos.find(p => 
+      String(p.codproduto) === termo || 
+      (p.codigo_barras && p.codigo_barras.toLowerCase() === termo) ||
+      (p.ean && p.ean.toLowerCase() === termo) ||
+      p.descricao.toLowerCase().includes(termo)
+    );
+    
+    if (prod) {
+      setProdutoSelecionadoId(String(prod.codproduto));
+      setCustoSelecionado(prod.custo || 0);
+      toast.success("Produto selecionado!");
+    } else {
+      toast.error("Produto não encontrado!");
+      setProdutoSelecionadoId("");
+    }
+  };
+
+  const handleBuscaRapidaFornecedor = () => {
+    if (!fornecedorBusca.trim()) return;
+    const termo = fornecedorBusca.toLowerCase().trim();
+    const forn = listaFornecedores.find(f => 
+      String(f.codfornecedor) === termo || 
+      String(f.id) === termo ||
+      (f.cnpj && f.cnpj.replace(/\D/g, "") === termo.replace(/\D/g, "")) ||
+      f.nome.toLowerCase().includes(termo)
+    );
+    
+    if (forn) {
+      setFornecedorUuid(forn.uuid || "");
+      setFornecedorCod(String(forn.codfornecedor || forn.id || ""));
+      setFornecedorNome(forn.nome);
+      toast.success("Fornecedor selecionado!");
+    } else {
+      toast.error("Fornecedor não encontrado!");
+      setFornecedorUuid("");
+      setFornecedorCod("");
+      setFornecedorNome("");
+    }
+  };
 
   const adicionarItem = () => {
     const produto = listaProdutos.find(p => String(p.codproduto) === produtoSelecionadoId);
@@ -220,6 +267,7 @@ const Purchases = () => {
           codfornecedor: parseInt(fornecedorCod),
           codfilial: parseInt(filialDestino),
           status: statusCompra,
+          numero_documento: notaFiscalFornecedor || undefined,
           itens: itensCompra.map(i => ({
             codproduto: parseInt(i.codproduto),
             quantidade: Number(i.quantidade),
@@ -250,6 +298,7 @@ const Purchases = () => {
       setFornecedorUuid("");
       setFornecedorCod("");
       setFornecedorNome("");
+      setNotaFiscalFornecedor("");
       setFilialDestino("");
       setItensCompra([]);
       setDialogOpen(false);
@@ -580,13 +629,55 @@ const Purchases = () => {
             </div>
 
             {tipoEntrada === "COMPRA" && (
-              <div className="space-y-2">
-                <Label>Fornecedor</Label>
-                <div className="flex flex-col sm:flex-row gap-2">
-                  <Button type="button" variant="outline" onClick={() => setDialogFornecedorOpen(true)}>
-                    Buscar
-                  </Button>
-                  <Input value={fornecedorNome} readOnly placeholder="Nenhum fornecedor selecionado" className="flex-1" />
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>Fornecedor (Cód/CNPJ/Nome)</Label>
+                  <div className="flex flex-col gap-2">
+                    {!fornecedorCod ? (
+                      <div className="flex gap-2">
+                        <Input
+                          value={fornecedorBusca}
+                          onChange={(e) => setFornecedorBusca(e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter") {
+                              e.preventDefault();
+                              handleBuscaRapidaFornecedor();
+                            }
+                          }}
+                          placeholder="Busca rápida (Enter)..."
+                          className="flex-1"
+                        />
+                        <Button type="button" variant="outline" onClick={() => setDialogFornecedorOpen(true)} title="Lista de Fornecedores">
+                          ...
+                        </Button>
+                      </div>
+                    ) : (
+                      <div className="flex gap-2">
+                        <Input 
+                          value={fornecedorNome} 
+                          readOnly 
+                          placeholder="Fornecedor Selecionado"
+                          className="flex-1 bg-muted/50 border-primary/20 text-primary font-medium"
+                        />
+                        <Button type="button" variant="ghost" onClick={() => {
+                          setFornecedorUuid("");
+                          setFornecedorCod("");
+                          setFornecedorNome("");
+                        }} title="Remover Fornecedor">
+                          <Trash2 className="h-4 w-4 text-muted-foreground hover:text-red-500" />
+                        </Button>
+                      </div>
+                    )}
+                  </div>
+                </div>
+                
+                <div className="space-y-2">
+                  <Label>Nº da Nota / Documento</Label>
+                  <Input 
+                    value={notaFiscalFornecedor} 
+                    onChange={e => setNotaFiscalFornecedor(e.target.value)} 
+                    placeholder="Ex: 123456" 
+                  />
                 </div>
               </div>
             )}
@@ -596,39 +687,71 @@ const Purchases = () => {
               
               <div className="grid grid-cols-1 md:grid-cols-12 gap-3 items-end mb-4">
                 <div className="md:col-span-4">
-                  <Label>Produto</Label>
-                  <div className="flex flex-col sm:flex-row gap-2">
-                    <Button type="button" variant="outline" onClick={() => setDialogProdutoOpen(true)}>
-                      ...
-                    </Button>
-                    <Button type="button" variant="outline" onClick={recarregarProdutos} title="Atualizar produtos" className="px-2">
-                      <RefreshCw className="h-4 w-4 text-green-600" />
-                    </Button>
-                    <Input 
-                      value={listaProdutos.find(p => String(p.codproduto) === produtoSelecionadoId)?.descricao || ""} 
-                      readOnly 
-                      placeholder="Produto"
-                    />
+                  <Label>Produto (Cód/EAN/Nome)</Label>
+                  <div className="flex flex-col gap-2">
+                    <div className="flex gap-2">
+                      <Input
+                        value={produtoBusca}
+                        onChange={(e) => setProdutoBusca(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") {
+                            e.preventDefault();
+                            handleBuscaRapidaProduto();
+                          }
+                        }}
+                        placeholder="Busca rápida (Enter)..."
+                        className="flex-1"
+                      />
+                      <Button type="button" variant="secondary" onClick={() => setScannerOpen(true)} title="Escanear Código">
+                        <Camera className="h-4 w-4" />
+                      </Button>
+                      <Button type="button" variant="outline" onClick={async () => {
+                        await recarregarProdutos();
+                        setDialogProdutoOpen(true);
+                      }} title="Catálogo de Produtos">
+                        ...
+                      </Button>
+                    </div>
+                    
+                    {produtoSelecionadoId && (
+                      <div className="flex gap-2">
+                        <Input 
+                          value={listaProdutos.find(p => String(p.codproduto) === produtoSelecionadoId)?.descricao || ""} 
+                          readOnly 
+                          placeholder="Produto Selecionado"
+                          className="flex-1 bg-muted/50 border-primary/20 text-primary font-medium"
+                        />
+                        <Button type="button" variant="ghost" onClick={() => setProdutoSelecionadoId("")} title="Limpar">
+                          <Trash2 className="h-4 w-4 text-muted-foreground hover:text-red-500" />
+                        </Button>
+                      </div>
+                    )}
                   </div>
                 </div>
-                <div className="md:col-span-3">
-                  <Label>Qtd.</Label>
-                  <Input type="number" value={qtdSelecionada} onChange={e => setQtdSelecionada(Number(e.target.value))} min={1} />
-                </div>
-                {tipoEntrada === "COMPRA" && (
-                  <div className="md:col-span-3">
-                    <Label>Custo Unit.</Label>
-                    <Input type="number" step="0.01" value={custoSelecionado} onChange={e => setCustoSelecionado(Number(e.target.value))} min={0} />
+                <div className={`md:col-span-3 grid ${tipoEntrada === "COMPRA" ? "grid-cols-2" : "grid-cols-1"} gap-2`}>
+                  <div>
+                    <Label>Qtd</Label>
+                    <Input type="number" value={qtdSelecionada} onChange={e => setQtdSelecionada(Number(e.target.value))} min={1} />
                   </div>
-                )}
-                <div className="md:col-span-3">
-                  <Label>Lote</Label>
-                  <Input value={loteSelecionado} onChange={e => setLoteSelecionado(e.target.value)} placeholder="Ex: L123" />
+                  {tipoEntrada === "COMPRA" && (
+                    <div>
+                      <Label>Custo Unit.</Label>
+                      <Input type="number" step="0.01" value={custoSelecionado} onChange={e => setCustoSelecionado(Number(e.target.value))} min={0} />
+                    </div>
+                  )}
                 </div>
-                <div className="md:col-span-3">
-                  <Label>Validade</Label>
-                  <Input type="date" value={validadeSelecionada} onChange={e => setValidadeSelecionada(e.target.value)} />
+                
+                <div className="md:col-span-3 grid grid-cols-2 gap-2">
+                  <div>
+                    <Label>Lote</Label>
+                    <Input value={loteSelecionado} onChange={e => setLoteSelecionado(e.target.value)} placeholder="Ex: L123" />
+                  </div>
+                  <div>
+                    <Label>Validade</Label>
+                    <Input type="date" value={validadeSelecionada} onChange={e => setValidadeSelecionada(e.target.value)} />
+                  </div>
                 </div>
+                
                 <div className="md:col-span-2">
                   <Button type="button" onClick={adicionarItem} disabled={!produtoSelecionadoId} className="w-full">
                     Add
@@ -637,33 +760,44 @@ const Purchases = () => {
               </div>
 
               {itensCompra.length > 0 && (
-                <div className="bg-muted/30 rounded-md p-3 space-y-2">
+                <div className="bg-muted/30 rounded-md p-3 space-y-3">
                   {itensCompra.map((item, i) => (
-                    <div key={i} className="flex justify-between items-center text-sm border-b pb-2 last:border-0 last:pb-0">
-                      <span className="flex-1">{item.nomeProduto}</span>
-                      <span className="w-20 text-center">{item.quantidade}x</span>
-                      {tipoEntrada === "COMPRA" && (
-                        <>
-                          <span className="w-24 text-right">R$ {item.custo_unitario.toLocaleString('pt-BR')}</span>
-                          <span className="w-24 text-right font-medium">R$ {(item.quantidade * item.custo_unitario).toLocaleString('pt-BR')}</span>
-                        </>
-                      )}
-                      <div className="flex flex-col text-xs text-muted-foreground ml-2 w-32">
-                        <span>Lote: {item.lote || '-'}</span>
-                        <span>Val: {item.validade ? new Date(item.validade).toLocaleDateString('pt-BR', {timeZone:'UTC'}) : '-'}</span>
+                    <div key={i} className="flex flex-col sm:flex-row sm:items-center justify-between text-sm border-b pb-3 last:border-0 last:pb-0 gap-2">
+                      <div className="flex-1 font-medium">{item.nomeProduto}</div>
+                      
+                      <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm">
+                        <div className="bg-background px-2 py-1 rounded-md border border-border">
+                          <span className="text-muted-foreground mr-1">Qtd:</span>
+                          <span className="font-bold">{item.quantidade}</span>
+                        </div>
+                        
+                        <div className="text-muted-foreground">
+                          <span className="sm:hidden mr-1">Custo:</span>
+                          R$ {item.custo_unitario.toLocaleString('pt-BR')}
+                        </div>
+                        <div className="font-bold text-foreground">
+                          <span className="sm:hidden mr-1">Total:</span>
+                          R$ {(item.quantidade * item.custo_unitario).toLocaleString('pt-BR')}
+                        </div>
+                        
+                        {(item.lote || item.validade) && (
+                          <div className="flex flex-col text-xs text-muted-foreground bg-muted/50 px-2 py-1 rounded-md">
+                            {item.lote && <span>Lote: {item.lote}</span>}
+                            {item.validade && <span>Val: {new Date(item.validade).toLocaleDateString('pt-BR', {timeZone:'UTC'})}</span>}
+                          </div>
+                        )}
+                        
+                        <button onClick={() => removerItem(item.codproduto)} className="text-red-500 hover:text-red-700 bg-red-50 hover:bg-red-100 px-2 py-1 rounded-md transition-colors sm:ml-auto">
+                          Remover
+                        </button>
                       </div>
-                      <button onClick={() => removerItem(item.codproduto)} className="text-red-500 hover:text-red-700 ml-3">
-                        Remover
-                      </button>
                     </div>
                   ))}
-                  <div className="border-t pt-2 flex justify-between font-bold">
-                    <span>{tipoEntrada === "COMPRA" ? "Total da Compra" : "Itens adicionados"}</span>
-                    {tipoEntrada === "COMPRA" && (
-                      <span className="text-primary">
-                        R$ {itensCompra.reduce((s, i) => s + (i.quantidade * i.custo_unitario), 0).toLocaleString('pt-BR')}
-                      </span>
-                    )}
+                  <div className="border-t pt-3 flex justify-between font-bold text-base">
+                    <span>{tipoEntrada === "COMPRA" ? "Total da Compra" : "Total do Ajuste (Custo)"}</span>
+                    <span className="text-primary">
+                      R$ {itensCompra.reduce((s, i) => s + (i.quantidade * i.custo_unitario), 0).toLocaleString('pt-BR')}
+                    </span>
                   </div>
                 </div>
               )}
@@ -779,33 +913,53 @@ const Purchases = () => {
               </div>
               <div>
                 <h4 className="font-medium border-b pb-1 mb-2">Itens da Compra</h4>
-                <div className="overflow-x-auto max-h-[250px] overflow-y-auto">
-                  <table className="w-full text-sm">
-                    <thead className="sticky top-0 bg-background">
-                      <tr className="border-b text-left text-muted-foreground text-xs">
-                        <th className="pb-2 font-medium pr-2">Cód</th>
-                        <th className="pb-2 font-medium">Produto</th>
-                        <th className="pb-2 font-medium text-right px-2">Qtd</th>
-                        <th className="pb-2 font-medium text-right px-2">Custo Un.</th>
-                        <th className="pb-2 font-medium text-right pl-2">Total</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-border/50">
-                      {(compraSelecionada.mscompra_item || []).map((item: any, idx: number) => (
-                        <tr key={idx} className="hover:bg-muted/30">
-                          <td className="py-2 text-muted-foreground pr-2">{item.codproduto}</td>
-                          <td className="py-2 font-medium">{item.msproduto?.descricao || "Desconhecido"}</td>
-                          <td className="py-2 text-right px-2">{item.quantidade}</td>
-                          <td className="py-2 text-right text-muted-foreground whitespace-nowrap px-2">
-                            R$ {Number(item.custo_unitario).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
-                          </td>
-                          <td className="py-2 text-right font-medium whitespace-nowrap pl-2">
-                            R$ {(item.quantidade * item.custo_unitario).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
-                          </td>
+                <div className="w-full">
+                  {/* Mobile View */}
+                  <div className="md:hidden flex flex-col gap-2 max-h-[300px] overflow-y-auto pr-1">
+                    {(compraSelecionada.mscompra_item || []).map((item: any, idx: number) => (
+                      <div key={idx} className="bg-muted/20 border border-border rounded-md p-3 text-sm flex flex-col gap-1">
+                        <div className="font-medium">{item.msproduto?.descricao || "Desconhecido"} <span className="text-muted-foreground text-xs font-normal ml-1">(Cód: {item.codproduto})</span></div>
+                        <div className="flex justify-between items-center text-xs mt-1">
+                          <span className="text-muted-foreground">Qtd: <span className="font-medium text-foreground">{item.quantidade}</span></span>
+                          <span className="text-muted-foreground">Unit: R$ {Number(item.custo_unitario).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</span>
+                          <span className="font-semibold text-primary">Total: R$ {(item.quantidade * item.custo_unitario).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</span>
+                        </div>
+                      </div>
+                    ))}
+                    {(compraSelecionada.mscompra_item || []).length === 0 && (
+                      <p className="text-muted-foreground text-sm py-4 text-center">Nenhum item registrado.</p>
+                    )}
+                  </div>
+
+                  {/* Desktop View */}
+                  <div className="hidden md:block overflow-x-auto max-h-[250px] overflow-y-auto">
+                    <table className="w-full text-sm">
+                      <thead className="sticky top-0 bg-background">
+                        <tr className="border-b text-left text-muted-foreground text-xs">
+                          <th className="pb-2 font-medium pr-2">Cód</th>
+                          <th className="pb-2 font-medium">Produto</th>
+                          <th className="pb-2 font-medium text-right px-2">Qtd</th>
+                          <th className="pb-2 font-medium text-right px-2">Custo Un.</th>
+                          <th className="pb-2 font-medium text-right pl-2">Total</th>
                         </tr>
-                      ))}
-                    </tbody>
-                  </table>
+                      </thead>
+                      <tbody className="divide-y divide-border/50">
+                        {(compraSelecionada.mscompra_item || []).map((item: any, idx: number) => (
+                          <tr key={idx} className="hover:bg-muted/30">
+                            <td className="py-2 text-muted-foreground pr-2">{item.codproduto}</td>
+                            <td className="py-2 font-medium">{item.msproduto?.descricao || "Desconhecido"}</td>
+                            <td className="py-2 text-right px-2">{item.quantidade}</td>
+                            <td className="py-2 text-right text-muted-foreground whitespace-nowrap px-2">
+                              R$ {Number(item.custo_unitario).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
+                            </td>
+                            <td className="py-2 text-right font-medium whitespace-nowrap pl-2">
+                              R$ {(item.quantidade * item.custo_unitario).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
                 </div>
               </div>
               <div className="flex justify-between items-center border-t pt-3">
