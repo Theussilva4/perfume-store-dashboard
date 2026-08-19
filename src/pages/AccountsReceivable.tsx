@@ -312,9 +312,17 @@ export default function AccountsReceivable() {
                         </div>
                       </div>
                       
-                      <div className="flex items-center text-xs text-muted-foreground">
-                        <Calendar className="h-3 w-3 mr-1" />
-                        <span>Gerada em: {format(new Date(conta.data_emissao), "dd/MM/yyyy", { locale: ptBR })}</span>
+                      <div className="flex flex-col gap-1">
+                        <div className="flex items-center text-xs text-muted-foreground">
+                          <Calendar className="h-3 w-3 mr-1" />
+                          <span>Gerada em: {format(new Date(conta.data_emissao), "dd/MM/yyyy", { locale: ptBR })}</span>
+                        </div>
+                        {conta.data_vencimento && (
+                          <div className={`flex items-center text-xs font-medium ${new Date(conta.data_vencimento) < new Date() ? 'text-red-500' : 'text-amber-600'}`}>
+                            <Calendar className="h-3 w-3 mr-1" />
+                            <span>Vence em: {format(new Date(conta.data_vencimento), "dd/MM/yyyy", { locale: ptBR })}</span>
+                          </div>
+                        )}
                       </div>
 
                       <Button className="w-full" onClick={() => handleAbrirBaixa(conta)}>
@@ -357,6 +365,18 @@ export default function AccountsReceivable() {
                     <div className="bg-emerald-50 p-3 rounded-md border border-emerald-100 flex justify-between items-center">
                       <span className="text-emerald-700 font-medium text-sm">Total Pago</span>
                       <span className="font-bold text-emerald-700">{formatarMoeda(conta.valor_pago)}</span>
+                    </div>
+                    <div className="flex flex-col gap-1 mt-3">
+                      <div className="flex items-center text-xs text-muted-foreground">
+                        <Calendar className="h-3 w-3 mr-1" />
+                        <span>Gerada em: {format(new Date(conta.data_emissao), "dd/MM/yyyy", { locale: ptBR })}</span>
+                      </div>
+                      {conta.data_vencimento && (
+                        <div className="flex items-center text-xs text-muted-foreground">
+                          <Calendar className="h-3 w-3 mr-1" />
+                          <span>Vence em: {format(new Date(conta.data_vencimento), "dd/MM/yyyy", { locale: ptBR })}</span>
+                        </div>
+                      )}
                     </div>
                     
                     {conta.pagamentos && conta.pagamentos.length > 0 && (

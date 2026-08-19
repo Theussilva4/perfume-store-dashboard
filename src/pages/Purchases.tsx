@@ -86,7 +86,8 @@ const Purchases = () => {
           data_compra: e.data_mov,
           status: "CONCLUIDA",
           valor_total: valorAjuste,
-          msfornecedor: { nome: "Ajuste Manual" },
+          msfornecedor: { nome: e.usuario_nome ? `Ajuste Manual (${e.usuario_nome})` : "Ajuste Manual" },
+          created_at: e.data_mov,
           codfilial: e.codfilial,
           tipo_registro: "AJUSTE",
           itens: (e.itens || []).map((item: any) => ({
@@ -492,7 +493,7 @@ const Purchases = () => {
                   </h4>
                   <p className="text-base font-medium text-foreground mt-1">{compra.msfornecedor?.nome || 'N/A'}</p>
                   <div className="flex flex-col gap-0.5 mt-2">
-                    <span className="text-xs text-muted-foreground">Entrada: {new Date(compra.created_at).toLocaleDateString("pt-BR")}</span>
+                    <span className="text-xs text-muted-foreground">Entrada: {new Date(compra.created_at).toLocaleString("pt-BR")}</span>
                     {compra.numero_documento && <span className="text-xs text-muted-foreground">Emissão: {new Date(compra.data_compra).toLocaleDateString("pt-BR")}</span>}
                   </div>
                 </div>
@@ -544,7 +545,7 @@ const Purchases = () => {
                   </td>
                   <td className="px-4 py-3">
                     <div className="flex flex-col">
-                      <span>{new Date(compra.created_at).toLocaleDateString("pt-BR")}</span>
+                      <span>{new Date(compra.created_at).toLocaleString("pt-BR")}</span>
                       {compra.numero_documento && <span className="text-xs text-muted-foreground">Emi: {new Date(compra.data_compra).toLocaleDateString("pt-BR")}</span>}
                     </div>
                   </td>
@@ -1026,4 +1027,5 @@ const Purchases = () => {
 };
 
 export default Purchases;
+
 

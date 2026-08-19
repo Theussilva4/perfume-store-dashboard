@@ -175,10 +175,10 @@ const Users = () => {
           <Table>
             <TableHeader className="bg-secondary/50 sticky top-0 z-10 backdrop-blur-sm">
               <TableRow>
-                <TableHead className="w-20">Cód</TableHead>
+                <TableHead className="w-20 hidden sm:table-cell">Cód</TableHead>
                 <TableHead>Nome</TableHead>
-                <TableHead>Login</TableHead>
-                <TableHead>Perfil</TableHead>
+                <TableHead className="hidden md:table-cell">Login</TableHead>
+                <TableHead className="hidden sm:table-cell">Perfil</TableHead>
                 <TableHead className="w-28 text-center">Status</TableHead>
                 <TableHead className="text-right">Ações</TableHead>
               </TableRow>
@@ -191,13 +191,14 @@ const Users = () => {
               ) : (
                 filtered.map((u) => (
                   <TableRow key={u.codusur} className="hover:bg-muted/50 transition-colors">
-                    <TableCell className="font-medium">{u.codusur}</TableCell>
+                    <TableCell className="font-medium hidden sm:table-cell">{u.codusur}</TableCell>
                     <TableCell>
-                      <div>{u.nome}</div>
-                      {u.email && <div className="text-xs text-muted-foreground">{u.email}</div>}
+                      <div className="font-medium">{u.nome}</div>
+                      <div className="text-xs text-muted-foreground md:hidden">{u.login}</div>
+                      {u.email && <div className="text-xs text-muted-foreground hidden sm:block">{u.email}</div>}
                     </TableCell>
-                    <TableCell>{u.login}</TableCell>
-                    <TableCell>{u.tipo_usuario || "VENDEDOR"}</TableCell>
+                    <TableCell className="hidden md:table-cell">{u.login}</TableCell>
+                    <TableCell className="hidden sm:table-cell">{u.tipo_usuario || "VENDEDOR"}</TableCell>
                     <TableCell className="text-center">
                       <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${u.ativo === 'S' ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400' : 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400'}`}>
                         {u.ativo === "S" ? "Ativo" : "Inativo"}

@@ -55,7 +55,7 @@ const Orders = () => {
   const [statusAtualPedido, setStatusAtualPedido] = useState("EM_ABERTO");
   const [codigoPlano, setCodigoPlano] = useState("");
   const [nomePlano, setNomePlano] = useState("");
-  const [pagamentosVenda, setPagamentosVenda] = useState<{ codplano: string, nome: string, valor: number, parcelas: number }[]>([]);
+  const [pagamentosVenda, setPagamentosVenda] = useState<{ codplano: string, nome: string, valor: number, parcelas: number, acrescimo_aplicado?: number, bandeira?: string, vencimento?: string }[]>([]);
   const [valorPagamentoAtual, setValorPagamentoAtual] = useState<string>("");
   const [parcelas, setParcelas] = useState("1");
   const [observacoes, setObservacoes] = useState("");
@@ -99,6 +99,8 @@ const Orders = () => {
   const [modoCobrancaCartao, setModoCobrancaCartao] = useState("PERCENTUAL");
   const [bandeiraSelecionada, setBandeiraSelecionada] = useState("");
   const [regrasBandeiras, setRegrasBandeiras] = useState<any>({});
+  const [perguntarVencimentoCrediario, setPerguntarVencimentoCrediario] = useState(false);
+  const [dataVencimentoCrediario, setDataVencimentoCrediario] = useState("");
 
   const [kitsAtivos, setKitsAtivos] = useState<any[]>([]);
   const [kitsDetectados, setKitsDetectados] = useState<{ id: number, nome: string, economia: number, qtd: number, aplicado: boolean }[]>([]);
@@ -124,7 +126,7 @@ const Orders = () => {
       if (pagamentosVenda.length > 0) return; // Travar preço se já iniciou múltiplos pagamentos
       
       const planoAtivo = listaFormasPagamento.find(fp => String(fp.CODPLPAG || fp.codplpag || fp.codforma || fp.id || fp.codplano) === String(codigoPlano));
-      const isCartao = planoAtivo?.tipo_pagamento === "CARTAO";
+      const isCartao = ["CARTAO", "CARTAO_CREDITO", "CARTAO_DEBITO", "CREDIARIO"].includes(planoAtivo?.tipo_pagamento);
       
       setItensPedido(prev => prev.map(item => {
         const prod = listarProdutos.find(p => String(p.codproduto) === item.produtoId);
@@ -289,6 +291,7 @@ const Orders = () => {
       ]).then(([clientes, vendedores, produtosRAW, tabelaPrecos, est, kitsData, configRes]) => {
         if (configRes && configRes.data) {
           setModoCobrancaCartao(configRes.data.modo_cobranca_cartao || "PERCENTUAL");
+          setPerguntarVencimentoCrediario(configRes.data.perguntar_vencimento_crediario === true);
         }
         setListarClientes(clientes);
         setListarVendedor(vendedores);
@@ -693,7 +696,7 @@ const Orders = () => {
         return;
       }
       const planoAtivo = listaFormasPagamento.find(fp => String(fp.CODPLPAG || fp.codplpag || fp.codforma || fp.id || fp.codplano) === String(codigoPlano));
-      const isCartao = planoAtivo?.tipo_pagamento === "CARTAO" && pagamentosVenda.length === 0;
+      const isCartao = ["CARTAO", "CARTAO_CREDITO", "CARTAO_DEBITO", "CREDIARIO"].includes(planoAtivo?.tipo_pagamento) && pagamentosVenda.length === 0;
       const precoCartao = Number(produto.preco_cartao || 0);
       const precoNormal = Number(produto.preco_calculado || 0);
       const precoFinal = (isCartao && modoCobrancaCartao === "PRECO_FIXO" && precoCartao > 0) ? precoCartao : precoNormal;
@@ -715,7 +718,7 @@ const Orders = () => {
          return;
        }
        const planoAtivo = listaFormasPagamento.find(fp => String(fp.CODPLPAG || fp.codplpag || fp.codforma || fp.id || fp.codplano) === String(codigoPlano));
-       const isCartao = planoAtivo?.tipo_pagamento === "CARTAO" && pagamentosVenda.length === 0;
+       const isCartao = ["CARTAO", "CARTAO_CREDITO", "CARTAO_DEBITO", "CREDIARIO"].includes(planoAtivo?.tipo_pagamento) && pagamentosVenda.length === 0;
        const precoCartao = Number(produtoEncontrado.preco_cartao || 0);
        const precoNormal = Number(produtoEncontrado.preco_calculado || 0);
        const precoFinal = (isCartao && modoCobrancaCartao === "PRECO_FIXO" && precoCartao > 0) ? precoCartao : precoNormal;
@@ -824,28 +827,30 @@ const Orders = () => {
       itensAvulsos = itensAvulsos.filter(i => i.quantidade > 0);
 
       const payload = {
-        codcliente: codigoCliente,
-        codvendedor: codigoVendedor,
-        codusur_criou: usuario?.codusur, // Envia o usuário logado
-        codfilial: filialPedido,
+        codcliente: Number(codigoCliente),
+        codvendedor: codigoVendedor ? Number(codigoVendedor) : undefined,
+        codusur_criou: usuario?.codusur ? Number(usuario.codusur) : undefined,
+        codfilial: filialPedido ? Number(filialPedido) : undefined,
         formaPagamento: pagamentosVenda.length > 0 ? pagamentosVenda[0].codplano : codigoPlano,
         pagamentos: pagamentosVenda.map(p => ({
           codplano_pagamento: Number(p.codplano),
-          valor: p.valor,
-          parcelas: p.parcelas,
+          valor: Number(p.valor),
+          parcelas: Number(p.parcelas) || 1,
           bandeira: p.bandeira,
-          snapshot_acrescimo_aplicado: p.acrescimo_aplicado
+          snapshot_acrescimo_aplicado: p.acrescimo_aplicado,
+          vencimento: p.vencimento
         })),
         parcelas: Number(parcelas) || 1,
+        vencimento: dataVencimentoCrediario,
         observacoes,
         status: statusAtualPedido,
-        desconto: Number(descontoPedido) - acrescimoFinal, // ajustado
+        desconto: Number(descontoPedido) - Number(acrescimoFinal), // ajustado
         acrescimo: acrescimoFinal,
-        valor_frete: valorFrete,
+        valor_frete: Number(valorFrete) || 0,
         produtos: itensAvulsos.map(i => ({
-          codproduto: i.produtoId,
-          quantidade: i.quantidade,
-          preco_unitario: i.preco
+          produtoId: Number(i.produtoId),
+          quantidade: Number(i.quantidade),
+          preco_unitario: Number(i.preco)
         })),
         kits: kitsParaEnviar
       };
@@ -1621,7 +1626,7 @@ const Orders = () => {
               // Cálculo de acréscimo se o plano tem taxa ou for cartão
               let valorSugerido = faltaPagar;
               let taxaAtual = 0;
-              const isCartao = planoSelecionado?.tipo_pagamento === 'CARTAO_CREDITO' || planoSelecionado?.tipo_pagamento === 'CARTAO_DEBITO';
+              const isCartao = ["CARTAO", "CARTAO_CREDITO", "CARTAO_DEBITO", "CREDIARIO"].includes(planoSelecionado?.tipo_pagamento);
               if (planoSelecionado?.tem_acrescimo || isCartao) {
                 taxaAtual = Number(planoSelecionado?.taxa_acrescimo || 0);
                 
@@ -1745,7 +1750,7 @@ const Orders = () => {
                                 } catch(e){}
                               }
 
-                              const isCartao = planoSelecionado?.tipo_pagamento === 'CARTAO_CREDITO' || planoSelecionado?.tipo_pagamento === 'CARTAO_DEBITO';
+                              const isCartao = ["CARTAO", "CARTAO_CREDITO", "CARTAO_DEBITO", "CREDIARIO"].includes(planoSelecionado?.tipo_pagamento);
                               if ((planoSelecionado?.tem_acrescimo || isCartao) && (taxaUsada > 0 || modoCobrancaCartao !== "PERCENTUAL")) {
                                 const taxa = taxaUsada;
                                 
@@ -1768,12 +1773,13 @@ const Orders = () => {
                               }
                               
                               setAcrescimoPedido(prev => prev + acrescimoDesteLancamento);
-                              setPagamentosVenda([...pagamentosVenda, { codplano: codigoPlano, nome: nomePlano, valor: valorAdicionar, parcelas: Number(parcelas), acrescimo_aplicado: acrescimoDesteLancamento, bandeira: bandeiraSelecionada }]);
+                              setPagamentosVenda([...pagamentosVenda, { codplano: codigoPlano, nome: nomePlano, valor: valorAdicionar, parcelas: Number(parcelas), acrescimo_aplicado: acrescimoDesteLancamento, bandeira: bandeiraSelecionada, vencimento: dataVencimentoCrediario }]);
                               
                               setCodigoPlano("");
                               setNomePlano("");
                               setValorPagamentoAtual("");
                               setParcelas("1");
+                              setDataVencimentoCrediario("");
                             }
                           }
                         }}
@@ -1795,6 +1801,17 @@ const Orders = () => {
                             ))}
                           </SelectContent>
                         </Select>
+                      </div>
+                    )}
+                    
+                    {planoSelecionado?.tipo_pagamento === 'CREDIARIO' && perguntarVencimentoCrediario && (
+                      <div className="space-y-2 md:col-span-2">
+                        <Label>1º Vencimento</Label>
+                        <Input 
+                          type="date" 
+                          value={dataVencimentoCrediario} 
+                          onChange={e => setDataVencimentoCrediario(e.target.value)} 
+                        />
                       </div>
                     )}
 
@@ -1829,7 +1846,7 @@ const Orders = () => {
                               } catch(e){}
                             }
 
-                            const isCartao = planoSelecionado?.tipo_pagamento === 'CARTAO_CREDITO' || planoSelecionado?.tipo_pagamento === 'CARTAO_DEBITO';
+                            const isCartao = ["CARTAO", "CARTAO_CREDITO", "CARTAO_DEBITO", "CREDIARIO"].includes(planoSelecionado?.tipo_pagamento);
                             if ((planoSelecionado?.tem_acrescimo || isCartao) && (taxaUsada > 0 || modoCobrancaCartao !== "PERCENTUAL")) {
                               const taxa = taxaUsada;
                               if (pagamentosVenda.length === 0 && Number(valorAdicionar.toFixed(2)) === Number(valorSugerido.toFixed(2))) {
@@ -1846,11 +1863,12 @@ const Orders = () => {
                               }
                             }
                             setAcrescimoPedido(prev => prev + acrescimoDesteLancamento);
-                            setPagamentosVenda([...pagamentosVenda, { codplano: codigoPlano, nome: nomePlano, valor: valorAdicionar, parcelas: Number(parcelas), acrescimo_aplicado: acrescimoDesteLancamento, bandeira: bandeiraSelecionada }]);
+                            setPagamentosVenda([...pagamentosVenda, { codplano: codigoPlano, nome: nomePlano, valor: valorAdicionar, parcelas: Number(parcelas), acrescimo_aplicado: acrescimoDesteLancamento, bandeira: bandeiraSelecionada, vencimento: dataVencimentoCrediario }]);
                             setCodigoPlano("");
                             setNomePlano("");
                             setValorPagamentoAtual("");
                             setParcelas("1");
+                            setDataVencimentoCrediario("");
                           } else {
                             toast.error("Insira um valor válido");
                           }
@@ -2372,4 +2390,5 @@ const Orders = () => {
 };
 
 export default Orders;
+
 

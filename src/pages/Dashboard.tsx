@@ -8,7 +8,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend } from "recharts";
 import { toast } from "sonner";
 import { format, parseISO } from "date-fns";
 import ptBR from "date-fns/locale/pt-BR";
@@ -66,6 +66,7 @@ export default function Dashboard() {
     clientesBase = 0,
     clientesNovosMes = 0,
     graficoVendas = [],
+    vendasSemanaAtualPassada = [],
     maisVendidos = [],
     ultimosPedidos = [],
     estoqueBaixo = [],
@@ -250,6 +251,27 @@ export default function Dashboard() {
                       }}
                     />
                     <Bar dataKey="total" fill="#0f172a" radius={[4, 4, 0, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Comparativo Semana a Semana */}
+          <Card className="shadow-sm">
+            <CardHeader>
+              <CardTitle className="text-lg">📊 Comparativo: Esta Semana vs Semana Passada</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="h-[250px] w-full mt-2">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={vendasSemanaAtualPassada} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                    <XAxis dataKey="dia" fontSize={12} axisLine={false} tickLine={false} />
+                    <YAxis tickFormatter={(val) => `R$${(val/1000).toFixed(1)}k`} fontSize={12} axisLine={false} tickLine={false} />
+                    <Tooltip formatter={(val: number, name: string) => [formataMoeda(val), name === 'atual' ? 'Esta Semana' : 'Semana Passada']} />
+                    <Legend wrapperStyle={{ fontSize: '12px' }} />
+                    <Bar dataKey="passada" name="Semana Passada" fill="#94a3b8" radius={[4, 4, 0, 0]} />
+                    <Bar dataKey="atual" name="Esta Semana" fill="#3b82f6" radius={[4, 4, 0, 0]} />
                   </BarChart>
                 </ResponsiveContainer>
               </div>

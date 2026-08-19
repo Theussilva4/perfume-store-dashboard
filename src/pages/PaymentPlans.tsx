@@ -326,6 +326,7 @@ const PaymentPlans = () => {
                 >
                   <option value="A_VISTA">À Vista / Dinheiro</option>
                   <option value="CARTAO">Cartão (Débito/Crédito)</option>
+                  <option value="CREDIARIO">Crediário (Contas a Receber)</option>
                 </select>
               </div>
             </div>

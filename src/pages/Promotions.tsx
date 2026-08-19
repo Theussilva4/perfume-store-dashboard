@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Percent, Search, Plus, Trash2, Calendar, Tags, Eye, Pencil } from "lucide-react";
+import { Percent, Search, Plus, Trash2, Calendar, Tags, Eye, Pencil, Camera } from "lucide-react";
+import { BarcodeScannerModal } from "@/components/BarcodeScannerModal";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -28,6 +29,9 @@ const Promotions = () => {
 
   // Para adicionar item na lista
   const [selectedProductId, setSelectedProductId] = useState("");
+  const [produtoBusca, setProdutoBusca] = useState("");
+  const [scannerOpen, setScannerOpen] = useState(false);
+  const [dialogProdutoOpen, setDialogProdutoOpen] = useState(false);
 
   const { data: configuracao } = useQuery({
     queryKey: ["configuracao-comercial"],
@@ -83,6 +87,7 @@ const Promotions = () => {
     setPrioridade("1");
     setItens([]);
     setSelectedProductId("");
+    setProdutoBusca("");
     setIsViewing(false);
     setEditingId(null);
   };
@@ -109,6 +114,11 @@ const Promotions = () => {
     setEditingId(promocao.codpromocao);
     setIsViewing(viewOnly);
     setIsModalOpen(true);
+  };
+
+  const handleScanProduto = (decodedText: string) => {
+    setProdutoBusca(decodedText);
+    toast.success("Código lido: " + decodedText);
   };
 
   const handleAddItem = () => {
@@ -358,17 +368,74 @@ const Promotions = () => {
               
               {!isViewing && (
                 <div className="flex flex-col sm:flex-row gap-2">
-                  <Select value={selectedProductId} onValueChange={setSelectedProductId}>
-                    <SelectTrigger className="flex-1"><SelectValue placeholder="Selecione um produto..." /></SelectTrigger>
-                    <SelectContent>
-                      {produtos.map((p: any) => (
-                        <SelectItem key={p.codproduto} value={p.codproduto.toString()}>{p.descricao} - (Base: R$ {Number(p.precificacao?.precoBase || 0).toFixed(2)})</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <Button variant="secondary" onClick={handleAddItem} disabled={!selectedProductId}>Adicionar</Button>
+                  <div className="flex flex-1 gap-2">
+                    <Input 
+                      placeholder="Buscar produto por nome, código ou código de barras..." 
+                      value={produtoBusca} 
+                      onChange={e => setProdutoBusca(e.target.value)} 
+                      className="flex-1"
+                    />
+                    <Button type="button" variant="outline" className="px-3" onClick={() => setScannerOpen(true)} title="Escanear Código">
+                      <Camera className="h-4 w-4" />
+                    </Button>
+                    <Button type="button" variant="secondary" onClick={() => setDialogProdutoOpen(true)}>
+                      <Search className="h-4 w-4 mr-2" /> Listar
+                    </Button>
+                  </div>
                 </div>
               )}
+
+              {/* Diálogo de Seleção de Produtos */}
+              <Dialog open={dialogProdutoOpen} onOpenChange={setDialogProdutoOpen}>
+                <DialogContent className="max-w-3xl">
+                  <DialogHeader><DialogTitle>Selecionar Produto</DialogTitle></DialogHeader>
+                  <div className="flex gap-2 mb-4">
+                    <Input 
+                      placeholder="Filtrar por nome, código ou código de barras..." 
+                      value={produtoBusca} 
+                      onChange={e => setProdutoBusca(e.target.value)} 
+                      className="flex-1"
+                    />
+                    <Button type="button" variant="outline" className="px-3" onClick={() => setScannerOpen(true)}>
+                      <Camera className="h-4 w-4" />
+                    </Button>
+                  </div>
+                  <div className="max-h-[60vh] overflow-y-auto space-y-2">
+                    {produtos
+                      .filter((p: any) => 
+                        !produtoBusca ||
+                        p.descricao?.toLowerCase().includes(produtoBusca.toLowerCase()) || 
+                        String(p.codproduto).includes(produtoBusca) || 
+                        (p.codigo_barras && String(p.codigo_barras).toLowerCase().includes(produtoBusca.toLowerCase()))
+                      )
+                      .map((p: any) => {
+                        const jaAdicionado = itens.some(i => i.codproduto === p.codproduto);
+                        return (
+                          <div 
+                            key={p.codproduto} 
+                            className={`p-3 border rounded-lg flex items-center justify-between ${jaAdicionado ? 'opacity-50 bg-muted' : 'hover:bg-muted/50 cursor-pointer'}`}
+                            onClick={() => {
+                              if (jaAdicionado) return;
+                              setSelectedProductId(String(p.codproduto));
+                              setItens([...itens, { ...p, tipo_opcional: "", valor_opcional: "" }]);
+                              setDialogProdutoOpen(false);
+                              setProdutoBusca("");
+                            }}
+                          >
+                            <div>
+                              <div className="font-medium">{p.descricao}</div>
+                              <div className="text-xs text-muted-foreground">Cód: {p.codproduto} | Cód. Barras: {p.codigo_barras || 'N/A'}</div>
+                            </div>
+                            <div className="text-right">
+                              <div className="font-bold">R$ {Number(p.precificacao?.precoBase || 0).toFixed(2)}</div>
+                              <div className="text-xs text-muted-foreground">Base</div>
+                            </div>
+                          </div>
+                        );
+                      })}
+                  </div>
+                </DialogContent>
+              </Dialog>
 
               {itens.length > 0 && (
                 <>
@@ -553,6 +620,15 @@ const Promotions = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+      
+      <BarcodeScannerModal 
+        isOpen={scannerOpen}
+        onClose={() => setScannerOpen(false)}
+        onScan={(text) => {
+          handleScanProduto(text);
+          setScannerOpen(false);
+        }}
+      />
     </div>
   );
 };

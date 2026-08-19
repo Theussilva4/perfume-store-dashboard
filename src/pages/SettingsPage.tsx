@@ -24,6 +24,7 @@ const SettingsPage = () => {
     allowProductsWithoutPrice: false,
     atualizacaoCustoCompra: "PERGUNTAR",
     modoCobrancaCartao: "PERCENTUAL",
+    perguntarVencimentoCrediario: false,
   });
 
   const [isLoading, setIsLoading] = useState(true);
@@ -47,6 +48,7 @@ const SettingsPage = () => {
             allowProductsWithoutPrice: data.venda_sem_preco === true,
             atualizacaoCustoCompra: data.atualizacao_custo_compra || "PERGUNTAR",
             modoCobrancaCartao: data.modo_cobranca_cartao || "PERCENTUAL",
+            perguntarVencimentoCrediario: data.perguntar_vencimento_crediario === true,
           });
         }
       } catch (error) {
@@ -74,6 +76,7 @@ const SettingsPage = () => {
         venda_sem_preco: form.allowProductsWithoutPrice,
         atualizacao_custo_compra: form.atualizacaoCustoCompra,
         modo_cobranca_cartao: form.modoCobrancaCartao,
+        perguntar_vencimento_crediario: form.perguntarVencimentoCrediario,
       });
       
       // Keep syncing with localStorage to not break other parts that might rely on it for now
@@ -197,12 +200,12 @@ const SettingsPage = () => {
             />
           </div>
 
-          <div className="flex items-center justify-between pt-2 border-t border-border mt-2">
+          <div className="flex flex-col md:flex-row md:items-center justify-between pt-2 border-t border-border mt-2 gap-4">
             <div className="flex-1">
               <p className="text-sm font-medium text-foreground">Atualização de Custo (Compra)</p>
               <p className="text-xs text-muted-foreground">Como o sistema deve atualizar o custo dos produtos ao registrar uma compra com valor diferente.</p>
             </div>
-            <div className="w-[300px]">
+            <div className="w-full md:w-[300px]">
               <Select
                 value={form.atualizacaoCustoCompra}
                 onValueChange={(val) => setForm({ ...form, atualizacaoCustoCompra: val })}
@@ -220,12 +223,12 @@ const SettingsPage = () => {
             </div>
           </div>
 
-          <div className="flex items-center justify-between pt-2 border-t border-border mt-2">
+          <div className="flex flex-col md:flex-row md:items-center justify-between pt-2 border-t border-border mt-2 gap-4">
             <div className="flex-1">
               <p className="text-sm font-medium text-foreground">Modo de Cobrança Cartão</p>
               <p className="text-xs text-muted-foreground">Define como os juros e valores de cartão de crédito são calculados no PDV.</p>
             </div>
-            <div className="w-[300px]">
+            <div className="w-full md:w-[300px]">
               <Select
                 value={form.modoCobrancaCartao}
                 onValueChange={(val) => setForm({ ...form, modoCobrancaCartao: val })}
@@ -234,11 +237,24 @@ const SettingsPage = () => {
                   <SelectValue placeholder="Selecione..." />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="PERCENTUAL">Acréscimo Percentual (Gross-Up)</SelectItem>
-                  <SelectItem value="PRECO_FIXO">Preço Fixo de Cartão (Tabela Produto)</SelectItem>
+                  <SelectItem value="PERCENTUAL">Acréscimo Percentual (%)</SelectItem>
+                  <SelectItem value="PRECO_FIXO">Diferença para Preço de Cartão (Fixo)</SelectItem>
                 </SelectContent>
               </Select>
             </div>
+          </div>
+          
+          <div className="flex items-center justify-between pt-2">
+            <div className="space-y-0.5">
+              <Label className="text-base">Vencimento de Crediário</Label>
+              <p className="text-sm text-muted-foreground">
+                Perguntar o vencimento da 1ª parcela no PDV ao vender fiado
+              </p>
+            </div>
+            <Switch
+              checked={form.perguntarVencimentoCrediario}
+              onCheckedChange={(checked) => setForm({ ...form, perguntarVencimentoCrediario: checked })}
+            />
           </div>
         </div>
 
