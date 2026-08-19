@@ -1,15 +1,7 @@
+ð¨ ERRO NA API ð¨
 
-API rodando na porta 3001
-ReferenceError: require is not defined
-    at registrarEntradaManual (file:///C:/Users/matheus.miguel/Documents/Node_projetos/Projeto_Perfume/API/controllers/estoqueController.js:82:28)
-    at Layer.handle [as handle_request] (C:\Users\matheus.miguel\Documents\Node_projetos\Projeto_Perfume\API\node_modules\express\lib\router\layer.js:95:5)
-    at next (C:\Users\matheus.miguel\Documents\Node_projetos\Projeto_Perfume\API\node_modules\express\lib\router\route.js:149:13)
-    at Route.dispatch (C:\Users\matheus.miguel\Documents\Node_projetos\Projeto_Perfume\API\node_modules\express\lib\router\route.js:119:3)
-    at Layer.handle [as handle_request] (C:\Users\matheus.miguel\Documents\Node_projetos\Projeto_Perfume\API\node_modules\express\lib\router\layer.js:95:5)
-    at C:\Users\matheus.miguel\Documents\Node_projetos\Projeto_Perfume\API\node_modules\express\lib\router\index.js:284:15
-    at router.process_params (C:\Users\matheus.miguel\Documents\Node_projetos\Projeto_Perfume\API\node_modules\express\lib\router\index.js:346:12)
-    at next (C:\Users\matheus.miguel\Documents\Node_projetos\Projeto_Perfume\API\node_modules\express\lib\router\index.js:280:10)
-    at router.handle (C:\Users\matheus.miguel\Documents\Node_projetos\Projeto_Perfume\API\node_modules\express\lib\router\index.js:175:3)
-    at router (C:\Users\matheus.miguel\Documents\Node_projetos\Projeto_Perfume\API\node_modules\express\lib\router\index.js:47:12)
-TELEGRAM_BOT_TOKEN ou TELEGRAM_CHAT_ID ausentes. Alerta não enviado.
-TELEGRAM_BOT_TOKEN ou TELEGRAM_CHAT_ID ausentes. Alerta não enviado.
+Rota: POST /api/compras
+Status: 500
+
+Detalhes:
+{"error":"Erro ao criar compra.","details":"\nInvalid `prisma.msestoque_lote.create()` invocation:\n\n{\n  data: {\n    codproduto: 226,\n    codfilial: 2,\n    lote: \"PADRAO\",\n    validade: new Date(\"2030-08-19T00:00:00.000Z\"),\n    quantidade: 31,\n    custo_unitario: 0,\n    ~~~~~~~~~~~~~~\n?   id?: Int,\n?   uuid?: String | Null,\n?   created_at?: DateTime | Null,\n?   updated_at?: DateTime | Null\n  }\n}\n\nUnknown argument `custo_unitario`. Available options are marked with ?."}
