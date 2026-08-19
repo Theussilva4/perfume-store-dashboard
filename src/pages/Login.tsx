@@ -56,7 +56,7 @@ const Login = () => {
   };
 
   return (
-    <div className="min-h-[100dvh] bg-background flex items-center justify-center p-4">
+    <div className="min-h-screen bg-background flex items-center justify-center p-4">
       <div className="w-full max-w-md">
         <div className="bg-card rounded-lg border border-border p-8 shadow-sm animate-fade-in-up">
           <div className="flex flex-col items-center mb-8">

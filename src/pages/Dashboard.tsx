@@ -268,7 +268,23 @@ export default function Dashboard() {
                   <BarChart data={vendasSemanaAtualPassada} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                     <XAxis dataKey="dia" fontSize={12} axisLine={false} tickLine={false} />
                     <YAxis tickFormatter={(val) => `R$${(val/1000).toFixed(1)}k`} fontSize={12} axisLine={false} tickLine={false} />
-                    <Tooltip formatter={(val: number, name: string) => [formataMoeda(val), name]} />
+                    <Tooltip 
+                        content={({ active, payload, label }) => {
+                          if (active && payload && payload.length) {
+                            return (
+                              <div className="bg-white border shadow-sm p-2 rounded text-sm">
+                                <p className="font-bold mb-1">{label}</p>
+                                {payload.map((entry, index) => (
+                                  <div key={`item-${index}`} style={{ color: entry.color }}>
+                                    {entry.dataKey === 'passada' ? 'Semana Passada' : 'Esta Semana'}: {formataMoeda(Number(entry.value))}
+                                  </div>
+                                ))}
+                              </div>
+                            );
+                          }
+                          return null;
+                        }}
+                      />
                     <Legend wrapperStyle={{ fontSize: '12px' }} />
                     <Bar dataKey="passada" name="Semana Passada" fill="#94a3b8" radius={[4, 4, 0, 0]} />
                     <Bar dataKey="atual" name="Esta Semana" fill="#3b82f6" radius={[4, 4, 0, 0]} />

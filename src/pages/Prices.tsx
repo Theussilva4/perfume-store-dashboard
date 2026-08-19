@@ -67,18 +67,23 @@ const Prices = () => {
     setIsModalOpen(true);
   };
 
-  const handleSave = () => {
-    mutationPreco.mutate({
-      preco_custo: parseFloat(costPrice),
-      preco_venda: parseFloat(sellPrice),
-      preco_cartao: parseFloat(cardPrice || "0"),
-      desconto_maximo: parseFloat(maxDiscount || "0")
-    });
-  };
+    const parseValue = (val: string) => {
+      if (!val) return 0;
+      return parseFloat(val.toString().replace(",", "."));
+    };
+
+    const handleSave = () => {
+      mutationPreco.mutate({
+        preco_custo: parseValue(costPrice),
+        preco_venda: parseValue(sellPrice),
+        preco_cartao: parseValue(cardPrice),
+        desconto_maximo: parseValue(maxDiscount)
+      });
+    };
 
   // --- SIMULADOR EM TEMPO REAL ---
-  const custoAtual = parseFloat(costPrice) || 0;
-  const vendaAtual = parseFloat(sellPrice) || 0;
+  const custoAtual = parseValue(costPrice) || 0;
+  const vendaAtual = parseValue(sellPrice) || 0;
   const lucro = vendaAtual - custoAtual;
   const margem = vendaAtual > 0 ? (lucro / vendaAtual) * 100 : 0;
   const markup = custoAtual > 0 ? (vendaAtual / custoAtual) : 0;

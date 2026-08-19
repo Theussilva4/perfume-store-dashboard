@@ -5,3 +5,37 @@ Status: 500
 
 Detalhes:
 {"error":"Erro ao criar compra.","details":"\nInvalid `prisma.msestoque_lote.create()` invocation:\n\n{\n  data: {\n    codproduto: 226,\n    codfilial: 2,\n    lote: \"PADRAO\",\n    validade: new Date(\"2030-08-19T00:00:00.000Z\"),\n    quantidade: 31,\n    custo_unitario: 0,\n    ~~~~~~~~~~~~~~\n?   id?: Int,\n?   uuid?: String | Null,\n?   created_at?: DateTime | Null,\n?   updated_at?: DateTime | Null\n  }\n}\n\nUnknown argument `custo_unitario`. Available options are marked with ?."}
+
+
+
+PrismaClientValidationError: 
+Invalid `prisma.msestoque_lote.create()` invocation:
+
+{
+  data: {
+    codproduto: 226,
+    codfilial: 2,
+    lote: "PADRAO",
+    validade: new Date("2030-08-19T00:00:00.000Z"),
+    quantidade: 31,
+    custo_unitario: 0,
+    ~~~~~~~~~~~~~~
+?   id?: Int,
+?   uuid?: String | Null,
+?   created_at?: DateTime | Null,
+?   updated_at?: DateTime | Null
+  }
+}
+
+Unknown argument `custo_unitario`. Available options are marked with ?.
+    at Nn (/app/node_modules/@prisma/client/runtime/library.js:29:1363)
+    at ei.handleRequestError (/app/node_modules/@prisma/client/runtime/library.js:121:6911)
+    at ei.handleAndLogRequestError (/app/node_modules/@prisma/client/runtime/library.js:121:6593)
+    at ei.request (/app/node_modules/@prisma/client/runtime/library.js:121:6300)
+    at async a (/app/node_modules/@prisma/client/runtime/library.js:130:9551)
+    at async creditarEstoque (file:///app/services/estoqueService.js:187:5)
+    at async file:///app/controllers/comprasController.js:390:11
+    at async Proxy._transactionWithCallback (/app/node_modules/@prisma/client/runtime/library.js:130:8120)
+    at async createCompra (file:///app/controllers/comprasController.js:347:20) {
+  clientVersion: '6.19.2'
+}
