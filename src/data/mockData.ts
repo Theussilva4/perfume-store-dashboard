@@ -205,7 +205,7 @@ export const coresStatus: Record<string, string> = {
 
 export const rotulosFilial: Record<string, string> = {
   matriz: "Matriz",
-  filial1: "Filial 1",
+  filial1: "Depósito",
 };
 
 /** Obter estoque de um produto para uma filial */

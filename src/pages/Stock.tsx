@@ -162,14 +162,13 @@ const Stock = () => {
                 </div>
 
                 <div className="grid grid-cols-2 gap-2 text-sm pt-2 border-t border-border mt-2">
-                  {filialSelecionada === "todas" ? (
-                    <>
+                  <>
                       <div>
                         <span className="text-xs text-muted-foreground block">Matriz</span>
                         <span className="font-medium">{p.estoqueMatriz}</span>
                       </div>
                       <div>
-                        <span className="text-xs text-muted-foreground block">Filial 1</span>
+                        <span className="text-xs text-muted-foreground block">Depósito</span>
                         <span className="font-medium">{p.estoqueFilial1}</span>
                       </div>
                       <div>
@@ -177,12 +176,6 @@ const Stock = () => {
                         <span className="font-semibold text-primary">{estoque}</span>
                       </div>
                     </>
-                  ) : (
-                    <div>
-                      <span className="text-xs text-muted-foreground block">Estoque Atual</span>
-                      <span className="font-medium text-primary">{estoque}</span>
-                    </div>
-                  )}
                   <div>
                     <span className="text-xs text-muted-foreground block">Estoque Mínimo</span>
                     <span className="font-medium text-muted-foreground">{minimo}</span>
@@ -200,15 +193,11 @@ const Stock = () => {
               <tr className="border-b border-border bg-muted/30">
                 <th className="text-left px-4 py-3 font-medium text-muted-foreground">Produto</th>
                 <th className="text-left px-4 py-3 font-medium text-muted-foreground">Categoria</th>
-                {filialSelecionada === "todas" ? (
-                  <>
+                <>
                     <th className="text-center px-4 py-3 font-medium text-muted-foreground">Matriz</th>
-                    <th className="text-center px-4 py-3 font-medium text-muted-foreground">Filial 1</th>
+                    <th className="text-center px-4 py-3 font-medium text-muted-foreground">Depósito</th>
                     <th className="text-center px-4 py-3 font-medium text-muted-foreground">Total</th>
                   </>
-                ) : (
-                  <th className="text-center px-4 py-3 font-medium text-muted-foreground">Atual</th>
-                )}
                 <th className="text-center px-4 py-3 font-medium text-muted-foreground">Mínimo</th>
                 <th className="text-center px-4 py-3 font-medium text-muted-foreground">Status</th>
               </tr>
@@ -231,15 +220,11 @@ const Stock = () => {
                       <div className="text-xs text-muted-foreground">Cód: {p.codproduto} • {p.marca || "-"}</div>
                     </td>
                     <td className="px-4 py-3 text-muted-foreground">{p.mscategoria?.categoria || "-"}</td>
-                    {filialSelecionada === "todas" ? (
-                      <>
+                    <>
                         <td className="px-4 py-3 text-center font-medium">{p.estoqueMatriz}</td>
                         <td className="px-4 py-3 text-center font-medium">{p.estoqueFilial1}</td>
                         <td className={`px-4 py-3 text-center font-semibold ${estaNegativo ? 'text-red-600' : 'text-primary'}`}>{estoque}</td>
                       </>
-                    ) : (
-                      <td className={`px-4 py-3 text-center font-medium ${estaNegativo ? 'text-red-600' : ''}`}>{estoque}</td>
-                    )}
                     <td className="px-4 py-3 text-center text-muted-foreground">{minimo}</td>
                     <td className="px-4 py-3 text-center">
                       {estaNegativo ? (
