@@ -20,6 +20,11 @@ api.interceptors.request.use((config) => {
 api.interceptors.response.use(
   (response) => response,
   (error) => {
+    // Ignore canceled requests (e.g. when user navigates away or browser aborts)
+    if (axios.isCancel(error) || error.code === 'ERR_CANCELED' || error.message === 'Request aborted') {
+      return new Promise(() => {}); // Retorna uma promise pendente silenciosa
+    }
+
     if (error.response?.status === 401) {
       localStorage.removeItem("token");
       localStorage.removeItem("auth_user");
