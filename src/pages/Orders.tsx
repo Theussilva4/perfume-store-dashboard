@@ -248,7 +248,7 @@ const Orders = () => {
 
         const codForma = p.CODPLPAG || p.codplpag || p.codforma || p.forma_pagamento || p.formaPagamento;
         const planoPgtoReq = (formasPgtoAPI || []).find((fp: any) => String(fp.CODPLPAG || fp.codplpag || fp.codforma || fp.id || fp.codplano) === String(codForma));
-        const vendedorNome = p.msusuario_mspedido_codusur_vendedorTomsusuario?.nome || p.vendedor?.nome || p.nomeVendedor || "Vendedor";
+        const vendedorNome = p.msusuario_mspedido_codusur_criouTomsusuario?.nome || p.msusuario_mspedido_codusur_vendedorTomsusuario?.nome || p.vendedor?.nome || p.nomeVendedor || "Vendedor";
 
         return {
           ...p,
@@ -372,7 +372,7 @@ const Orders = () => {
 
         const codForma = p.CODPLPAG || p.codplpag || p.codforma || p.forma_pagamento || p.formaPagamento;
         const planoPgtoReq = (listaFormasPagamento || []).find((fp: any) => String(fp.CODPLPAG || fp.codplpag || fp.codforma || fp.id || fp.codplano) === String(codForma));
-        const vendedorNome = p.msusuario_mspedido_codusur_vendedorTomsusuario?.nome || p.vendedor?.nome || p.nomeVendedor || "Vendedor";
+        const vendedorNome = p.msusuario_mspedido_codusur_criouTomsusuario?.nome || p.msusuario_mspedido_codusur_vendedorTomsusuario?.nome || p.vendedor?.nome || p.nomeVendedor || "Vendedor";
 
         return {
           ...p,
@@ -770,6 +770,7 @@ const Orders = () => {
     }
 
     try {
+      setIsSubmitting(true);
       // Separar itens avulsos dos itens que compõem os kits aplicados
       const subtotalBase = itensPedido.reduce((s, i) => s + i.preco * i.quantidade, 0);
       
@@ -781,10 +782,12 @@ const Orders = () => {
         const somaPag = pagamentosVenda.reduce((acc, p) => acc + p.valor, 0);
         if (somaPag === 0 && totalDoPedidoFinal > 0) {
           setValidationError({ title: "Pagamento não encontrado", message: "Para finalizar a venda, você deve lançar o(s) pagamento(s)." });
+          setIsSubmitting(false);
           return;
         }
         if (Math.abs(somaPag - totalDoPedidoFinal) > 0.05 && totalDoPedidoFinal > 0) {
           setValidationError({ title: "Valores Incorretos", message: `A soma dos pagamentos (R$ ${somaPag.toFixed(2)}) não bate com o Total (R$ ${totalDoPedidoFinal.toFixed(2)}). Corrija antes de finalizar.` });
+          setIsSubmitting(false);
           return;
         }
       }
@@ -892,6 +895,8 @@ const Orders = () => {
       } else {
         toast.error(msg);
       }
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -2023,7 +2028,9 @@ const Orders = () => {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setDialogOpen(false)}>Cancelar</Button>
-            <Button onClick={handleCriarPedido}>{idPedidoEdicao ? "Gravar Alterações" : "Criar Pedido"}</Button>
+            <Button onClick={handleCriarPedido} disabled={isSubmitting}>
+              {isSubmitting ? "Aguarde..." : (idPedidoEdicao ? "Gravar Alterações" : "Criar Pedido")}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
