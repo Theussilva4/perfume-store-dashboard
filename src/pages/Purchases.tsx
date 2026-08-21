@@ -61,6 +61,28 @@ const Purchases = () => {
   
   const [itensCompra, setItensCompra] = useState<any[]>([]);
 
+  const [buscaProdutoLocal, setBuscaProdutoLocal] = useState("");
+
+  const handleBuscarProdutoLocal = () => {
+    if (!buscaProdutoLocal.trim()) return;
+    const busca = buscaProdutoLocal.toLowerCase().trim();
+    const buscaNumerica = limpar(busca);
+    
+    const encontrado = listaProdutos.find(p => 
+      (p.codigo_barras && p.codigo_barras.toLowerCase() === busca) ||
+      (buscaNumerica && String(p.codproduto) === buscaNumerica) ||
+      (p.referencia && p.referencia.toLowerCase() === busca)
+    );
+
+    if (encontrado) {
+      setProdutoSelecionadoId(String(encontrado.codproduto));
+      setCustoSelecionado(Number(encontrado.custo || 0));
+      setBuscaProdutoLocal("");
+    } else {
+      toast.error("Produto não encontrado.");
+    }
+  };
+
   useEffect(() => {
     carregarDados();
   }, []);
