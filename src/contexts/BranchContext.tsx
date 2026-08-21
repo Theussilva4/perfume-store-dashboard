@@ -34,15 +34,17 @@ export const BranchProvider = ({ children }: { children: ReactNode }) => {
   });
 
   useEffect(() => {
-    api.get("/filial").then(res => {
-      if (res.data && Array.isArray(res.data)) {
-        setFiliais(res.data.map((f: any) => ({
-          id: String(f.codfilial),
-          nome: f.filial,
-          rotulo: f.filial
-        })));
-      }
-    }).catch(console.error);
+    if (localStorage.getItem("token")) {
+      api.get("/filial").then(res => {
+        if (res.data && Array.isArray(res.data)) {
+          setFiliais(res.data.map((f: any) => ({
+            id: String(f.codfilial),
+            nome: f.filial,
+            rotulo: f.filial
+          })));
+        }
+      }).catch(console.error);
+    }
   }, []);
 
   const rotuloFilial =
