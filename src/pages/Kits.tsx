@@ -28,6 +28,7 @@ export default function Kits() {
   const [nome, setNome] = useState("");
   const [descricao, setDescricao] = useState("");
   const [precoKit, setPrecoKit] = useState<number | "">("");
+  const [precoKitCartao, setPrecoKitCartao] = useState<number | "">("");
   const [dataInicio, setDataInicio] = useState("");
   const [dataFim, setDataFim] = useState("");
   const [ativo, setAtivo] = useState(true);
@@ -64,6 +65,7 @@ export default function Kits() {
     setNome("");
     setDescricao("");
     setPrecoKit("");
+    setPrecoKitCartao("");
     setDataInicio("");
     setDataFim("");
     setAtivo(true);
@@ -77,6 +79,7 @@ export default function Kits() {
     setNome(kit.nome);
     setDescricao(kit.descricao || "");
     setPrecoKit(Number(kit.preco_kit));
+    setPrecoKitCartao(kit.preco_kit_cartao ? Number(kit.preco_kit_cartao) : "");
     setDataInicio(kit.data_inicio ? kit.data_inicio.split("T")[0] : "");
     setDataFim(kit.data_fim ? kit.data_fim.split("T")[0] : "");
     setAtivo(kit.ativo === "S");
@@ -133,6 +136,7 @@ export default function Kits() {
       nome,
       descricao,
       preco_kit: Number(precoKit),
+      preco_kit_cartao: precoKitCartao ? Number(precoKitCartao) : null,
       data_inicio: dataInicio || null,
       data_fim: dataFim || null,
       ativo: ativo ? "S" : "N",
@@ -220,9 +224,14 @@ export default function Kits() {
               </div>
               {k.descricao && <p className="text-sm text-slate-500 line-clamp-2 mb-3">{k.descricao}</p>}
               <div className="flex gap-2">
-                <Badge variant="outline" className="bg-white">
+                <Badge variant="outline" className="bg-white" title="Preço Normal">
                   R$ {Number(k.preco_kit).toFixed(2)}
                 </Badge>
+                {k.preco_kit_cartao > 0 && (
+                  <Badge variant="outline" className="bg-white" title="Preço Cartão">
+                    💳 R$ {Number(k.preco_kit_cartao).toFixed(2)}
+                  </Badge>
+                )}
                 {k.economia > 0 && (
                   <Badge variant="secondary" className="bg-green-100 text-green-700">
                     -{k.economia_percentual.toFixed(1)}%
@@ -296,9 +305,15 @@ export default function Kits() {
                 <Textarea value={descricao} onChange={e => setDescricao(e.target.value)} placeholder="Detalhes opcionais da promoção..." className="resize-none" rows={3} />
               </div>
 
-              <div className="space-y-2">
-                <Label>Preço Fechado do Kit (R$) *</Label>
-                <Input type="number" value={precoKit} onChange={e => setPrecoKit(e.target.value ? Number(e.target.value) : "")} placeholder="199.90" />
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>Preço do Kit (R$) *</Label>
+                  <Input type="number" value={precoKit} onChange={e => setPrecoKit(e.target.value ? Number(e.target.value) : "")} placeholder="199.90" />
+                </div>
+                <div className="space-y-2">
+                  <Label>Preço Cartão (R$)</Label>
+                  <Input type="number" value={precoKitCartao} onChange={e => setPrecoKitCartao(e.target.value ? Number(e.target.value) : "")} placeholder="210.00" />
+                </div>
               </div>
 
               <div className="grid grid-cols-2 gap-4">
