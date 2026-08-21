@@ -10,6 +10,7 @@ import {
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import api from '@/services/api';
 
 import { 
   Card, 
@@ -91,12 +92,9 @@ export default function AccountsReceivable() {
 
   const carregarClientes = async () => {
     try {
-      const response = await fetch('/api/cliente', {
-        headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
-      });
-      if (response.ok) {
-        const data = await response.json();
-        setClientes(data);
+      const response = await api.get('/cliente');
+      if (response.data) {
+        setClientes(response.data);
       }
     } catch (e) {
       console.error(e);
@@ -110,22 +108,13 @@ export default function AccountsReceivable() {
     }
     try {
       setIsSubmitting(true);
-      const response = await fetch('/api/contas-receber', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        },
-        body: JSON.stringify({
-          codcliente: parseInt(novoClienteId),
-          codfilial: selectedBranch || 1,
-          valor_total: parseFloat(novoValor),
-          data_vencimento: novaDataVencimento || null,
-          observacoes: "Conta gerada manualmente"
-        })
+      await api.post('/contas-receber', {
+        codcliente: parseInt(novoClienteId),
+        codfilial: selectedBranch || 1,
+        valor_total: parseFloat(novoValor),
+        data_vencimento: novaDataVencimento || null,
+        observacoes: "Conta gerada manualmente"
       });
-
-      if (!response.ok) throw new Error("Erro ao criar conta");
       
       toast.success("Conta criada com sucesso!");
       setNovaContaModalOpen(false);
@@ -134,7 +123,7 @@ export default function AccountsReceivable() {
       setNovaDataVencimento("");
       carregarContas();
     } catch (error: any) {
-      toast.error(error.message);
+      toast.error(error.response?.data?.error || error.message || "Erro ao criar conta");
     } finally {
       setIsSubmitting(false);
     }
@@ -143,21 +132,13 @@ export default function AccountsReceivable() {
   const carregarContas = async () => {
     try {
       setIsLoading(true);
-      const url = new URL('/api/contas-receber', window.location.origin);
+      const params = new URLSearchParams();
       if (selectedBranch) {
-        url.searchParams.append('codfilial', selectedBranch.toString());
+        params.append('codfilial', selectedBranch.toString());
       }
       
-      const response = await fetch(url.toString(), {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        }
-      });
-      
-      if (!response.ok) throw new Error("Falha ao carregar contas");
-      
-      const data = await response.json();
-      setContas(data);
+      const response = await api.get(`/contas-receber?${params.toString()}`);
+      setContas(response.data);
     } catch (error) {
       console.error(error);
       toast.error("Erro ao carregar contas a receber");
@@ -185,30 +166,17 @@ export default function AccountsReceivable() {
     try {
       setIsSubmitting(true);
       
-      // O codusur é enviado para que a API saiba qual caixa aberto deve receber o dinheiro
-      const response = await fetch(`/api/contas-receber/${contaSelecionada.id}/baixar`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        },
-        body: JSON.stringify({
-          valor_pago: valor,
-          codusur: user?.id
-        })
+      await api.post(`/contas-receber/${contaSelecionada.id}/baixar`, {
+        valor_pago: valor,
+        codusur: user?.id
       });
-      
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || "Falha ao registrar pagamento");
-      }
       
       toast.success("Pagamento registrado com sucesso! O valor foi adicionado ao seu Caixa Atual.");
       setBaixaModalOpen(false);
       carregarContas();
     } catch (error: any) {
       console.error(error);
-      toast.error(error.message || "Erro ao registrar pagamento");
+      toast.error(error.response?.data?.error || error.message || "Erro ao baixar conta");
     } finally {
       setIsSubmitting(false);
     }
