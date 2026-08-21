@@ -682,39 +682,36 @@ const Purchases = () => {
                 </div>
               </div>
             )}
-
-            <div className="mt-4">
-              <p className="text-xs text-muted-foreground uppercase tracking-widest font-medium mb-3">Itens da Compra</p>
+            
+            <div className="bg-muted/50 p-4 rounded-md space-y-4">
+              <h3 className="font-semibold text-lg flex items-center gap-2">
+                <ShoppingCart className="w-5 h-5 text-primary" />
+                Adicionar Produtos
+              </h3>
               
-              <div className="grid grid-cols-1 md:grid-cols-12 gap-3 items-end mb-4">
-                <div className="md:col-span-4">
-                  <Label>Produto (Cód/EAN/Nome)</Label>
+              <div className="grid grid-cols-1 md:grid-cols-12 gap-4 items-end">
+                <div className="md:col-span-8 space-y-2">
+                  <Label>Produto (Cód. Barras ou Busca)</Label>
                   <div className="flex flex-col gap-2">
-                    <div className="flex gap-2">
-                      <Input
-                        value={produtoBusca}
-                        onChange={(e) => setProdutoBusca(e.target.value)}
-                        onKeyDown={(e) => {
-                          if (e.key === "Enter") {
-                            e.preventDefault();
-                            handleBuscaRapidaProduto();
-                          }
-                        }}
-                        placeholder="Busca rápida (Enter)..."
-                        className="flex-1"
-                      />
-                      <Button type="button" variant="secondary" onClick={() => setScannerOpen(true)} title="Escanear Código">
-                        <Camera className="h-4 w-4" />
-                      </Button>
-                      <Button type="button" variant="outline" onClick={async () => {
-                        await recarregarProdutos();
-                        setDialogProdutoOpen(true);
-                      }} title="Catálogo de Produtos">
-                        ...
-                      </Button>
-                    </div>
-                    
-                    {produtoSelecionadoId && (
+                    {!produtoSelecionadoId ? (
+                      <div className="flex gap-2">
+                        <Input
+                          value={buscaProdutoLocal}
+                          onChange={(e) => setBuscaProdutoLocal(e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter") {
+                              e.preventDefault();
+                              handleBuscarProdutoLocal();
+                            }
+                          }}
+                          placeholder="Digite código de barras, referência ou nome (Enter)..."
+                          className="flex-1"
+                        />
+                        <Button type="button" variant="outline" onClick={() => setDialogProdutoOpen(true)} title="Lista de Produtos">
+                          <Search className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    ) : (
                       <div className="flex gap-2">
                         <Input 
                           value={listaProdutos.find(p => String(p.codproduto) === produtoSelecionadoId)?.descricao || ""} 
@@ -722,14 +719,15 @@ const Purchases = () => {
                           placeholder="Produto Selecionado"
                           className="flex-1 bg-muted/50 border-primary/20 text-primary font-medium"
                         />
-                        <Button type="button" variant="ghost" onClick={() => setProdutoSelecionadoId("")} title="Limpar">
+                        <Button type="button" variant="ghost" onClick={() => setProdutoSelecionadoId("")} title="Remover Produto">
                           <Trash2 className="h-4 w-4 text-muted-foreground hover:text-red-500" />
                         </Button>
                       </div>
                     )}
                   </div>
                 </div>
-                <div className={`md:col-span-3 grid ${tipoEntrada === "COMPRA" ? "grid-cols-2" : "grid-cols-1"} gap-2`}>
+                
+                <div className={`md:col-span-4 grid ${tipoEntrada === "COMPRA" ? "grid-cols-2" : "grid-cols-1"} gap-2`}>
                   <div>
                     <Label>Qtd</Label>
                     <Input type="number" value={qtdSelecionada} onChange={e => setQtdSelecionada(Number(e.target.value))} min={1} />
@@ -742,7 +740,7 @@ const Purchases = () => {
                   )}
                 </div>
                 
-                <div className="md:col-span-3 grid grid-cols-2 gap-2">
+                <div className="md:col-span-6 grid grid-cols-2 gap-2">
                   <div>
                     <Label>Lote</Label>
                     <Input value={loteSelecionado} onChange={e => setLoteSelecionado(e.target.value)} placeholder="Ex: L123" />
